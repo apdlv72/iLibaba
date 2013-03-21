@@ -13,13 +13,12 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-    
-    <item android:id="@+id/reconnect"
+<menu xmlns:android="http://schemas.android.com/apk/res/android"><item android:id="@+id/reconnect"
           android:icon="@android:drawable/ic_menu_revert"
           android:title="@string/reconnect" /><item android:id="@+id/disconnect"
           android:icon="@android:drawable/ic_menu_close_clear_cancel"
           android:title="@string/disconnect" /><item android:id="@+id/scan" android:icon="@android:drawable/ic_menu_search" android:title="@string/select" /><item android:id="@+id/discoverable"
           android:icon="@android:drawable/ic_menu_mylocation"
           android:title="@string/discoverable" />
+          <item android:id="@+id/menu_garage_next" android:title="Water Strip Control" android:icon="@android:drawable/ic_media_ff"></item>
 </menu>

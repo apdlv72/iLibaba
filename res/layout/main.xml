@@ -259,7 +259,8 @@
             android:handle="@+id/handle"
             android:orientation="vertical" >
 
-            <Button
+            <ImageButton
+                            style="@style/button"
                 android:id="@+id/handle"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
@@ -271,7 +272,23 @@
                 android:text="Logfile"
                 android:textColor="@android:color/white"
                 android:padding="5dp"
-                android:textSize="14sp" />
+                android:textSize="14sp" 
+                            android:src="@android:drawable/arrow_up_float" 
+                />
+                                    
+             <!--  Button
+                android:id="@+id/handle"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/slider"
+                android:focusableInTouchMode="true"
+                android:maxLines="1"
+                android:scrollHorizontally="false"
+                android:scrollbarAlwaysDrawVerticalTrack="false"
+                android:text="Logfile"
+                android:textColor="@android:color/white"
+                android:padding="5dp"
+                android:textSize="14sp" / -->
 
             <LinearLayout
                 android:id="@+id/content"

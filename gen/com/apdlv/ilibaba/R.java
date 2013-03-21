@@ -8,6 +8,9 @@
 package com.apdlv.ilibaba;
 
 public final class R {
+    public static final class array {
+        public static final int mode_array=0x7f050000;
+    }
     public static final class attr {
     }
     public static final class drawable {
@@ -23,50 +26,78 @@ public final class R {
         public static final int slider=0x7f020009;
     }
     public static final class id {
-        public static final int Button0=0x7f070017;
-        public static final int Button1=0x7f07000a;
-        public static final int Button2=0x7f07000b;
-        public static final int Button3=0x7f07000c;
-        public static final int Button4=0x7f07000e;
-        public static final int Button5=0x7f07000f;
-        public static final int Button7=0x7f070012;
-        public static final int Button8=0x7f070013;
-        public static final int Button9=0x7f070014;
-        public static final int ButtonBS=0x7f070018;
-        public static final int ButtonOpen=0x7f070016;
-        public static final int TableRow1=0x7f070009;
-        public static final int TableRow2=0x7f07000d;
-        public static final int TableRow3=0x7f070011;
-        public static final int TableRow4=0x7f070015;
-        public static final int button6=0x7f070010;
-        public static final int button_scan=0x7f070006;
-        public static final int content=0x7f07001b;
-        public static final int disconnect=0x7f07001f;
-        public static final int discoverable=0x7f070021;
-        public static final int handle=0x7f07001c;
-        public static final int infoArea=0x7f070019;
-        public static final int logView=0x7f07001d;
-        public static final int new_devices=0x7f070005;
-        public static final int paired_devices=0x7f070003;
-        public static final int pinText=0x7f070008;
-        public static final int reconnect=0x7f07001e;
-        public static final int scan=0x7f070020;
-        public static final int scrollView1=0x7f070007;
-        public static final int slidingDrawer1=0x7f07001a;
-        public static final int title_left_text=0x7f070000;
-        public static final int title_new_devices=0x7f070004;
-        public static final int title_paired_devices=0x7f070002;
-        public static final int title_right_text=0x7f070001;
+        public static final int Button0=0x7f08002d;
+        public static final int Button1=0x7f080020;
+        public static final int Button2=0x7f080021;
+        public static final int Button3=0x7f080022;
+        public static final int Button4=0x7f080024;
+        public static final int Button5=0x7f080025;
+        public static final int Button7=0x7f080028;
+        public static final int Button8=0x7f080029;
+        public static final int Button9=0x7f08002a;
+        public static final int ButtonBS=0x7f08002e;
+        public static final int ButtonOpen=0x7f08002c;
+        public static final int LinearLayout1=0x7f080000;
+        public static final int TableRow1=0x7f08001f;
+        public static final int TableRow2=0x7f080023;
+        public static final int TableRow3=0x7f080027;
+        public static final int TableRow4=0x7f08002b;
+        public static final int button6=0x7f080026;
+        public static final int buttonGo=0x7f08001c;
+        public static final int buttonWaterOff=0x7f080012;
+        public static final int button_scan=0x7f080019;
+        public static final int colorPickerCirc=0x7f080010;
+        public static final int content=0x7f080031;
+        public static final int disconnect=0x7f080037;
+        public static final int discoverable=0x7f080039;
+        public static final int handle=0x7f080032;
+        public static final int infoArea=0x7f08002f;
+        public static final int logView=0x7f080033;
+        public static final int menu_garage_next=0x7f08003a;
+        public static final int menu_water_next=0x7f080035;
+        public static final int menu_water_onoff=0x7f080034;
+        public static final int new_devices=0x7f080018;
+        public static final int paired_devices=0x7f080016;
+        public static final int pinText=0x7f08001e;
+        public static final int progressBar=0x7f08001a;
+        public static final int progressCircle=0x7f08001b;
+        public static final int reconnect=0x7f080036;
+        public static final int scan=0x7f080038;
+        public static final int scrollView1=0x7f08001d;
+        public static final int seekFade=0x7f08000f;
+        public static final int seekRandom=0x7f080006;
+        public static final int seekSpeed=0x7f08000c;
+        public static final int seekStrength=0x7f080009;
+        public static final int slidingDrawer1=0x7f080030;
+        public static final int spinner=0x7f080001;
+        public static final int tableRow2=0x7f080004;
+        public static final int tableRow3=0x7f080007;
+        public static final int tableRow4=0x7f08000a;
+        public static final int tableRow5=0x7f08000d;
+        public static final int textCommand=0x7f080011;
+        public static final int textView1=0x7f080003;
+        public static final int textView3=0x7f080005;
+        public static final int textView4=0x7f080008;
+        public static final int textView5=0x7f08000b;
+        public static final int textView6=0x7f08000e;
+        public static final int title_left_text=0x7f080013;
+        public static final int title_new_devices=0x7f080017;
+        public static final int title_paired_devices=0x7f080015;
+        public static final int title_right_text=0x7f080014;
+        public static final int verticalSeekBright=0x7f080002;
     }
     public static final class layout {
-        public static final int custom_title=0x7f030000;
-        public static final int device_list=0x7f030001;
-        public static final int device_name=0x7f030002;
-        public static final int main=0x7f030003;
-        public static final int message=0x7f030004;
+        public static final int activity_waterstrip=0x7f030000;
+        public static final int custom_title=0x7f030001;
+        public static final int device_list=0x7f030002;
+        public static final int device_name=0x7f030003;
+        public static final int door_open_dialog=0x7f030004;
+        public static final int main=0x7f030005;
+        public static final int message=0x7f030006;
     }
     public static final class menu {
-        public static final int option_menu=0x7f060000;
+        public static final int activity_waterstrip=0x7f070000;
+        public static final int option_menu=0x7f070001;
     }
     public static final class string {
         public static final int app_name=0x7f040000;
@@ -74,11 +105,13 @@ public final class R {
         public static final int button_scan=0x7f04000e;
         public static final int disconnect=0x7f040011;
         public static final int discoverable=0x7f040010;
+        public static final int hello_world=0x7f040013;
+        public static final int menu_settings=0x7f040014;
         public static final int none_found=0x7f04000b;
         public static final int none_paired=0x7f04000a;
         public static final int not_connected=0x7f040003;
         public static final int reconnect=0x7f040012;
-        /**   DeviceListActivity 
+        /**  DeviceListActivity 
          */
         public static final int scanning=0x7f040008;
         /**  Options Menu 
@@ -86,9 +119,11 @@ public final class R {
         public static final int select=0x7f04000f;
         public static final int select_device=0x7f040009;
         public static final int sendMas=0x7f040002;
-        /**   BluetoothChat 
+        /**  BluetoothChat 
          */
         public static final int sendMenos=0x7f040001;
+        public static final int title_activity_door_opens=0x7f040015;
+        public static final int title_activity_waterstrip=0x7f040016;
         public static final int title_connected_to=0x7f040006;
         public static final int title_connecting=0x7f040005;
         public static final int title_not_connected=0x7f040007;
@@ -96,9 +131,9 @@ public final class R {
         public static final int title_paired_devices=0x7f04000c;
     }
     public static final class style {
-        public static final int YourApplicationTheme=0x7f050001;
+        public static final int YourApplicationTheme=0x7f060001;
         /**  >style name="AppTheme" parent="android:Theme.Light" / 
          */
-        public static final int button=0x7f050000;
+        public static final int button=0x7f060000;
     }
 }

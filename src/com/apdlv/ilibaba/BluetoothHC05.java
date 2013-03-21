@@ -21,11 +21,14 @@ import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 
 import com.apdlv.ilibaba.R;
-
+import android.view.View.OnClickListener;
 import android.app.Activity;
+import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -41,6 +44,7 @@ import android.view.View;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.Scroller;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -59,6 +63,7 @@ public class BluetoothHC05 extends Activity {
     public static final int MESSAGE_WRITE = 3;
     public static final int MESSAGE_DEVICE_NAME = 4;
     public static final int MESSAGE_TOAST = 5;
+    public static final int MESSAGE_DEBUG_MSG = 6;
 
     // Key names received from the BluetoothChatService Handler
     public static final String DEVICE_NAME = "device_name";
@@ -198,7 +203,13 @@ public class BluetoothHC05 extends Activity {
 	   {
 	       try { Thread.sleep(ms); } catch (InterruptedException e) {}
 	       if (!cancelled)		  
-	       {
+	       {		   
+		   Message msg = mHandler.obtainMessage(BluetoothHC05.MESSAGE_TOAST);
+		   Bundle bundle = new Bundle();
+		   bundle.putString(BluetoothHC05.TOAST, "Disconnecting");
+		   msg.setData(bundle);
+		   mHandler.sendMessage(msg);
+
 		   mChatService.disconnect();
 	       }
 	   }
@@ -207,6 +218,16 @@ public class BluetoothHC05 extends Activity {
 	   {
 	       this.cancelled = true;
 	   }
+    }
+    
+    
+    private void sendToast(String text)
+    {
+	   Message msg = mHandler.obtainMessage(BluetoothHC05.MESSAGE_TOAST);
+	   Bundle bundle = new Bundle();
+	   bundle.putString(BluetoothHC05.TOAST, text);
+	   msg.setData(bundle);
+	   mHandler.sendMessage(msg);	
     }
     
     private DisconnectThread disconnectThread = null;
@@ -240,8 +261,8 @@ public class BluetoothHC05 extends Activity {
 	    (disconnectThread = new DisconnectThread(ms)).start();		
 	}	
     }    
-        
 
+    
     public void buttonPressed(View v)
     {
 	Log.d(TAG, "buttonPressed: " + v);
@@ -259,8 +280,6 @@ public class BluetoothHC05 extends Activity {
 	    else if (mButtonOpen==b)
 	    {
 		initOpening();
-		// don't do this here but after open command was received
-		//disconnectAfter(2000);
 	    }
 	}
 	else if (v instanceof Button)
@@ -278,7 +297,7 @@ public class BluetoothHC05 extends Activity {
     
     private void initOpening()
     {
-	sendMessage("t,artur\n");
+	sendBTMessage("t,artur\n");
 	commandIntension = CMD_OPEN;	
     }
 
@@ -290,7 +309,8 @@ public class BluetoothHC05 extends Activity {
         mButtonOpen = (ImageButton) findViewById(R.id.ButtonOpen);
         
         // Initialize the BluetoothChatService to perform bluetooth connections
-        mChatService = new BluetoothSerialService(this, mHandler);
+        boolean doListen = false;
+        mChatService = new BluetoothSerialService(this, mHandler, doListen);
     }
 
     @Override
@@ -332,7 +352,7 @@ public class BluetoothHC05 extends Activity {
      * Sends a message.
      * @param message  A string of text to send.
      */
-    private void sendMessage(String message) 
+    private void sendBTMessage(String message) 
     {
         // Check that we're actually connected before trying anything
         if (mChatService.getState() != BluetoothSerialService.STATE_CONNECTED) {
@@ -416,6 +436,10 @@ public class BluetoothHC05 extends Activity {
             
             Log.d(TAG, "Got message "+ msg);
             switch (msg.what) {
+            case MESSAGE_DEBUG_MSG:
+        	String logLine = (String)msg.obj; Log.d(TAG, logLine);
+        	log(logLine);
+        	break;
             case MESSAGE_STATE_CHANGE:
                 if(D) Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
                 
@@ -458,17 +482,21 @@ public class BluetoothHC05 extends Activity {
             case MESSAGE_READ:                
         	Log.d(TAG, "Got MESSAGE_READ "+ msg);
                 byte[] readBuf = (byte[]) msg.obj;
-                Log.d(TAG, "Got payload "+ format(readBuf, 128));	
+                //Log.d(TAG, "Got payload "+ format(readBuf, 128));	
 
                 String payload = new String(readBuf, 0, msg.arg1);
+                Log.d(TAG, "Got payload "+ payload);
         	log("RCVD: " + payload);
-                receivedLine += payload;
-                if (receivedLine.endsWith("\n"))
-                {
-                    log("COMMAND: " + receivedLine);
-                    handleCommand(receivedLine);
-                    receivedLine = "";
-                }
+        	synchronized (receivedLine)
+        	{
+        	    receivedLine += payload;
+        	    if (receivedLine.endsWith("\r") || receivedLine.endsWith("\n"))
+        	    {
+        		log("COMMAND: " + receivedLine);
+        		handleCommand(receivedLine);
+        		receivedLine = "";
+        	    }
+        	}
                 
                 break;
             case MESSAGE_DEVICE_NAME:
@@ -500,56 +528,69 @@ public class BluetoothHC05 extends Activity {
     
     private void handleCommand(String command)
     {
-	Log.d(TAG, "COMMAND: '"+ command +"'");	  
-	
-	char code = command.charAt(0);
-	switch (code)
+	try
 	{
-	case 'O' : 
-	    logSuccess(command.substring(1));
-	    disconnectAfter(2000);
-	    break;
-	    
-	case 'E' : 
-	    logError(command.substring(1)); 
-	    break;
-	    
-	case 'D' : 
-	    logDebug(command.substring(1)); 
-	    break;
-	    
-	case 'T' :
-	    switch (commandIntension)
+	    Log.d(TAG, "COMMAND: '"+ command +"'");
+	    command = command.replaceAll("[\r\n]", "");
+
+	    char code = command.charAt(0);
+	    switch (code)
 	    {
-	    case CMD_OPEN:
-	    {
-		String token = computeToken(command.substring(1), pin);
-		sendMessage(CMD_OPEN + token);
-	    }
-	    break;
-	    case CMD_PIN:
-	    {
-		String token = computeToken(command.substring(1), pin);
-		sendMessage(CMD_PIN + token + "," + newPin);
-	    }
-	    break;
-	    case CMD_NONE:
+	    case 'O' : 
+		logSuccess(command.substring(1));
+		//disconnectAfter(2000);
+		showProgress();
+		mChatService.disconnect();
+		mPinArea.setText("");
+		break;
+
+	    case 'E' : 
+		logError(command.substring(1)); 
+		break;
+
+	    case 'D' : 
+		logDebug(command.substring(1)); 
+		break;
+
+	    case 'T' :
+		switch (commandIntension)
+		{
+		case CMD_OPEN:
+		{
+		    String token = computeToken(command.substring(1), pin);
+		    sendBTMessage(CMD_OPEN + token + "\n");
+		}
+		break;
+		case CMD_PIN:
+		{
+		    String token = computeToken(command.substring(1), pin);
+		    sendBTMessage(CMD_PIN + token + "," + newPin + "\n");
+		}
+		break;
+		case CMD_NONE:
+		    break;
+		}
+		commandIntension = CMD_NONE;
+		break;
+
+	    default:
+		logError(command); 
 		break;
 	    }
-	    commandIntension = CMD_NONE;
-	    break;
-
-	default:
-	    logError(command); 
-	    break;
 	}
-	
+	catch (Exception e)
+	{
+	    String msg = e.toString();
+	    msg = msg.replaceAll("[\r\n]", "");
+	    sendBTMessage("E" + msg + "\n");
+	}
     }
 
     private String computeToken(String token, int pin)
     {
-	long t = Long.parseLong(token);
-	return "" + ((t+pin) % 0xffffffff);
+	long t = Long.parseLong(token, 36);
+	t = (t+pin) % 0xffffffffL;
+	return String.format("%x", t);
     }
 
     private void logError(String msg)
@@ -653,9 +694,119 @@ public class BluetoothHC05 extends Activity {
         return true;
     }
 
+    
+    private void showProgress2()
+    {
+	final ProgressDialog dialog = new ProgressDialog(this);
+        dialog.setCancelable(true);
+        dialog.setMessage("Opening gate ...");
+        dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        dialog.setProgress(0);         
+        dialog.setMax(100);
+        dialog.show();
+ 
+        final Handler progressHandler = new Handler() {
+            public void handleMessage(Message msg) {
+                dialog.incrementProgressBy(1);
+            }
+        };
+        
+        // create a thread for updating the progress bar
+        Thread background = new Thread (new Runnable() 
+        {
+            public void run() 
+            {
+        	for (int i=0; i<100; i++)
+        	{
+        	    try { Thread.sleep(20); } catch (Exception e) {}
+        	    progressHandler.sendMessage(progressHandler.obtainMessage());
+        	} 
+        	dialog.dismiss();
+            }
+        });
+        
+        background.start();
+    }
+    
+    
+    public class CustomizeDialog extends Dialog implements OnClickListener  
+    {
+	private ProgressBar mProgress;
+	private Button mGo;
+
+	public CustomizeDialog(Context context)   
+	{
+	    super(context);
+	    requestWindowFeature(Window.FEATURE_NO_TITLE);
+	    setContentView(R.layout.door_open_dialog);
+	    (mProgress = (ProgressBar) findViewById(R.id.progressBar)).setMax(100);
+	    mProgress.setProgress(0);
+	    
+	    mGo = (Button) findViewById(R.id.buttonGo);
+	    mGo.setOnClickListener(this);
+	}
+
+	
+	@Override
+	public void show()
+	{
+	    super.show();
+
+	    final Handler handler = new Handler();
+
+	    new Thread(new Runnable() 
+	    {
+		public void run() 
+		{
+		    for (int i=0; i<100; i++) 
+		    {
+			mProgress.incrementProgressBy(1);
+			try
+                        {
+	                    Thread.sleep(100);
+                        } 
+			catch (InterruptedException e)
+                        {
+	                    // TODO Auto-generated catch block
+	                    e.printStackTrace();
+                        }
+			/*
+			handler.post(new Runnable() 
+			{
+			    public void run() 
+			    {
+				mProgress.incrementProgressBy(1);
+				Log.d(TAG, "PROGRESS ");
+			    }
+			});
+			*/
+		    }
+		    dismiss();
+		}
+	    }).start();
+	}
+
+
+	public void onClick(View v)
+        {
+	    mProgress.incrementProgressBy(1);
+        }	
+    }
+    
+    private void showProgress()
+    {
+	(new CustomizeDialog(this)).show();
+    }
+
+    
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+        case R.id.menu_garage_next:
+            Intent i = new Intent(getApplicationContext(), WaterstripActivity.class);
+            startActivity(i);
+            finish();
+            return true;            
         case R.id.reconnect:
             connectInAdvance();
             return true;
@@ -671,8 +822,16 @@ public class BluetoothHC05 extends Activity {
             // Ensure this device is discoverable by others
             ensureDiscoverable();
             return true;
+            
+            
         }
         return false;
+    }
+
+    public void onClick(DialogInterface dialog, int which)
+    {
+	// TODO Auto-generated method stub
+	
     }
 
 }
