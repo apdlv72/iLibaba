@@ -19,8 +19,12 @@ package com.apdlv.ilibaba;
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
+import java.util.Calendar;
 
 import com.apdlv.ilibaba.R;
+import com.apdlv.ilibaba.shake.Shaker;
+import com.apdlv.ilibaba.shake.Shaker.Callback;
+
 import android.view.View.OnClickListener;
 import android.app.Activity;
 import android.app.Dialog;
@@ -34,6 +38,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Vibrator;
 import android.text.Layout;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -42,6 +47,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
@@ -52,7 +58,7 @@ import android.widget.Toast;
 /**
  * This is the main Activity that displays the current chat session.
  */
-public class BluetoothHC05 extends Activity {
+public class BluetoothHC05 extends Activity implements Callback {
     // Debugging
     private static final String TAG = "BluetoothChat";
     private static final boolean D = true;
@@ -87,12 +93,17 @@ public class BluetoothHC05 extends Activity {
     private TextView mPinArea;
     private TextView mInfoArea;
     private TextView mLogView;
+    private Vibrator mVibrator;
 
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) 
+    {
         super.onCreate(savedInstanceState);
         if(D) Log.e(TAG, "+++ ON CREATE +++");
+
+	//requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         // Set up the window layout
         requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
@@ -101,7 +112,8 @@ public class BluetoothHC05 extends Activity {
 
         // Set up the custom title
         mTitle = (TextView) findViewById(R.id.title_left_text);
-        mTitle.setText(R.string.app_name);
+        if (null!=mTitle) mTitle.setText(R.string.view_name_garage);
+        
         mTitle = (TextView) findViewById(R.id.title_right_text);
 
         (mPinArea = (TextView) findViewById(R.id.pinText)).setCursorVisible(false);        
@@ -125,9 +137,90 @@ public class BluetoothHC05 extends Activity {
         
         loadPeerInfo();
         updateSelectedInfo();
+        
+	//Shaker shaker = new Shaker(this, 1.25d, 500, this);
+	Shaker shaker = new Shaker(this, 2*1.25d, 500, this);
+
+	mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+	activityStarted = Calendar.getInstance().getTimeInMillis();
+    }
+    
+    long activityStarted;
+
+    
+    @Override
+    public void onStart() 
+    {
+        super.onStart();
+        if(D) Log.e(TAG, "++ ON START ++");
+
+        // If BT is not on, request that it be enabled.
+        // setupChat() will then be called during onActivityResult
+        if (!mBluetoothAdapter.isEnabled()) {
+            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+        // Otherwise, setup the chat session
+        } else {
+            if (mChatService == null) setupChat();
+        }
+        //connectInAdvance();
     }
 
     
+    @Override
+    public synchronized void onPause() 
+    {
+        super.onPause();
+        if (mChatService != null) mChatService.disconnect();
+        mPinArea.setText("");
+        if(D) Log.e(TAG, "- ON PAUSE -");
+    }
+
+    
+    @Override
+    public synchronized void onResume() 
+    {
+        super.onResume();
+        if(D) Log.e(TAG, "+ ON RESUME +");
+
+        // Performing this check in onResume() covers the case in which BT was
+        // not enabled during onStart(), so we were paused to enable it...
+        // onResume() will be called when ACTION_REQUEST_ENABLE activity returns.
+        if (mChatService != null) {
+            // Only if the state is STATE_NONE, do we know that we haven't started already
+            if (mChatService.getState() == BluetoothSerialService.STATE_NONE) {
+              // Start the Bluetooth chat services
+              mChatService.start();
+            }
+        }
+    }
+/*    
+    @Override
+    public void onConfigurationChanged(android.content.res.Configuration newConfig) 
+    {
+	super.onConfigurationChanged(newConfig);
+        if(D) Log.e(TAG, "+ ON CONFIG CHANGE +");
+    };
+*/
+    
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (mChatService != null) mChatService.disconnect();
+        mPinArea.setText("");
+        if(D) Log.e(TAG, "-- ON STOP --");
+        //finish();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        // Stop the Bluetooth chat services
+        if (mChatService != null) mChatService.stop();
+        if(D) Log.e(TAG, "--- ON DESTROY ---");
+    }
+
+
     private void scrollToEnd()  
     {
 	if (null==mLogView) return;
@@ -151,41 +244,6 @@ public class BluetoothHC05 extends Activity {
 	mLogView.append(msg + "\n");
 	scrollToEnd();
     }
-    
-    @Override
-    public void onStart() {
-        super.onStart();
-        if(D) Log.e(TAG, "++ ON START ++");
-
-        // If BT is not on, request that it be enabled.
-        // setupChat() will then be called during onActivityResult
-        if (!mBluetoothAdapter.isEnabled()) {
-            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-        // Otherwise, setup the chat session
-        } else {
-            if (mChatService == null) setupChat();
-        }
-        //connectInAdvance();
-    }
-
-    @Override
-    public synchronized void onResume() {
-        super.onResume();
-        if(D) Log.e(TAG, "+ ON RESUME +");
-
-        // Performing this check in onResume() covers the case in which BT was
-        // not enabled during onStart(), so we were paused to enable it...
-        // onResume() will be called when ACTION_REQUEST_ENABLE activity returns.
-        if (mChatService != null) {
-            // Only if the state is STATE_NONE, do we know that we haven't started already
-            if (mChatService.getState() == BluetoothSerialService.STATE_NONE) {
-              // Start the Bluetooth chat services
-              mChatService.start();
-            }
-        }
-    }
-
     
     private class DisconnectThread extends Thread
     {
@@ -297,7 +355,7 @@ public class BluetoothHC05 extends Activity {
     
     private void initOpening()
     {
-	sendBTMessage("t,artur\n");
+	sendBTMessage("tartur\n");
 	commandIntension = CMD_OPEN;	
     }
 
@@ -305,37 +363,12 @@ public class BluetoothHC05 extends Activity {
         Log.d(TAG, "setupChat()");
 
         // Initialize the send button with a listener that for click events
-        mButtonBS   = (ImageButton) findViewById(R.id.ButtonBS);
-        mButtonOpen = (ImageButton) findViewById(R.id.ButtonOpen);
+        mButtonBS   = (ImageButton) findViewById(R.id.buttonBS);
+        mButtonOpen = (ImageButton) findViewById(R.id.buttonOpen);
         
         // Initialize the BluetoothChatService to perform bluetooth connections
         boolean doListen = false;
         mChatService = new BluetoothSerialService(this, mHandler, doListen);
-    }
-
-    @Override
-    public synchronized void onPause() {
-        super.onPause();
-        if (mChatService != null) mChatService.disconnect();
-        mPinArea.setText("");
-        if(D) Log.e(TAG, "- ON PAUSE -");
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        if (mChatService != null) mChatService.disconnect();
-        mPinArea.setText("");
-        if(D) Log.e(TAG, "-- ON STOP --");
-        finish();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        // Stop the Bluetooth chat services
-        if (mChatService != null) mChatService.stop();
-        if(D) Log.e(TAG, "--- ON DESTROY ---");
     }
 
     private void ensureDiscoverable() {
@@ -428,6 +461,23 @@ public class BluetoothHC05 extends Activity {
     String receivedLine = "";
     private boolean mConnected;
     
+    
+    private void setTitleMsg(String msg)
+    {
+	if (null!=mTitle)
+	{
+	    mTitle.setText(msg);
+	}
+    }
+    
+    private void appendTitle(String msg)
+    {
+	if (null!=mTitle)
+	{
+	    mTitle.append(msg);
+	}
+    }
+    
     // The Handler that gets information back from the BluetoothChatService
     private final Handler mHandler = new Handler() {
 
@@ -448,30 +498,30 @@ public class BluetoothHC05 extends Activity {
                 switch (msg.arg1) {
                 case BluetoothSerialService.STATE_CONNECTED:
                     log("STATE_CONNECTED");
-                    mTitle.setText(R.string.title_connected_to);
-                    mTitle.append(mConnectedDeviceName);
+                    setTitle(R.string.title_connected_to);
+                    appendTitle(mConnectedDeviceName);
                     mConnected = true;
                     mInfoArea.setTextColor(Color.GREEN);
                     break;
                 case BluetoothSerialService.STATE_CONNECTING:
                     log("STATE_CONNECTING");
-                    mTitle.setText(R.string.title_connecting);
+                    setTitle(R.string.title_connecting);
                     mInfoArea.setTextColor(Color.YELLOW);
                     break;
                 case BluetoothSerialService.STATE_DISCONNECTED:
                     log("STATE_DISCONNECTED");
-                    mTitle.setText("disconnected");
+                    setTitleMsg("disconnected");
                     mInfoArea.setTextColor(Color.RED);
                     break;
                 case BluetoothSerialService.STATE_TIMEOUT:
                     log("STATE_TIMEOUT");
-                    mTitle.setText("timeout");
+                    setTitleMsg("timeout");
                     mInfoArea.setTextColor(Color.RED);
                     break;
                 case BluetoothSerialService.STATE_LISTEN:
                 case BluetoothSerialService.STATE_NONE:
                     log("STATE_LISTEN/STATE_NONE");
-                    mTitle.setText(R.string.title_not_connected);
+                    setTitle(R.string.title_not_connected);
                     mInfoArea.setTextColor(Color.RED);
                     break;
                 }
@@ -803,9 +853,7 @@ public class BluetoothHC05 extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case R.id.menu_garage_next:
-            Intent i = new Intent(getApplicationContext(), WaterstripActivity.class);
-            startActivity(i);
-            finish();
+            nextActivity();
             return true;            
         case R.id.reconnect:
             connectInAdvance();
@@ -828,10 +876,36 @@ public class BluetoothHC05 extends Activity {
         return false;
     }
 
+    /**
+     * 
+     */
+    private void nextActivity()
+    {
+	Intent i = new Intent(getApplicationContext(), WaterstripActivity.class);
+	startActivity(i);
+	finish();
+    }
+
     public void onClick(DialogInterface dialog, int which)
     {
 	// TODO Auto-generated method stub
 	
     }
 
+    public void shakingStarted()
+    {
+	if (Calendar.getInstance().getTimeInMillis()-activityStarted>1000)
+	{
+	    mVibrator.vibrate(500);
+	}
+    }
+
+
+    public void shakingStopped()
+    {
+	if (Calendar.getInstance().getTimeInMillis()-activityStarted>1000)
+	{
+	    nextActivity();
+	}
+    }
 }
