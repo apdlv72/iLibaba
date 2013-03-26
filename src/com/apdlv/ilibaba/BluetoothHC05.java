@@ -324,6 +324,8 @@ public class BluetoothHC05 extends Activity implements Callback {
     public void buttonPressed(View v)
     {
 	Log.d(TAG, "buttonPressed: " + v);
+	mVibrator.vibrate(10);
+	
 	String pin = mPinArea.getText().toString();	    
 	if (v instanceof ImageButton)
 	{	    
@@ -744,41 +746,7 @@ public class BluetoothHC05 extends Activity implements Callback {
         return true;
     }
 
-    
-    private void showProgress2()
-    {
-	final ProgressDialog dialog = new ProgressDialog(this);
-        dialog.setCancelable(true);
-        dialog.setMessage("Opening gate ...");
-        dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        dialog.setProgress(0);         
-        dialog.setMax(100);
-        dialog.show();
- 
-        final Handler progressHandler = new Handler() {
-            public void handleMessage(Message msg) {
-                dialog.incrementProgressBy(1);
-            }
-        };
         
-        // create a thread for updating the progress bar
-        Thread background = new Thread (new Runnable() 
-        {
-            public void run() 
-            {
-        	for (int i=0; i<100; i++)
-        	{
-        	    try { Thread.sleep(20); } catch (Exception e) {}
-        	    progressHandler.sendMessage(progressHandler.obtainMessage());
-        	} 
-        	dialog.dismiss();
-            }
-        });
-        
-        background.start();
-    }
-    
-    
     public class CustomizeDialog extends Dialog implements OnClickListener  
     {
 	private ProgressBar mProgress;

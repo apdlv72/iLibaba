@@ -72,12 +72,10 @@
                 android:layout_weight="1"
                 android:orientation="vertical" >
 
-                <com.apdlv.ilibaba.color.ColorPickerCircView
-                    android:id="@+id/colorPickerCirc"
-                    android:layout_width="100dp"
-                    android:layout_height="100dp"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="5dp" />
+                <com.apdlv.ilibaba.hsv.HSVColorWheel
+                    android:id="@+id/hSVColorWheel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
 
                 <TableLayout
                     android:layout_width="fill_parent"

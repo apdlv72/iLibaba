@@ -13,22 +13,21 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.apdlv.ilibaba.color.ColorPickerCircView;
-import com.apdlv.ilibaba.color.OnColorChangedListener;
+import com.apdlv.ilibaba.hsv.HSVColorWheel;
+import com.apdlv.ilibaba.hsv.OnColorSelectedListener;
 import com.apdlv.ilibaba.shake.Shaker;
 import com.apdlv.ilibaba.shake.Shaker.Callback;
 
-public class WaterstripActivity extends Activity implements OnSeekBarChangeListener, OnColorChangedListener, OnClickListener, Callback
+public class WaterstripActivity extends Activity implements OnSeekBarChangeListener, OnClickListener, Callback, OnColorSelectedListener
 {
     private TextView mTextCommand;
-    private ColorPickerCircView mColorPicker;
+    //private ColorPickerCircView mColorPicker;
     private BluetoothAdapter mBluetoothAdapter;
     private TextView mTitle;
 
@@ -39,6 +38,8 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
     protected void onCreate(Bundle savedInstanceState)
     {
 	super.onCreate(savedInstanceState);
+	
+	boolean isWater = true;
 	
 	//requestWindowFeature(Window.FEATURE_NO_TITLE);
         //getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -65,11 +66,23 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
 	//(mButtonOff = (Button) findViewById(R.id.buttonWaterOff)).setOnClickListener(this);
 	mTextCommand   = (TextView) findViewById(R.id.textCommand);
 
+	HSVColorWheel mColorWheel = (HSVColorWheel) findViewById(R.id.hSVColorWheel);
+	mColorWheel.setListener(this);
+	
+	
+	if (!isWater)
+	{
+	    findViewById(R.id.seekAmplitude).setVisibility(View.INVISIBLE);
+	    findViewById(R.id.seekRand).setVisibility(View.INVISIBLE);	
+	}
+	
+	/*
 	mColorPicker = (ColorPickerCircView) findViewById(R.id.colorPickerCirc);
 	if (null!=mColorPicker)
 	{
 	    mColorPicker.setOnColorChangedListener(this);
-	}	
+	}
+	*/	
 
 	mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -80,8 +93,7 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
 	    return;
 	}
 	
-	//Shaker shaker = new Shaker(this, 1.25d, 500, this);
-	Shaker shaker = new Shaker(this, 2*1.25d, 500, this);
+	//Shaker shaker = new Shaker(this, 2*1.25d, 500, this);
 	
 	mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 	activityStarted = Calendar.getInstance().getTimeInMillis();
@@ -156,16 +168,6 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
 	// TODO Auto-generated method stub	
     }
 
-    public void colorChanged(int color)
-    {
-	mTextCommand.setText(String.format("RGB=%06x", color & 0xFFFFFF));	
-    }
-
-    public void colorChanging(int color)
-    {
-	mTextCommand.setText(String.format("RGB=%06x", color & 0xFFFFFF));		
-    }
-
     public void onClick(View v)
     {
 	if (v instanceof Button)
@@ -211,5 +213,11 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
 	{
 	    nextActivity();
 	}
+    }
+
+    // interface OnColorSelectedListener
+    public void colorSelected(Integer color)
+    {
+	mTextCommand.setText(String.format("RGB=%06x", color & 0xFFFFFF));		
     }
 }
