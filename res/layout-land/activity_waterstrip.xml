@@ -1,4 +1,4 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/topLinearLayout"
     android:layout_width="match_parent"
@@ -6,209 +6,203 @@
     android:orientation="vertical"
     tools:context=".WaterstripActivity" >
 
-    <RelativeLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="fill_parent" >
 
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="fill_parent" >
+            android:layout_width="fill_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingBottom="20dp" >
 
-            <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:paddingBottom="20dp" >
-
-                <TextView
-                    android:id="@+id/textCommand"
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center_horizontal"
-                    android:text="command" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="100" >
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical" >
-
-                        <com.apdlv.ilibaba.views.VerticalSeekBar
-                            android:id="@+id/seekBright"
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:layout_gravity="center_horizontal"
-                            android:layout_weight="1"
-                            android:max="255"
-                            android:maxHeight="4dp"
-                            android:paddingBottom="5dp"
-                            android:paddingLeft="40dp"
-                            android:paddingRight="40dp"
-                            android:paddingTop="5dp"
-                            android:progress="220"
-                            android:progressDrawable="@drawable/seek_bg"
-                            android:tag="BRI"
-                            android:thumb="@drawable/seek_bright" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical" >
-
-                        <com.apdlv.ilibaba.views.VerticalSeekBar
-                            android:id="@+id/seekSpeed"
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:layout_gravity="center_horizontal"
-                            android:layout_weight="1"
-                            android:max="100"
-                            android:maxHeight="4dp"
-                            android:paddingBottom="5dp"
-                            android:paddingLeft="40dp"
-                            android:paddingRight="40dp"
-                            android:paddingTop="5dp"
-                            android:progress="10"
-                            android:progressDrawable="@drawable/seek_bg"
-                            android:tag="SPD"
-                            android:thumb="@drawable/seek_speed" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical" >
-
-                        <com.apdlv.ilibaba.views.VerticalSeekBar
-                            android:id="@+id/seekFade"
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:layout_gravity="center_horizontal"
-                            android:layout_weight="1"
-                            android:max="100"
-                            android:maxHeight="4dp"
-                            android:paddingBottom="5dp"
-                            android:paddingLeft="40dp"
-                            android:paddingRight="40dp"
-                            android:paddingTop="5dp"
-                            android:progress="10"
-                            android:progressDrawable="@drawable/seek_bg"
-                            android:tag="FAD"
-                            android:thumb="@drawable/seek_fade" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical" >
-
-                        <com.apdlv.ilibaba.views.VerticalSeekBar
-                            android:id="@+id/seekAmplitude"
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:layout_gravity="center_horizontal"
-                            android:layout_weight="1"
-                            android:max="255"
-                            android:maxHeight="4dp"
-                            android:paddingBottom="5dp"
-                            android:paddingLeft="40dp"
-                            android:paddingRight="40dp"
-                            android:paddingTop="5dp"
-                            android:progress="220"
-                            android:progressDrawable="@drawable/seek_bg"
-                            android:tag="AMP"
-                            android:thumb="@drawable/seek_random" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical" >
-
-                        <com.apdlv.ilibaba.views.VerticalSeekBar
-                            android:id="@+id/seekRand"
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:layout_gravity="center_horizontal"
-                            android:layout_weight="1"
-                            android:max="20"
-                            android:maxHeight="4dp"
-                            android:paddingBottom="5dp"
-                            android:paddingLeft="40dp"
-                            android:paddingRight="40dp"
-                            android:paddingTop="5dp"
-                            android:progress="2"
-                            android:progressDrawable="@drawable/seek_bg"
-                            android:tag="RND"
-                            android:thumb="@drawable/seek_random" />
-                    </LinearLayout>
-                </LinearLayout>
-            </LinearLayout>
-
-            <LinearLayout
+            <TextView
+                android:id="@+id/textCommand"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:orientation="vertical" >
+                android:gravity="center_horizontal"
+                android:text="command" />
 
-                <Spinner
-                    android:id="@+id/spinner"
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content"
-                    android:entries="@array/mode_array" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="100" >
 
-                <com.apdlv.ilibaba.color.ColorPickerCircView
-                    android:id="@+id/colorPickerCirc"
-                    android:layout_width="100dp"
-                    android:layout_height="fill_parent"
-                    android:layout_gravity="center"
-                    android:layout_margin="5dp" />
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical" >
 
+                    <com.apdlv.ilibaba.views.VerticalSeekBar
+                        android:id="@+id/seekBright"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_weight="1"
+                        android:max="255"
+                        android:maxHeight="4dp"
+                        android:paddingBottom="5dp"
+                        android:paddingLeft="40dp"
+                        android:paddingRight="40dp"
+                        android:paddingTop="5dp"
+                        android:progress="220"
+                        android:progressDrawable="@drawable/seek_bg"
+                        android:tag="BRI"
+                        android:thumb="@drawable/seek_bright" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical" >
+
+                    <com.apdlv.ilibaba.views.VerticalSeekBar
+                        android:id="@+id/seekSpeed"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_weight="1"
+                        android:max="100"
+                        android:maxHeight="4dp"
+                        android:paddingBottom="5dp"
+                        android:paddingLeft="40dp"
+                        android:paddingRight="40dp"
+                        android:paddingTop="5dp"
+                        android:progress="10"
+                        android:progressDrawable="@drawable/seek_bg"
+                        android:tag="SPD"
+                        android:thumb="@drawable/seek_speed" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical" >
+
+                    <com.apdlv.ilibaba.views.VerticalSeekBar
+                        android:id="@+id/seekFade"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_weight="1"
+                        android:max="100"
+                        android:maxHeight="4dp"
+                        android:paddingBottom="5dp"
+                        android:paddingLeft="40dp"
+                        android:paddingRight="40dp"
+                        android:paddingTop="5dp"
+                        android:progress="10"
+                        android:progressDrawable="@drawable/seek_bg"
+                        android:tag="FAD"
+                        android:thumb="@drawable/seek_fade" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical" >
+
+                    <com.apdlv.ilibaba.views.VerticalSeekBar
+                        android:id="@+id/seekAmplitude"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_weight="1"
+                        android:max="255"
+                        android:maxHeight="4dp"
+                        android:paddingBottom="5dp"
+                        android:paddingLeft="40dp"
+                        android:paddingRight="40dp"
+                        android:paddingTop="5dp"
+                        android:progress="220"
+                        android:progressDrawable="@drawable/seek_bg"
+                        android:tag="AMP"
+                        android:thumb="@drawable/seek_random" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical" >
+
+                    <com.apdlv.ilibaba.views.VerticalSeekBar
+                        android:id="@+id/seekRand"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_weight="1"
+                        android:max="20"
+                        android:maxHeight="4dp"
+                        android:paddingBottom="5dp"
+                        android:paddingLeft="40dp"
+                        android:paddingRight="40dp"
+                        android:paddingTop="5dp"
+                        android:progress="2"
+                        android:progressDrawable="@drawable/seek_bg"
+                        android:tag="RND"
+                        android:thumb="@drawable/seek_random" />
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
 
-        <SlidingDrawer
-            android:id="@+id/slidingDrawer"
-            android:layout_width="match_parent"
-            android:layout_height="fill_parent"
-            android:allowSingleTap="true"
-            android:animateOnClick="true"
-            android:content="@+id/content"
-            android:handle="@+id/handle"
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:orientation="vertical" >
 
-            <ImageButton
-                android:id="@+id/handle"
-                style="@style/button"
+            <Spinner
+                android:id="@+id/spinner"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/slider"
-                android:focusableInTouchMode="true"
-                android:maxLines="1"
-                android:padding="5dp"
-                android:scrollHorizontally="false"
-                android:scrollbarAlwaysDrawVerticalTrack="false"
-                android:src="@android:drawable/arrow_up_float"
-                android:text="Logfile"
-                android:textColor="@android:color/white"
-                android:textSize="14sp" />
+                android:entries="@array/mode_array" />
 
-            <TextView
-                android:id="@+id/content"
-                android:layout_width="fill_parent"
-                android:layout_height="match_parent"
-                android:background="#333"
-                android:scrollHorizontally="false"
-                android:scrollbarAlwaysDrawVerticalTrack="true"
-                android:scrollbarStyle="outsideInset"
-                android:scrollbars="vertical" />
-        </SlidingDrawer>
-    </RelativeLayout>
+            <com.apdlv.ilibaba.color.ColorPickerCircView
+                android:id="@+id/colorPickerCirc"
+                android:layout_width="100dp"
+                android:layout_height="fill_parent"
+                android:layout_gravity="center"
+                android:layout_margin="5dp" />
+        </LinearLayout>
+    </LinearLayout>
 
-</LinearLayout>
+    <SlidingDrawer
+        android:id="@+id/slidingDrawer"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:allowSingleTap="true"
+        android:animateOnClick="true"
+        android:content="@+id/content"
+        android:handle="@+id/handle"
+        android:orientation="vertical" >
+
+        <ImageButton
+            android:id="@+id/handle"
+            style="@style/button"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/slider"
+            android:focusableInTouchMode="true"
+            android:maxLines="1"
+            android:padding="5dp"
+            android:scrollHorizontally="false"
+            android:scrollbarAlwaysDrawVerticalTrack="false"
+            android:src="@android:drawable/arrow_up_float"
+            android:text="Logfile"
+            android:textColor="@android:color/white"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/content"
+            android:layout_width="fill_parent"
+            android:layout_height="match_parent"
+            android:background="#333"
+            android:scrollHorizontally="false"
+            android:scrollbarAlwaysDrawVerticalTrack="true"
+            android:scrollbarStyle="outsideInset"
+            android:scrollbars="vertical" />
+    </SlidingDrawer>
+
+</RelativeLayout>

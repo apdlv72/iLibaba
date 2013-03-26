@@ -1,6 +1,6 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/topLinearLayout"
+    android:id="@+id/topLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
@@ -220,7 +220,7 @@
         android:layout_height="fill_parent"
         android:allowSingleTap="true"
         android:animateOnClick="true"
-        android:content="@+id/content"
+        android:content="@+id/logView"
         android:handle="@+id/handle"
         android:orientation="vertical" >
 
@@ -240,44 +240,16 @@
             android:textColor="@android:color/white"
             android:textSize="14sp" />
 
-        <!--
-                Button
-                android:id="@+id/handle"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/slider"
-                android:focusableInTouchMode="true"
-                android:maxLines="1"
-                android:scrollHorizontally="false"
-                android:scrollbarAlwaysDrawVerticalTrack="false"
-                android:text="Logfile"
-                android:textColor="@android:color/white"
-                android:padding="5dp"
-                android:textSize="14sp" /
-        -->
-
-        <LinearLayout
-            android:id="@+id/content"
-            android:layout_width="match_parent"
-            android:layout_height="fill_parent" >
-
-            <LinearLayout
-                android:id="@+id/content"
-                android:layout_width="match_parent"
-                android:layout_height="fill_parent"
-                android:layout_marginBottom="8dp" >
-
-                <TextView
-                    android:id="@+id/logView"
-                    android:layout_width="fill_parent"
-                    android:layout_height="match_parent"
-                    android:background="#333"
-                    android:scrollHorizontally="false"
-                    android:scrollbarAlwaysDrawVerticalTrack="true"
-                    android:scrollbarStyle="outsideInset"
-                    android:scrollbars="vertical" />
-            </LinearLayout>
-        </LinearLayout>
+        <TextView
+            android:id="@+id/logView"
+            android:layout_width="fill_parent"
+            android:layout_height="match_parent"
+            android:background="#333"
+            android:scrollHorizontally="false"
+            android:scrollbarAlwaysDrawVerticalTrack="true"
+            android:scrollbarStyle="outsideInset"
+            android:scrollbars="vertical" />
+        
     </SlidingDrawer>
 
-</LinearLayout>
+</RelativeLayout>

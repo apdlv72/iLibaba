@@ -41,7 +41,8 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
 	super.onCreate(savedInstanceState);
 	
 	//requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        //getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+	
         // Set up the window layout
         requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
         setContentView(R.layout.main);
@@ -199,7 +200,7 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
     {
 	if (Calendar.getInstance().getTimeInMillis()-activityStarted>1000)
 	{
-	    mVibrator.vibrate(500);
+	    mVibrator.vibrate(200);
 	}
     }
 

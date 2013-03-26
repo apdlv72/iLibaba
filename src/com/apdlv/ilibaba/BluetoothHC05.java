@@ -103,7 +103,7 @@ public class BluetoothHC05 extends Activity implements Callback {
         if(D) Log.e(TAG, "+++ ON CREATE +++");
 
 	//requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        //getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         // Set up the window layout
         requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
@@ -896,7 +896,7 @@ public class BluetoothHC05 extends Activity implements Callback {
     {
 	if (Calendar.getInstance().getTimeInMillis()-activityStarted>1000)
 	{
-	    mVibrator.vibrate(500);
+	    mVibrator.vibrate(200);
 	}
     }
 

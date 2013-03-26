@@ -18,7 +18,6 @@ package com.apdlv.ilibaba;
 
 import java.util.Set;
 
-import com.apdlv.ilibaba.R;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -106,21 +105,6 @@ public class DeviceListActivity extends Activity {
 
         // Get a set of currently paired devices
         Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
-        /*
-        for (BluetoothDevice dev : pairedDevices)
-        {
-            String addr = dev.getAddress();
-            if (addr.startsWith("20:13:01"))
-            {
-                Intent intent = new Intent();
-                intent.putExtra(EXTRA_DEVICE_ADDRESS, addr);
-
-                // Set result and finish this Activity
-                setResult(Activity.RESULT_OK, intent);
-                finish();
-            }
-        }
-        */
 
         // If there are paired devices, add each one to the ArrayAdapter
         if (pairedDevices.size() > 0) {
@@ -200,12 +184,6 @@ public class DeviceListActivity extends Activity {
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 // Get the BluetoothDevice object from the Intent
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                
-                String addr = device.getAddress();
-                if (addr.startsWith("20:"))
-                {
-                    
-                }
                 
                 // If it's already paired, skip it, because it's been listed already
                 if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
