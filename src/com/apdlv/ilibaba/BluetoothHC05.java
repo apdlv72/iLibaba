@@ -24,6 +24,7 @@ import java.util.Calendar;
 import com.apdlv.ilibaba.R;
 import com.apdlv.ilibaba.shake.Shaker;
 import com.apdlv.ilibaba.shake.Shaker.Callback;
+import com.apdlv.ilibaba.water.WaterstripActivity;
 
 import android.view.View.OnClickListener;
 import android.app.Activity;
@@ -747,10 +748,9 @@ public class BluetoothHC05 extends Activity implements Callback {
     }
 
         
-    public class CustomizeDialog extends Dialog implements OnClickListener  
+    public class CustomizeDialog extends Dialog  
     {
 	private ProgressBar mProgress;
-	private Button mGo;
 
 	public CustomizeDialog(Context context)   
 	{
@@ -758,10 +758,7 @@ public class BluetoothHC05 extends Activity implements Callback {
 	    requestWindowFeature(Window.FEATURE_NO_TITLE);
 	    setContentView(R.layout.door_open_dialog);
 	    (mProgress = (ProgressBar) findViewById(R.id.progressBar)).setMax(100);
-	    mProgress.setProgress(0);
-	    
-	    mGo = (Button) findViewById(R.id.buttonGo);
-	    mGo.setOnClickListener(this);
+	    mProgress.setProgress(0);	    
 	}
 
 	
@@ -769,8 +766,6 @@ public class BluetoothHC05 extends Activity implements Callback {
 	public void show()
 	{
 	    super.show();
-
-	    final Handler handler = new Handler();
 
 	    new Thread(new Runnable() 
 	    {
@@ -781,34 +776,16 @@ public class BluetoothHC05 extends Activity implements Callback {
 			mProgress.incrementProgressBy(1);
 			try
                         {
-	                    Thread.sleep(100);
+	                    Thread.sleep(10);
                         } 
 			catch (InterruptedException e)
                         {
-	                    // TODO Auto-generated catch block
-	                    e.printStackTrace();
                         }
-			/*
-			handler.post(new Runnable() 
-			{
-			    public void run() 
-			    {
-				mProgress.incrementProgressBy(1);
-				Log.d(TAG, "PROGRESS ");
-			    }
-			});
-			*/
 		    }
 		    dismiss();
 		}
 	    }).start();
 	}
-
-
-	public void onClick(View v)
-        {
-	    mProgress.incrementProgressBy(1);
-        }	
     }
     
     private void showProgress()
@@ -820,6 +797,11 @@ public class BluetoothHC05 extends Activity implements Callback {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+        
+        case R.id.menu_garage_test:
+            showProgress();
+            break;
+        
         case R.id.menu_garage_next:
             nextActivity();
             return true;            

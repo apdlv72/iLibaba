@@ -49,6 +49,8 @@ public class DeviceListActivity extends Activity {
     private static final String TAG = "DeviceListActivity";
     private static final boolean D = true;
 
+    public static final int REQUEST_CONNECT_DEVICE = 1;
+
     // Return Intent extra
     public static String EXTRA_DEVICE_ADDRESS = "device_address";
 

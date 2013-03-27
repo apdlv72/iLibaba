@@ -12,7 +12,7 @@
         android:orientation="vertical" >
 
         <Spinner
-            android:id="@+id/spinner"
+            android:id="@+id/spinnerMode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:entries="@array/mode_array" />
@@ -26,8 +26,7 @@
                 android:id="@+id/seekBright"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="5dp"
                 android:layout_weight="1"
                 android:max="255"
                 android:maxHeight="4dp"
@@ -37,6 +36,21 @@
                 android:progressDrawable="@drawable/seek_bg"
                 android:tag="BRI"
                 android:thumb="@drawable/seek_bright" />
+
+            <SeekBar
+                android:id="@+id/seekAmplitude"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="5dp"
+                android:layout_weight="1"
+                android:max="255"
+                android:maxHeight="4dp"
+                android:paddingLeft="40dp"
+                android:paddingRight="40dp"
+                android:progress="220"
+                android:progressDrawable="@drawable/seek_bg"
+                android:tag="AMP"
+                android:thumb="@drawable/seek_amplitude" />
         </LinearLayout>
 
         <LinearLayout
@@ -75,38 +89,18 @@
                 <com.apdlv.ilibaba.hsv.HSVColorWheel
                     android:id="@+id/hSVColorWheel"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginRight="10dp" />
 
                 <TableLayout
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content" >
 
                     <TableRow
-                        android:id="@+id/TableRow01"
-                        android:layout_width="fill_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="5dp" >
-
-                        <SeekBar
-                            android:id="@+id/seekAmplitude"
-                            android:layout_width="fill_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:max="255"
-                            android:maxHeight="4dp"
-                            android:paddingLeft="40dp"
-                            android:paddingRight="40dp"
-                            android:progress="220"
-                            android:progressDrawable="@drawable/seek_bg"
-                            android:tag="AMP"
-                            android:thumb="@drawable/seek_amplitude" />
-                    </TableRow>
-
-                    <TableRow
                         android:id="@+id/tableRow3"
                         android:layout_width="fill_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="5dp" >
+                        android:layout_height="wrap_content" >
 
                         <SeekBar
                             android:id="@+id/seekRand"
@@ -121,6 +115,26 @@
                             android:progressDrawable="@drawable/seek_bg"
                             android:tag="RND"
                             android:thumb="@drawable/seek_random" />
+                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow01"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content" >
+
+                        <SeekBar
+                            android:id="@+id/seekStrength"
+                            android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:max="255"
+                            android:maxHeight="4dp"
+                            android:paddingLeft="40dp"
+                            android:paddingRight="40dp"
+                            android:progress="220"
+                            android:progressDrawable="@drawable/seek_bg"
+                            android:tag="STR"
+                            android:thumb="@drawable/seek_strength" />
                     </TableRow>
                 </TableLayout>
             </LinearLayout>
@@ -165,7 +179,7 @@
         android:layout_height="fill_parent"
         android:allowSingleTap="true"
         android:animateOnClick="true"
-        android:content="@+id/content"
+        android:content="@+id/logView"
         android:handle="@+id/handle"
         android:orientation="vertical" >
 
@@ -186,7 +200,7 @@
             android:textSize="14sp" />
 
         <TextView
-            android:id="@+id/content"
+            android:id="@+id/logView"
             android:layout_width="fill_parent"
             android:layout_height="match_parent"
             android:background="#333"

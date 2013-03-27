@@ -48,12 +48,17 @@ public class HSVColorWheel  extends View {
 	private int pointerLength;
 	private int innerPadding;
 	private Paint pointerPaint = new Paint();
+	private Paint borderPaint = new Paint();
+	
 	private void init() {
 		float density = context.getResources().getDisplayMetrics().density;
 		scale = (int) (density * SCALE);
 		pointerLength = (int) (density * POINTER_LENGTH_DP );
 		pointerPaint.setStrokeWidth(  (int) (density * POINTER_LINE_WIDTH_DP ) );
 		innerPadding = pointerLength / 2;
+		
+		borderPaint.setStrokeWidth(  (int) (density * POINTER_LINE_WIDTH_DP ) );
+		borderPaint.setColor(Color.GRAY);
 	}
 
 	public void setListener( OnColorSelectedListener listener ) {
@@ -61,6 +66,9 @@ public class HSVColorWheel  extends View {
 	}
 
 	float[] colorHsv = { 0f, 0f, 1f };
+	private boolean isEnabled;
+	
+	
 	public void setColor( int color ) {
 		Color.colorToHSV(color, colorHsv);
 		invalidate();
@@ -69,7 +77,15 @@ public class HSVColorWheel  extends View {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		if ( bitmap != null ) {
-			canvas.drawBitmap(bitmap, null, rect, null);
+		    	if (isEnabled)
+		    	{
+		    	    canvas.drawBitmap(bitmap, null, rect, null);
+		    	}
+		    	else
+		    	{
+		    	    canvas.drawCircle((rect.left+rect.right)/2, (rect.top+rect.bottom)/2, rect.width()/2, borderPaint);
+		    	    canvas.drawText("no connection", 10, 10, pointerPaint); 
+		    	}
 			float hueInPiInterval = colorHsv[0] / 180f * (float)Math.PI;
 
 			selectedPoint.x = rect.left + (int) (-FloatMath.cos( hueInPiInterval ) * colorHsv[1] * innerCircleRadius + fullCircleRadius);
@@ -79,6 +95,13 @@ public class HSVColorWheel  extends View {
 			canvas.drawLine( selectedPoint.x, selectedPoint.y - pointerLength, selectedPoint.x, selectedPoint.y + pointerLength, pointerPaint );
 		}
 	}
+	
+	@Override public void setEnabled(boolean enabled) 
+	{
+	    super.setEnabled(enabled);
+	    this.isEnabled = enabled;
+	    
+	};
 
 	private Rect rect;
 	private Bitmap bitmap;
