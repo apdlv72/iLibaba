@@ -703,7 +703,7 @@ public class GateControlActivity extends Activity implements Callback {
         if(D) Log.d(TAG, "onActivityResult " + resultCode);
         switch (requestCode) {
         case REQUEST_CONNECT_DEVICE:
-            // When DeviceListActivity returns with a device to connect
+            // When PresetsActivity returns with a device to connect
             if (resultCode == Activity.RESULT_OK) {
                 // Get the device MAC address
                 String address = data.getExtras()
@@ -806,7 +806,7 @@ public class GateControlActivity extends Activity implements Callback {
             mChatService.disconnect();
             return true;
         case R.id.select:
-            // Launch the DeviceListActivity to see devices and do scan
+            // Launch the PresetsActivity to see devices and do scan
             Intent serverIntent = new Intent(this, DeviceListActivity.class);
             startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
             return true;

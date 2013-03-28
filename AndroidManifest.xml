@@ -30,6 +30,11 @@
             android:label="@string/select_device"
             android:theme="@android:style/Theme.Dialog" />
         <activity
+            android:name="com.apdlv.ilibaba.strip.PresetsActivity"
+            android:configChanges="orientation|keyboardHidden"
+            android:label="Presets"
+            android:theme="@android:style/Theme.Dialog" />
+        <activity
             android:name="com.apdlv.ilibaba.gate.DoorOpensActivity"
             android:label="@string/title_activity_door_opens" >
         </activity>

@@ -1,5 +1,6 @@
 package com.apdlv.ilibaba.strip;
 
+
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
@@ -47,6 +48,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     private TextView mTitle;
 
     private static final int REQUEST_ENABLE_BT = 2;
+    private static final int REQUEST_PRESET    = 3;
+    private static final int REQUEST_CONNECT_DEVICE = 1;
 
     private BluetoothConnector mmBTConnector;
     private TextView mLogView;
@@ -163,12 +166,16 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    setCmd("POW=0");
 	    return true;
 	case R.id.menu_water_select:
-	    // Launch the DeviceListActivity to see devices and do scan
+	    // Launch the PresetsActivity to see devices and do scan
 	    Intent serverIntent = new Intent(this, DeviceListActivity.class);
-	    startActivityForResult(serverIntent, DeviceListActivity.REQUEST_CONNECT_DEVICE);
+	    startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
 	    return true;
 	case R.id.menu_water_disconnect:
 	    mmBTConnector.disconnect();
+	    break;
+	case R.id.menu_water_presets:
+	    Intent serverIntent2 = new Intent(this, PresetsActivity.class);
+	    startActivityForResult(serverIntent2, REQUEST_PRESET);
 	    break;
 //	case R.id.discoverable: // Ensure this device is discoverable by others
 //          ensureDiscoverable();
@@ -223,7 +230,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     protected void onPause() 
     {
 	super.onPause();
-	mmBTConnector.disconnect();	
+	//mmBTConnector.disconnect();	
     };
 
     void setCmd(String s)
@@ -274,6 +281,11 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     {
 	switch (requestCode) 
 	{
+	case REQUEST_PRESET:
+	    Bundle b = data.getExtras();
+	    b.getInt(PresetsActivity.EXTRA_PRESET_BUNDLE);
+	    break;
+	
 	case REQUEST_ENABLE_BT:
 	    // When the request to enable Bluetooth returns
 	    if (resultCode == Activity.RESULT_OK) {
@@ -286,8 +298,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    }
 	    break;
 
-	case DeviceListActivity.REQUEST_CONNECT_DEVICE:
-	    // When DeviceListActivity returns with a device to connect
+	case REQUEST_CONNECT_DEVICE:
+	    // When PresetsActivity returns with a device to connect
 	    if (resultCode == Activity.RESULT_OK) {
 		// Get the device MAC address
 		String address = data.getExtras()
