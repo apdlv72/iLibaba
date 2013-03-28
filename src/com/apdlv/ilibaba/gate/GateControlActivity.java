@@ -49,7 +49,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.apdlv.ilibaba.R;
-import com.apdlv.ilibaba.shake.Shaker;
 import com.apdlv.ilibaba.shake.Shaker.Callback;
 import com.apdlv.ilibaba.strip.StripControlActivity;
 
@@ -128,7 +127,7 @@ public class GateControlActivity extends Activity implements Callback {
 
         // If the adapter is null, then Bluetooth is not supported
         if (mBluetoothAdapter == null) {
-            Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
+            sendToast("Bluetooth is not available");
             finish();
             return;
         }
@@ -137,7 +136,7 @@ public class GateControlActivity extends Activity implements Callback {
         updateSelectedInfo();
         
 	//Shaker shaker = new Shaker(this, 1.25d, 500, this);
-	Shaker shaker = new Shaker(this, 2*1.25d, 500, this);
+	//Shaker shaker = new Shaker(this, 2*1.25d, 500, this);
 
 	mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 	activityStarted = Calendar.getInstance().getTimeInMillis();
@@ -552,12 +551,10 @@ public class GateControlActivity extends Activity implements Callback {
             case MESSAGE_DEVICE_NAME:
                 // save the connected device's name
                 mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
-                Toast.makeText(getApplicationContext(), "Connected to "
-                               + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
+                sendToast("Connected to " + mConnectedDeviceName);
                 break;
             case MESSAGE_TOAST:
-                Toast.makeText(getApplicationContext(), msg.getData().getString(TOAST),
-                               Toast.LENGTH_SHORT).show();
+        	sendToast(msg.getData().getString(TOAST));
                 break;
             }
         }
@@ -679,7 +676,7 @@ public class GateControlActivity extends Activity implements Callback {
         } 
         catch (Exception e)
         {
-            Toast.makeText(getApplicationContext(), "Failed to peer info: " + e, Toast.LENGTH_LONG).show();
+            sendToast("Failed to peer info: " + e);
         } 
     }
 
@@ -697,7 +694,7 @@ public class GateControlActivity extends Activity implements Callback {
         } 
         catch (Exception e)
         {
-            Toast.makeText(getApplicationContext(), "Failed to load peer info: " + e, Toast.LENGTH_LONG).show();
+            sendToast("Failed to load peer info: " + e);
         } 
     }
 

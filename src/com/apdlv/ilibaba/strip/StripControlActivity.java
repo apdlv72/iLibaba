@@ -310,6 +310,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     }
 
 
+    @SuppressWarnings("unused")
     private void appendTitle(String msg)
     {
 	if (null!=mTitle)

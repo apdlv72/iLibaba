@@ -21,18 +21,17 @@ import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.UUID;
 
-import com.apdlv.ilibaba.gate.GateControlActivity;
-
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+
+import com.apdlv.ilibaba.gate.GateControlActivity;
 
 public class BluetoothConnector 
 {
@@ -50,7 +49,7 @@ public class BluetoothConnector
     private static final boolean D = true;
 
     // Name for the SDP record when creating server socket
-    private static final String NAME = "iLibaba"; //"BluetoothChat";
+    //private static final String NAME = "iLibaba"; //"BluetoothChat";
 
     // Unique UUID for this application
     private static final UUID MY_UUID =
@@ -68,7 +67,6 @@ public class BluetoothConnector
     private ConnectThread mConnectThread;
     //private ConnectedThread mConnectedThread;
     private int mState;
-    private boolean mDoListen;
 
     // Constants that indicate the current connection state
     public static final int STATE_NONE = 0;       // we're doing nothing

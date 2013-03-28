@@ -18,9 +18,6 @@ package com.apdlv.ilibaba.gate;
 
 import java.util.Set;
 
-import com.apdlv.ilibaba.R;
-
-
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -39,6 +36,8 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import com.apdlv.ilibaba.R;
 
 /**
  * This Activity appears as a dialog. It lists any paired devices and

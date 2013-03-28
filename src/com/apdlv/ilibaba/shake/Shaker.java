@@ -21,8 +21,6 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.SystemClock;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Shaker {
 private SensorManager mgr=null;
