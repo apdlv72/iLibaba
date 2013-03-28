@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.apdlv.ilibaba;
+package com.apdlv.ilibaba.gate;
 
 import java.util.Set;
+
+import com.apdlv.ilibaba.R;
 
 
 import android.app.Activity;

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package com.apdlv.ilibaba;
+package com.apdlv.ilibaba.gate;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -93,13 +93,13 @@ public class BluetoothSerialService {
         mState = state;
 
         // Give the new state to the Handler so the UI Activity can update
-        mHandler.obtainMessage(BluetoothHC05.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
+        mHandler.obtainMessage(GateControlActivity.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
     }
     
     
     private synchronized void log(String msg)
     {
-	mHandler.obtainMessage(BluetoothHC05.MESSAGE_DEBUG_MSG, msg).sendToTarget();
+	mHandler.obtainMessage(GateControlActivity.MESSAGE_DEBUG_MSG, msg).sendToTarget();
     }
 
     /**
@@ -193,9 +193,9 @@ public class BluetoothSerialService {
         mConnectedThread.start();
 
         // Send the name of the connected device back to the UI Activity
-        Message msg = mHandler.obtainMessage(BluetoothHC05.MESSAGE_DEVICE_NAME);
+        Message msg = mHandler.obtainMessage(GateControlActivity.MESSAGE_DEVICE_NAME);
         Bundle bundle = new Bundle();
-        bundle.putString(BluetoothHC05.DEVICE_NAME, device.getName());
+        bundle.putString(GateControlActivity.DEVICE_NAME, device.getName());
         msg.setData(bundle);
         mHandler.sendMessage(msg);
 
@@ -249,9 +249,9 @@ public class BluetoothSerialService {
         setState(STATE_LISTEN);
 
         // Send a failure message back to the Activity
-        Message msg = mHandler.obtainMessage(BluetoothHC05.MESSAGE_TOAST);
+        Message msg = mHandler.obtainMessage(GateControlActivity.MESSAGE_TOAST);
         Bundle bundle = new Bundle();
-        bundle.putString(BluetoothHC05.TOAST, "Unable to connect device");
+        bundle.putString(GateControlActivity.TOAST, "Unable to connect device");
         msg.setData(bundle);
         mHandler.sendMessage(msg);
     }
@@ -263,9 +263,9 @@ public class BluetoothSerialService {
         setState(STATE_LISTEN);
 
         // Send a failure message back to the Activity
-        Message msg = mHandler.obtainMessage(BluetoothHC05.MESSAGE_TOAST);
+        Message msg = mHandler.obtainMessage(GateControlActivity.MESSAGE_TOAST);
         Bundle bundle = new Bundle();
-        bundle.putString(BluetoothHC05.TOAST, "Device connection was lost");
+        bundle.putString(GateControlActivity.TOAST, "Device connection was lost");
         msg.setData(bundle);
         mHandler.sendMessage(msg);
     }
@@ -617,7 +617,7 @@ public class BluetoothSerialService {
                     log("ConnectedThread: read " + bytes + " bytes)");
 
                     // Send the obtained bytes to the UI Activity
-                    mHandler.obtainMessage(BluetoothHC05.MESSAGE_READ, bytes, -1, buffer)
+                    mHandler.obtainMessage(GateControlActivity.MESSAGE_READ, bytes, -1, buffer)
                             .sendToTarget();
                 } catch (IOException e) {
                     log("ConnectedThread: disconnected: " + e);
@@ -637,7 +637,7 @@ public class BluetoothSerialService {
                 mmOutStream.write(buffer);
 
                 // Share the sent message back to the UI Activity
-                mHandler.obtainMessage(BluetoothHC05.MESSAGE_WRITE, -1, -1, buffer)
+                mHandler.obtainMessage(GateControlActivity.MESSAGE_WRITE, -1, -1, buffer)
                         .sendToTarget();
             } catch (IOException e) {
                 Log.e(TAG, "Exception during write", e);

@@ -14,22 +14,15 @@
  * limitations under the License.
  */
 
-package com.apdlv.ilibaba;
+package com.apdlv.ilibaba.gate;
 
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.util.Calendar;
 
-import com.apdlv.ilibaba.R;
-import com.apdlv.ilibaba.shake.Shaker;
-import com.apdlv.ilibaba.shake.Shaker.Callback;
-import com.apdlv.ilibaba.water.WaterstripActivity;
-
-import android.view.View.OnClickListener;
 import android.app.Activity;
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
@@ -48,7 +41,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
@@ -56,10 +48,15 @@ import android.widget.Scroller;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.apdlv.ilibaba.R;
+import com.apdlv.ilibaba.shake.Shaker;
+import com.apdlv.ilibaba.shake.Shaker.Callback;
+import com.apdlv.ilibaba.strip.StripControlActivity;
+
 /**
  * This is the main Activity that displays the current chat session.
  */
-public class BluetoothHC05 extends Activity implements Callback {
+public class GateControlActivity extends Activity implements Callback {
     // Debugging
     private static final String TAG = "BluetoothChat";
     private static final boolean D = true;
@@ -263,9 +260,9 @@ public class BluetoothHC05 extends Activity implements Callback {
 	       try { Thread.sleep(ms); } catch (InterruptedException e) {}
 	       if (!cancelled)		  
 	       {		   
-		   Message msg = mHandler.obtainMessage(BluetoothHC05.MESSAGE_TOAST);
+		   Message msg = mHandler.obtainMessage(GateControlActivity.MESSAGE_TOAST);
 		   Bundle bundle = new Bundle();
-		   bundle.putString(BluetoothHC05.TOAST, "Disconnecting");
+		   bundle.putString(GateControlActivity.TOAST, "Disconnecting");
 		   msg.setData(bundle);
 		   mHandler.sendMessage(msg);
 
@@ -282,9 +279,9 @@ public class BluetoothHC05 extends Activity implements Callback {
     
     private void sendToast(String text)
     {
-	   Message msg = mHandler.obtainMessage(BluetoothHC05.MESSAGE_TOAST);
+	   Message msg = mHandler.obtainMessage(GateControlActivity.MESSAGE_TOAST);
 	   Bundle bundle = new Bundle();
-	   bundle.putString(BluetoothHC05.TOAST, text);
+	   bundle.putString(GateControlActivity.TOAST, text);
 	   msg.setData(bundle);
 	   mHandler.sendMessage(msg);	
     }
@@ -829,7 +826,7 @@ public class BluetoothHC05 extends Activity implements Callback {
      */
     private void nextActivity()
     {
-	Intent i = new Intent(getApplicationContext(), WaterstripActivity.class);
+	Intent i = new Intent(getApplicationContext(), StripControlActivity.class);
 	startActivity(i);
 	finish();
     }

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package com.apdlv.ilibaba.water;
+package com.apdlv.ilibaba.strip;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,7 +21,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.UUID;
 
-import com.apdlv.ilibaba.BluetoothHC05;
+import com.apdlv.ilibaba.gate.GateControlActivity;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
@@ -453,9 +453,9 @@ public class BluetoothConnector
             }
 
             // Start the connected thread
-            Message msg = mHandler.obtainMessage(BluetoothHC05.MESSAGE_DEVICE_NAME);
+            Message msg = mHandler.obtainMessage(GateControlActivity.MESSAGE_DEVICE_NAME);
             Bundle bundle = new Bundle();
-            bundle.putString(BluetoothHC05.DEVICE_NAME, mmDevice.getName());
+            bundle.putString(GateControlActivity.DEVICE_NAME, mmDevice.getName());
             msg.setData(bundle);
             mHandler.sendMessage(msg);
             setState(STATE_CONNECTED);
@@ -572,7 +572,7 @@ public class BluetoothConnector
 //                    log("ConnectedThread: read " + bytes + " bytes)");
 //
 //                    // Send the obtained bytes to the UI Activity
-//                    mHandler.obtainMessage(BluetoothHC05.MESSAGE_READ, bytes, -1, buffer)
+//                    mHandler.obtainMessage(GateControlActivity.MESSAGE_READ, bytes, -1, buffer)
 //                            .sendToTarget();
 //                } catch (IOException e) {
 //                    log("ConnectedThread: disconnected: " + e);
@@ -592,7 +592,7 @@ public class BluetoothConnector
 //                mmOutStream.write(buffer);
 //
 //                // Share the sent message back to the UI Activity
-//                mHandler.obtainMessage(BluetoothHC05.MESSAGE_WRITE, -1, -1, buffer)
+//                mHandler.obtainMessage(GateControlActivity.MESSAGE_WRITE, -1, -1, buffer)
 //                        .sendToTarget();
 //            } catch (IOException e) {
 //                Log.e(TAG, "Exception during write", e);

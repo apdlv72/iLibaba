@@ -1,4 +1,4 @@
-package com.apdlv.ilibaba;
+package com.apdlv.ilibaba.test;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

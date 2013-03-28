@@ -10,13 +10,13 @@
 
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.VIBRATE"/>
-    
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <application
         android:icon="@drawable/app_icon"
         android:label="@string/app_name" >
         <activity
-            android:name="com.apdlv.ilibaba.BluetoothHC05"
+            android:name="com.apdlv.ilibaba.gate.GateControlActivity"
             android:configChanges="keyboardHidden"
             android:label="@string/app_name" >
             <intent-filter>
@@ -25,22 +25,16 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.apdlv.ilibaba.DeviceListActivity"
+            android:name="com.apdlv.ilibaba.gate.DeviceListActivity"
             android:configChanges="orientation|keyboardHidden"
             android:label="@string/select_device"
             android:theme="@android:style/Theme.Dialog" />
         <activity
-            android:name="com.apdlv.ilibaba.DoorOpensActivity"
+            android:name="com.apdlv.ilibaba.gate.DoorOpensActivity"
             android:label="@string/title_activity_door_opens" >
-            <!--  
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>            
-            -->
         </activity>
         <activity
-            android:name="com.apdlv.ilibaba.water.WaterstripActivity"
+            android:name="com.apdlv.ilibaba.strip.StripControlActivity"
             android:label="@string/title_activity_waterstrip" >
         </activity>
     </application>

@@ -1,4 +1,4 @@
-package com.apdlv.ilibaba.water;
+package com.apdlv.ilibaba.strip;
 
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
@@ -32,15 +32,15 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.apdlv.ilibaba.BluetoothHC05;
-import com.apdlv.ilibaba.BluetoothSerialService;
-import com.apdlv.ilibaba.DeviceListActivity;
 import com.apdlv.ilibaba.R;
-import com.apdlv.ilibaba.hsv.HSVColorWheel;
-import com.apdlv.ilibaba.hsv.OnColorSelectedListener;
+import com.apdlv.ilibaba.color.HSVColorWheel;
+import com.apdlv.ilibaba.color.OnColorSelectedListener;
+import com.apdlv.ilibaba.gate.GateControlActivity;
+import com.apdlv.ilibaba.gate.BluetoothSerialService;
+import com.apdlv.ilibaba.gate.DeviceListActivity;
 import com.apdlv.ilibaba.shake.Shaker.Callback;
 
-public class WaterstripActivity extends Activity implements OnSeekBarChangeListener, OnClickListener, Callback, OnColorSelectedListener, OnItemSelectedListener
+public class StripControlActivity extends Activity implements OnSeekBarChangeListener, OnClickListener, Callback, OnColorSelectedListener, OnItemSelectedListener
 {
     private TextView mTextCommand;
     private BluetoothAdapter mBluetoothAdapter;
@@ -182,7 +182,7 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
 
     private void nextActivity()
     {
-	Intent i = new Intent(getApplicationContext(), BluetoothHC05.class);
+	Intent i = new Intent(getApplicationContext(), GateControlActivity.class);
 	startActivity(i);            
 	finish();	
     }
