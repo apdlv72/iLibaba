@@ -2,8 +2,12 @@ package com.apdlv.ilibaba.views;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Bitmap.Config;
+import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
@@ -29,20 +33,49 @@ public class MutableSeekBar extends SeekBar
 	super(context);
 	init();
     }
-    
+
     private void init()
     {
 	Bitmap bitmap = Bitmap.createBitmap(10, 10, Config.RGB_565);
 	bitmap.eraseColor(Color.GRAY);
-	inactiveThumb = new BitmapDrawable(bitmap);
+	
+	inactiveThumb = null;
+	
+	/* does not work
+	Bitmap gray = toGrayscale(bitmap); //new BitmapDrawable(bitmap);
+	inactiveThumb = new BitmapDrawable(gray);
+	inactiveThumb.setAlpha(255);	
+	inactiveThumb.setBounds(activeThumb.getBounds());
+	inactiveThumb.setChangingConfigurations(activeThumb.getChangingConfigurations());
+	inactiveThumb.setVisible(true, true);
+	*/
     }
+
+    @SuppressWarnings("unused")
+    private Bitmap toGrayscale(Bitmap bmpOriginal)
+    {        
+	int width, height;
+	height = bmpOriginal.getHeight();
+	width = bmpOriginal.getWidth();    
+
+	Bitmap bmpGrayscale = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+	Canvas c = new Canvas(bmpGrayscale);
+	Paint paint = new Paint();
+	ColorMatrix cm = new ColorMatrix();
+	cm.setSaturation(0);
+	ColorMatrixColorFilter f = new ColorMatrixColorFilter(cm);
+	paint.setColorFilter(f);
+	c.drawBitmap(bmpOriginal, 0, 0, paint);
+	return bmpGrayscale;
+    }
+    
     
     @Override
     public void setThumb(Drawable thumb)
     {
-        // TODO Auto-generated method stub
-        super.setThumb(thumb);
-        activeThumb = thumb;
+	// TODO Auto-generated method stub
+	super.setThumb(thumb);
+	activeThumb = thumb;
     }
 
     @Override
@@ -58,7 +91,7 @@ public class MutableSeekBar extends SeekBar
 	    super.setThumb(inactiveThumb);
 	}
     };
-    
+
     private Drawable activeThumb;
     private Drawable inactiveThumb;
 

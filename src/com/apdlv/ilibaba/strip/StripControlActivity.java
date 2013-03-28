@@ -35,9 +35,9 @@ import android.widget.Toast;
 import com.apdlv.ilibaba.R;
 import com.apdlv.ilibaba.color.HSVColorWheel;
 import com.apdlv.ilibaba.color.OnColorSelectedListener;
-import com.apdlv.ilibaba.gate.GateControlActivity;
 import com.apdlv.ilibaba.gate.BluetoothSerialService;
 import com.apdlv.ilibaba.gate.DeviceListActivity;
+import com.apdlv.ilibaba.gate.GateControlActivity;
 import com.apdlv.ilibaba.shake.Shaker.Callback;
 
 public class StripControlActivity extends Activity implements OnSeekBarChangeListener, OnClickListener, Callback, OnColorSelectedListener, OnItemSelectedListener

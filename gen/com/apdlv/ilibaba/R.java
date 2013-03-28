@@ -63,8 +63,9 @@ public final class R {
         public static final int menu_water_next=0x7f080038;
         public static final int menu_water_off=0x7f080037;
         public static final int menu_water_on=0x7f080036;
-        public static final int menu_water_reconnect=0x7f080033;
-        public static final int menu_water_select=0x7f080034;
+        public static final int menu_water_presets=0x7f080033;
+        public static final int menu_water_reconnect=0x7f080034;
+        public static final int menu_water_select=0x7f080039;
         public static final int new_devices=0x7f08002a;
         public static final int paired_devices=0x7f080028;
         public static final int pinText=0x7f080002;
