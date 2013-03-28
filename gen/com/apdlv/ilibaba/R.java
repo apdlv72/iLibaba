@@ -31,7 +31,8 @@ public final class R {
         public static final int seek_speed=0x7f02000e;
         public static final int seek_strength=0x7f02000f;
         public static final int seek_thumb=0x7f020010;
-        public static final int slider=0x7f020011;
+        public static final int seek_thumb_inactive=0x7f020011;
+        public static final int slider=0x7f020012;
     }
     public static final class id {
         public static final int Button0=0x7f080011;

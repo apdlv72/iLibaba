@@ -1,6 +1,8 @@
 package com.apdlv.ilibaba.views;
 
+import com.apdlv.ilibaba.R;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -11,6 +13,7 @@ import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
+import android.view.View;
 import android.widget.SeekBar;
 
 public class MutableSeekBar extends SeekBar
@@ -36,11 +39,13 @@ public class MutableSeekBar extends SeekBar
 
     private void init()
     {
-	Bitmap bitmap = Bitmap.createBitmap(10, 10, Config.RGB_565);
-	bitmap.eraseColor(Color.GRAY);
-	
 	inactiveThumb = null;
-	
+
+	/* does not work
+	Resources res = getResources();
+	inactiveThumb = res.getDrawable(R.drawable.seek_thumb_inactive);
+	*/
+
 	/* does not work
 	Bitmap gray = toGrayscale(bitmap); //new BitmapDrawable(bitmap);
 	inactiveThumb = new BitmapDrawable(gray);
@@ -48,7 +53,7 @@ public class MutableSeekBar extends SeekBar
 	inactiveThumb.setBounds(activeThumb.getBounds());
 	inactiveThumb.setChangingConfigurations(activeThumb.getChangingConfigurations());
 	inactiveThumb.setVisible(true, true);
-	*/
+	 */
     }
 
     @SuppressWarnings("unused")
@@ -68,8 +73,8 @@ public class MutableSeekBar extends SeekBar
 	c.drawBitmap(bmpOriginal, 0, 0, paint);
 	return bmpGrayscale;
     }
-    
-    
+
+
     @Override
     public void setThumb(Drawable thumb)
     {
@@ -79,10 +84,10 @@ public class MutableSeekBar extends SeekBar
     }
 
     @Override
-    public void setEnabled(boolean enabled) 
+    public void setEnabled(boolean state) 
     {
-	super.setEnabled(enabled);
-	if (enabled)
+	super.setEnabled(state);
+	if (state)
 	{
 	    super.setThumb(activeThumb);
 	}
