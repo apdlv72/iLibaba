@@ -246,7 +246,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     {
 	mTextCommand.setText(s);
 	mmBTConnector.write((s+"\r\n").getBytes());
-	doLog("SENT: " + s + "\n");
+	doLog("SENT: " + s);
     }
 
 
@@ -270,7 +270,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
     private void doLog(String s)
     {
-	mLogView.append(s);
+	mLogView.append(s + "\n");
 	scrollToEnd();
 	Log.d(TAG, s);
     }
@@ -671,7 +671,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	{
 	    if (null!=mLogView)
 	    {
-		doLog("RCVD: " + receivedLine + "\n");
+		//doLog("RCVD: " + receivedLine);
 	    }
 
 	    if (receivedLine.startsWith("HELLO"))
