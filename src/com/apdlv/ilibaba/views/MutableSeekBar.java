@@ -1,19 +1,13 @@
 package com.apdlv.ilibaba.views;
 
-import com.apdlv.ilibaba.R;
 import android.content.Context;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
-import android.graphics.Bitmap.Config;
 import android.graphics.Paint;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
-import android.view.View;
 import android.widget.SeekBar;
 
 public class MutableSeekBar extends SeekBar
