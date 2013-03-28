@@ -32,6 +32,7 @@ import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -45,7 +46,7 @@ import com.apdlv.ilibaba.R;
  * by the user, the MAC address of the device is sent back to the parent
  * Activity in the result Intent.
  */
-public class PresetsActivity extends Activity {
+public class PresetsActivity extends Activity implements OnItemLongClickListener {
     // Debugging
     private static final String TAG = "PresetsActivity";
     private static final boolean D = true;
@@ -62,142 +63,93 @@ public class PresetsActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+	super.onCreate(savedInstanceState);
 
-        // Setup the window
-        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
-        setContentView(R.layout.presets_list);
+	// Setup the window
+	requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+	setContentView(R.layout.preset_list);
 
-        // Set result CANCELED incase the user backs out
-        setResult(Activity.RESULT_CANCELED);
+	// Set result CANCELED incase the user backs out
+	setResult(Activity.RESULT_CANCELED);
 
-        // Initialize the button to perform device discovery
-        Button scanButton = (Button) findViewById(R.id.button_scan);
-        /*
+	// Initialize the button to perform device discovery
+	Button scanButton = (Button) findViewById(R.id.button_scan);
+	/*
         scanButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 doDiscovery();
                 v.setVisibility(View.GONE);
             }
         });
-        */
+	 */
 
-        String presets[] = { "Dark", "Light", "Water", "Red", "Chillout" }; 
-        
-        // Initialize array adapters. One for already paired devices and
-        // one for newly discovered devices
-        mPairedDevicesArrayAdapter = new ArrayAdapter<String>(this, R.layout.device_name);
-        mNewDevicesArrayAdapter = new ArrayAdapter<String>(this, R.layout.device_name);
+	String presets[] = { "One", "Two", "Three", "Four", "Five", "Six" }; 
 
-        // Find and set up the ListView for paired devices
-        ListView pairedListView = (ListView) findViewById(R.id.paired_devices);
-        pairedListView.setAdapter(mPairedDevicesArrayAdapter);
-        pairedListView.setOnItemClickListener(mDeviceClickListener);
+	// Initialize array adapters. One for already paired devices and
+	// one for newly discovered devices
+	mPairedDevicesArrayAdapter = new ArrayAdapter<String>(this, R.layout.preset_name);
+	//mNewDevicesArrayAdapter = new ArrayAdapter<String>(this, R.layout.device_name);
 
-        // Find and set up the ListView for newly discovered devices
-        /*
-        ListView newDevicesListView = (ListView) findViewById(R.id.new_devices);
-        newDevicesListView.setAdapter(mNewDevicesArrayAdapter);
-        newDevicesListView.setOnItemClickListener(mDeviceClickListener);
-        */
+	// Find and set up the ListView for paired devices
+	ListView pairedListView = (ListView) findViewById(R.id.paired_devices);
+	pairedListView.setAdapter(mPairedDevicesArrayAdapter);
+	pairedListView.setOnItemClickListener(mDeviceClickListener);
 
-        // Register for broadcasts when a device is discovered
-        /*
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        this.registerReceiver(mReceiver, filter);
-        */
+	pairedListView.setOnItemLongClickListener(this);
 
-        // Register for broadcasts when discovery has finished
-        /*
-        filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        this.registerReceiver(mReceiver, filter);
-        */
-
-        // Get the local Bluetooth adapter
-        //mBtAdapter = BluetoothAdapter.getDefaultAdapter();
-
-        // Get a set of currently paired devices
-        //Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
-
-        // If there are paired devices, add each one to the ArrayAdapter
-        /*
-        if (pairedDevices.size() > 0) {
-            findViewById(R.id.title_paired_devices).setVisibility(View.VISIBLE);
-            for (BluetoothDevice device : pairedDevices) {
-                mPairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
-            }
-        } else {
-            String noDevices = getResources().getText(R.string.none_paired).toString();
-            mPairedDevicesArrayAdapter.add(noDevices);
-        }
-        */
-
-        for (String p : presets) {
-            mPairedDevicesArrayAdapter.add(p);
-        }
+	for (String p : presets) {
+	    mPairedDevicesArrayAdapter.add(p);
+	}
 
     }
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
-
-        /*
-        // Make sure we're not doing discovery anymore
-        if (mBtAdapter != null) {
-            mBtAdapter.cancelDiscovery();
-        }
-
-        // Unregister broadcast listeners
-        this.unregisterReceiver(mReceiver);
-        */
+	super.onDestroy();
     }
 
-    /**
-     * Start device discover with the BluetoothAdapter
-     */
-    /*
-    private void doDiscovery() {
-        if (D) Log.d(TAG, "doDiscovery()");
-
-        // Indicate scanning in the title
-        setProgressBarIndeterminateVisibility(true);
-        setTitle(R.string.scanning);
-
-        // Turn on sub-title for new devices
-        findViewById(R.id.title_new_devices).setVisibility(View.VISIBLE);
-
-        // If we're already discovering, stop it
-        if (mBtAdapter.isDiscovering()) {
-            mBtAdapter.cancelDiscovery();
-        }
-
-        // Request discover from BluetoothAdapter
-        mBtAdapter.startDiscovery();
-    }
-    */
 
     // The on-click listener for all devices in the ListViews
     private OnItemClickListener mDeviceClickListener = new OnItemClickListener() {
-        public void onItemClick(AdapterView<?> av, View v, int arg2, long arg3) {
-            /*
+	public void onItemClick(AdapterView<?> av, View v, int arg2, long arg3) {
+	    /*
             // Cancel discovery because it's costly and we're about to connect
             mBtAdapter.cancelDiscovery();
-            */
-            // Get the device MAC address, which is the last 17 chars in the View
-            String info = ((TextView) v).getText().toString();
+	     */
+	    // Get the device MAC address, which is the last 17 chars in the View
+	    String name = ((TextView) v).getText().toString();
+	    /*
             //String address = info.substring(info.length() - 17);
             Bundle b = new Bundle();
-            b.putString("NAME", info);
+            b.putString("NAME", name);
             b.putInt("RND", 7);
+	     */
 
-            // Create the result Intent and include the MAC address
-            Intent intent = new Intent();
-            intent.putExtra(EXTRA_PRESET_BUNDLE, b);
+	    // Create the result Intent and include the MAC address
+	    Intent intent = new Intent();
+	    intent.putExtra("ACTION", "load");
+	    intent.putExtra("NAME", name);
 
-            // Set result and finish this Activity
-            setResult(Activity.RESULT_OK, intent);
-            finish();
-        }
+	    // Set result and finish this Activity
+	    setResult(Activity.RESULT_OK, intent);
+	    finish();
+	}
     };
+
+    public boolean onItemLongClick(AdapterView<?> arg0, View view, int arg2, long arg3)
+    {
+	Log.d(TAG, "Long click on " + view);
+	if (view instanceof TextView)
+	{
+	    String name = ((TextView)view).getText().toString();
+	    Intent intent = new Intent();
+	    intent.putExtra("ACTION", "save");
+	    intent.putExtra("NAME", name);
+
+	    // Set result and finish this Activity
+	    setResult(Activity.RESULT_OK, intent);
+	    finish();
+	}
+	return false;
+    }
 }

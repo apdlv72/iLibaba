@@ -25,7 +25,7 @@ public class HSVColorWheel  extends View {
     private final Context context;
 
     private OnColorSelectedListener listener;
-    
+
     public HSVColorWheel(Context context, AttributeSet attrs, int defStyle) {
 	super(context, attrs, defStyle);
 	this.context = context;
@@ -124,6 +124,7 @@ public class HSVColorWheel  extends View {
     private float scaledFadeOutSize;
 
     private Point selectedPoint = new Point();
+    private int mLastColor = 0xffffff;
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -223,7 +224,8 @@ public class HSVColorWheel  extends View {
 	case MotionEvent.ACTION_DOWN:
 	case MotionEvent.ACTION_MOVE:
 	    if ( listener != null ) {
-		listener.colorSelected( getColorForPoint( (int)event.getX(), (int)event.getY(), colorHsv ) );
+		mLastColor = getColorForPoint( (int)event.getX(), (int)event.getY(), colorHsv );
+		listener.colorSelected( mLastColor );
 	    }
 	    invalidate();
 	    return true;
@@ -231,4 +233,9 @@ public class HSVColorWheel  extends View {
 	return super.onTouchEvent(event);
     }
 
-}
+    public int getSelectedColor()
+    {
+	return mLastColor ;
+    }
+
+ }

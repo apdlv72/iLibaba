@@ -102,7 +102,8 @@ public final class R {
         public static final int device_name=0x7f030004;
         public static final int dialog_gate=0x7f030005;
         public static final int message=0x7f030006;
-        public static final int presets_list=0x7f030007;
+        public static final int preset_list=0x7f030007;
+        public static final int preset_name=0x7f030008;
     }
     public static final class menu {
         public static final int options_gate=0x7f070000;
