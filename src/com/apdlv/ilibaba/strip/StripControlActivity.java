@@ -292,10 +292,13 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	switch (requestCode) 
 	{
 	case REQUEST_PRESET:
-	    Bundle b = data.getExtras();
-	    String name    = b.getString("NAME");
-	    String action  = b.getString("ACTION");
-	    applyPresets(action, name);
+	    Bundle b = null==data ? null : data.getExtras();
+	    if (null!=b)
+	    {
+		String name    = b.getString("NAME");
+		String action  = b.getString("ACTION");
+		applyPresets(action, name);
+	    }
 	    break;
 
 	case REQUEST_ENABLE_BT:
