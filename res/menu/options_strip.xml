@@ -1,8 +1,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
     <item android:id="@+id/menu_water_reconnect"    android:icon="@android:drawable/ic_menu_revert"             android:title="@string/reconnect" />
+    <item android:id="@+id/menu_water_select"       android:icon="@android:drawable/ic_menu_search"             android:title="@string/select" />
     <item android:id="@+id/menu_water_disconnect"   android:icon="@android:drawable/ic_menu_close_clear_cancel" android:title="@string/disconnect" />
-    <item android:id="@+id/menu_water_scan"         android:icon="@android:drawable/ic_menu_search"             android:title="@string/select" />
+    <!--  
     <item android:id="@+id/menu_water_discoverable" android:icon="@android:drawable/ic_menu_mylocation"         android:title="@string/discoverable" />
-    <item android:id="@+id/menu_water_onoff"        android:icon="@android:drawable/ic_lock_power_off"          android:title="On/Off" />
+    -->
+    <item android:id="@+id/menu_water_on"           android:icon="@android:drawable/ic_media_play"              android:title="On" />
+    <item android:id="@+id/menu_water_off"          android:icon="@android:drawable/ic_lock_power_off"          android:title="Off" />
     <item android:id="@+id/menu_water_next"         android:icon="@android:drawable/ic_media_ff"                android:title="Garage Gate Control"/>    
 </menu>

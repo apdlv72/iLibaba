@@ -337,7 +337,10 @@ public class BluetoothConnector
         {
           try 
           {
+              if (null!=mmOutStream)
+              {
               mmOutStream.write(buffer);
+              }
 
               // Share the sent message back to the UI Activity
               mHandler.obtainMessage(MESSAGE_WRITE, -1, -1, buffer).sendToTarget();

@@ -14,6 +14,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
+import android.text.Layout;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -23,6 +25,7 @@ import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.Button;
+import android.widget.Scroller;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Spinner;
@@ -40,7 +43,6 @@ import com.apdlv.ilibaba.shake.Shaker.Callback;
 public class WaterstripActivity extends Activity implements OnSeekBarChangeListener, OnClickListener, Callback, OnColorSelectedListener, OnItemSelectedListener
 {
     private TextView mTextCommand;
-    //private ColorPickerCircView mColorPicker;
     private BluetoothAdapter mBluetoothAdapter;
     private TextView mTitle;
 
@@ -49,19 +51,21 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
     private BluetoothConnector mmBTConnector;
     private TextView mLogView;
     private HSVColorWheel mColorWheel;
+    private Vibrator mVibrator;
+    private long activityStarted;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
 	super.onCreate(savedInstanceState);	
-	boolean isWater = true;
 
 	//requestWindowFeature(Window.FEATURE_NO_TITLE);
 	//getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
 	// Set up the window layout
 	requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
-	setContentView(R.layout.main);
+	setContentView(R.layout.activity_strip);
 	getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.custom_title);
 
 	// Set up the custom title
@@ -71,7 +75,7 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
 	mTitle = (TextView) findViewById(R.id.title_right_text);
 	mTitle.setText("test");
 
-	setContentView(R.layout.activity_waterstrip);
+	setContentView(R.layout.activity_strip);
 
 	((Spinner)findViewById(R.id.spinnerMode)).setOnItemSelectedListener(this);
 
@@ -82,7 +86,12 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
 	((SeekBar) findViewById(R.id.seekStrength)).setOnSeekBarChangeListener(this);
 	((SeekBar) findViewById(R.id.seekRand)).setOnSeekBarChangeListener(this);
 
-	mLogView     = (TextView) findViewById(R.id.logView);	
+	mLogView = (TextView) findViewById(R.id.logView);
+        mLogView.setMaxLines(1000);
+        mLogView.setMovementMethod(ScrollingMovementMethod.getInstance());
+        Scroller scroller = new Scroller(mLogView.getContext());
+        mLogView.setScroller(scroller);	
+	
 	mTextCommand = (TextView) findViewById(R.id.textCommand);
 
 	mColorWheel = (HSVColorWheel) findViewById(R.id.hSVColorWheel);
@@ -110,10 +119,7 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
 	loadPeerInfo();
     }
 
-
-    Vibrator mVibrator;
-    long activityStarted;
-
+    
     @Override
     protected void onStart()
     {
@@ -124,9 +130,7 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
 	    Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
 	    startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
 	    // Otherwise, setup the chat session
-	} else {
-	    //if (mChatService == null) setupChat();
-	}
+	} 
     }
 
 
@@ -134,7 +138,7 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
     public boolean onCreateOptionsMenu(Menu menu)
     {
 	// Inflate the menu; this adds items to the action bar if it is present.
-	getMenuInflater().inflate(R.menu.activity_waterstrip, menu);
+	getMenuInflater().inflate(R.menu.options_strip, menu);
 	return true;
     }
 
@@ -152,10 +156,13 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
 	case R.id.menu_water_next:
 	    nextActivity();
 	    return true;
-	case R.id.menu_water_onoff:
-	    setCmd("STA=2");
+	case R.id.menu_water_on:
+	    setCmd("POW=1");
 	    return true;
-	case R.id.menu_water_scan:
+	case R.id.menu_water_off:
+	    setCmd("POW=0");
+	    return true;
+	case R.id.menu_water_select:
 	    // Launch the DeviceListActivity to see devices and do scan
 	    Intent serverIntent = new Intent(this, DeviceListActivity.class);
 	    startActivityForResult(serverIntent, DeviceListActivity.REQUEST_CONNECT_DEVICE);
@@ -163,6 +170,9 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
 	case R.id.menu_water_disconnect:
 	    mmBTConnector.disconnect();
 	    break;
+//	case R.id.discoverable: // Ensure this device is discoverable by others
+//          ensureDiscoverable();
+//          return true;
 	default:
 	    Toast.makeText(getApplicationContext(), "Unknown option " + item.getItemId(), Toast.LENGTH_SHORT).show();
 	}
@@ -220,7 +230,32 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
     {
 	mTextCommand.setText(s);
 	mmBTConnector.write((s+"\r\n").getBytes());
-	mLogView.append("SENT: " + s + "\n");
+	doLog("SENT: " + s + "\n");
+    }
+
+
+    private void scrollToEnd()  
+    {
+	if (null==mLogView) return;
+	Layout layout = mLogView.getLayout();
+	if (null==layout) return;
+	
+        final int scrollAmount = mLogView.getLayout().getLineTop(mLogView.getLineCount())-mLogView.getHeight();
+        if (scrollAmount>0)
+        {
+            mLogView.scrollTo(0, scrollAmount);
+        }
+        else
+        {
+            mLogView.scrollTo(0,0);
+        }
+    }
+
+
+    private void doLog(String s)
+    {
+	mLogView.append(s);
+	scrollToEnd();
     }
 
     public void onClick(View v)
@@ -478,7 +513,7 @@ public class WaterstripActivity extends Activity implements OnSeekBarChangeListe
 	{
 	    if (null!=mLogView)
 	    {
-		mLogView.append("RCVD: " + receivedLine + "\n");
+		doLog("RCVD: " + receivedLine + "\n");
 	    }
 	    
 	    if (receivedLine.startsWith("HELLO"))

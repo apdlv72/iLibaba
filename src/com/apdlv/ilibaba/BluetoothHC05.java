@@ -108,7 +108,7 @@ public class BluetoothHC05 extends Activity implements Callback {
 
         // Set up the window layout
         requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
-        setContentView(R.layout.main);
+        setContentView(R.layout.activity_gate);
         getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.custom_title);
 
         // Set up the custom title
@@ -743,7 +743,7 @@ public class BluetoothHC05 extends Activity implements Callback {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.option_menu, menu);
+        inflater.inflate(R.menu.options_gate, menu);
         return true;
     }
 
@@ -756,7 +756,7 @@ public class BluetoothHC05 extends Activity implements Callback {
 	{
 	    super(context);
 	    requestWindowFeature(Window.FEATURE_NO_TITLE);
-	    setContentView(R.layout.door_open_dialog);
+	    setContentView(R.layout.dialog_gate);
 	    (mProgress = (ProgressBar) findViewById(R.id.progressBar)).setMax(100);
 	    mProgress.setProgress(0);	    
 	}
@@ -811,17 +811,15 @@ public class BluetoothHC05 extends Activity implements Callback {
         case R.id.disconnect:
             mChatService.disconnect();
             return true;
-        case R.id.scan:
+        case R.id.select:
             // Launch the DeviceListActivity to see devices and do scan
             Intent serverIntent = new Intent(this, DeviceListActivity.class);
             startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
             return true;
-        case R.id.discoverable:
-            // Ensure this device is discoverable by others
-            ensureDiscoverable();
-            return true;
-            
-            
+//        case R.id.discoverable:
+//            // Ensure this device is discoverable by others
+//            ensureDiscoverable();
+//            return true;
         }
         return false;
     }

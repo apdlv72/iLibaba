@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/reconnect"  android:icon="@android:drawable/ic_menu_revert" android:title="@string/reconnect" />
+    <item android:id="@+id/select"     android:icon="@android:drawable/ic_menu_search" android:title="@string/select" />
+    <item android:id="@+id/disconnect" android:icon="@android:drawable/ic_menu_close_clear_cancel" android:title="@string/disconnect" />
+    <!--  
+    <item android:id="@+id/discoverable" android:icon="@android:drawable/ic_menu_mylocation" android:title="@string/discoverable" />
+    -->
+    <item android:id="@+id/menu_garage_test" android:title="Test dialog" />
+    <item android:id="@+id/menu_garage_next" android:title="Water Strip Control" android:icon="@android:drawable/ic_media_ff" />
+</menu>
