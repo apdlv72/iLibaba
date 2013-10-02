@@ -20,7 +20,7 @@
     <string name="app_name">iLibaba</string>
     <string name="view_name_garage">Garage Door Opener</string>
     <string name="view_name_water">Water Strip Control</string>
-    
+
     <!-- BluetoothChat -->
     <string name="sendMenos">-</string>
     <string name="sendMas">+</string>
@@ -49,7 +49,18 @@
     <string name="title_activity_door_opens">DoorOpensActivity</string>
     <string name="title_activity_waterstrip">WaterstripActivity</string>
 
-    
+    <!-- modes for an RGB strip -->
+    <string-array name="mode_array">
+        <item>WATER</item>
+        <item>WATER2</item>
+        <item>FADE</item>
+        <item>RAINBOW</item>
+        <item>CONST</item>
+        <item>RAINFLOW</item>
+    </string-array>
+
+    <!-- modes for an Dream LED strip -->
+    <!--
     <string-array name="mode_array">
         <item>Water1</item>
         <item>Water2</item>
@@ -59,5 +70,11 @@
         <item>Fading1</item>
         <item>Fading2</item>
         <item>Funky</item>
-        </string-array>
+    </string-array>
+    -->
+    <string name="title_activity_frotect">FrotectActivity</string>
+    <string name="title_activity_temp_chart">TempChartActivity</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_temp">TempActivity</string>
+
 </resources>

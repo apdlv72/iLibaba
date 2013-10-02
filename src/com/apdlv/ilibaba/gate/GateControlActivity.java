@@ -57,7 +57,7 @@ import com.apdlv.ilibaba.strip.StripControlActivity;
  */
 public class GateControlActivity extends Activity implements Callback {
     // Debugging
-    private static final String TAG = "BluetoothChat";
+    private static final String TAG = "GateControlActivity";
     private static final boolean D = true;
 
     // Message types sent from the BluetoothChatService Handler
@@ -234,6 +234,7 @@ public class GateControlActivity extends Activity implements Callback {
             mLogView.scrollTo(0,0);
         }
     }
+
     
     public void log(String msg)
     {
@@ -554,7 +555,8 @@ public class GateControlActivity extends Activity implements Callback {
                 sendToast("Connected to " + mConnectedDeviceName);
                 break;
             case MESSAGE_TOAST:
-        	sendToast(msg.getData().getString(TOAST));
+        	//sendToast(msg.getData().getString(TOAST));
+        	showToast(msg.getData().getString(TOAST));
                 break;
             }
         }
@@ -632,6 +634,12 @@ public class GateControlActivity extends Activity implements Callback {
 	    sendBTMessage("E" + msg + "\n");
 	}
     }
+
+    protected void showToast(String string)
+    {
+	Toast.makeText(this, string, Toast.LENGTH_LONG).show();
+    }
+
 
     private String computeToken(String token, int pin)
     {

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package com.apdlv.ilibaba.strip;
+package com.apdlv.ilibaba.frotect;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,7 +35,7 @@ import com.apdlv.ilibaba.gate.GateControlActivity;
 
 public class BluetoothConnector 
 {
-    public static final String TOAST = "TOAST";
+    static final String TOAST = "TOAST";
     public static final String DEVICE_NAME = "device_name";
 
     public interface OnBluetoothListener

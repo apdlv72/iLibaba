@@ -1,0 +1,509 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".FrotectActivity" >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical" >
+
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" >
+
+            <TableRow
+                android:id="@+id/TableRow15"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="5dp"
+                android:layout_marginTop="0dp" >
+
+                <TableLayout
+                    android:id="@+id/TableLayout06"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginRight="20dp" >
+
+                    <TableRow
+                        android:id="@+id/TableRow20"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+                        <RadioButton
+                            android:id="@+id/sensor1"
+                            android:enabled="false"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Strand 1" />
+                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow21"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+<!--                         <TextView
+                            android:id="@+id/hi1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="hi:" />
+ -->                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow18"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+                    </TableRow>
+
+                    <TextView
+                        android:id="@+id/temp1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="10°C"
+                        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                    <TableRow
+                        android:id="@+id/TableRow17"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+                        <TextView
+                            android:id="@+id/lo1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="limits: 3°C/10°C" />
+                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow26"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+<!--                         <TextView
+                            android:id="@+id/last1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="last:" />
+ -->                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow25"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+                        <TextView
+                            android:id="@+id/errors1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="errors:" />
+                    </TableRow>
+                </TableLayout>
+
+                <TableLayout
+                    android:id="@+id/TableLayout03"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginRight="20dp" >
+
+                    <TableRow
+                        android:id="@+id/TableRow24"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+                        <RadioButton
+                            android:id="@+id/sensor2"
+                            android:checked="true"
+                            android:enabled="false"
+                            android:inputType="none"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Strand 2" />
+                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow19"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+<!--                         <TextView
+                            android:id="@+id/hi2"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="hi:" />
+ -->                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow14"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+                    </TableRow>
+
+                    <TextView
+                        android:id="@+id/temp2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="10°C"
+                        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                    <TableRow
+                        android:id="@+id/TableRow23"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+                        <TextView
+                            android:id="@+id/lo2"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="limits: 3°C/10°C" />
+                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow16"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+<!--                         <TextView
+                            android:id="@+id/last2"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="last:" />
+ -->                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow22"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+                        <TextView
+                            android:id="@+id/errors2"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="errors:" />
+                    </TableRow>
+                </TableLayout>
+            </TableRow>
+
+            <TableRow
+                android:id="@+id/TableRow02"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="5dp"
+                android:layout_marginTop="0dp" >
+
+                <TableLayout
+                    android:id="@+id/TableLayout02"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginRight="20dp" >
+
+                    <TableRow
+                        android:id="@+id/TableRow07"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+                        <RadioButton
+                            android:id="@+id/sensor3"
+                            android:checked="true"
+                            android:enabled="false"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Strand 3" />
+                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow08"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+<!--                         <TextView
+                            android:id="@+id/hi3"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="hi:" />
+ -->                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow05"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+                    </TableRow>
+
+                    <TextView
+                        android:id="@+id/temp3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="10°C"
+                        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                    <TableRow
+                        android:id="@+id/TableRow04"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+                        <TextView
+                            android:id="@+id/lo3"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="limits: 3°C/10°C" />
+                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow13"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+                        <TextView
+                            android:id="@+id/last3"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="last:" />
+                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow12"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+                        <TextView
+                            android:id="@+id/errors3"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="errors:" />
+                    </TableRow>
+                </TableLayout>
+
+                <TableLayout
+                    android:id="@+id/TableLayout01"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginRight="20dp" >
+
+                    <TableRow
+                        android:id="@+id/TableRow11"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+                        <RadioButton
+                            android:id="@+id/sensor4"
+                            android:checked="true"
+                            android:enabled="false"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Strand 4" />
+                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow06"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+<!--                         <TextView
+                            android:id="@+id/hi4"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="hi:" />
+ -->                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow01"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+                    </TableRow>
+
+                    <TextView
+                        android:id="@+id/temp4"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="10°C"
+                        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                    <TableRow
+                        android:id="@+id/TableRow10"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+                        <TextView
+                            android:id="@+id/lo4"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="limits: 3°C/10°C" />
+                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow03"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+<!--                         <TextView
+                            android:id="@+id/last4"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="last:" />
+ -->                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow09"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+                        <TextView
+                            android:id="@+id/errors4"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="errors:" />
+                    </TableRow>
+                </TableLayout>
+            </TableRow>
+
+            <TableRow
+                android:id="@+id/TableRow53"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="5dp"
+                android:layout_marginTop="0dp" >
+
+                <TableLayout
+                    android:id="@+id/TableLayout04"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginRight="20dp" >
+
+                    <TableRow
+                        android:id="@+id/TableRow48"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+                        <RadioButton
+                            android:id="@+id/sensor5"
+                            android:checked="true"
+                            android:enabled="false"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Extra" />
+
+                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow55"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+                    </TableRow>
+
+                    <TextView
+                        android:id="@+id/temp5"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="10°C"
+                        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                    <TableRow
+                        android:id="@+id/TableRow41"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+<!--                         <TextView
+                            android:id="@+id/last5"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="last:" />
+ -->                    </TableRow>
+
+                    <TableRow
+                        android:id="@+id/TableRow40"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" >
+
+                        <TextView
+                            android:id="@+id/errors5"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="errors:" />
+                    </TableRow>
+                </TableLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" >
+
+                    <Button
+                        android:id="@+id/buttonPower"
+                        style="?android:attr/buttonStyleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Power chart" />
+
+                    <Button
+                        android:id="@+id/buttonTemp"
+                        style="?android:attr/buttonStyleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Temp. chart" />
+
+                    <Button
+                        android:id="@+id/buttonCost"
+                        style="?android:attr/buttonStyleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Cost chart" />
+
+                    <Button
+                        android:id="@+id/buttonDuty"
+                        style="?android:attr/buttonStyleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Duty cycle" />
+                </LinearLayout>
+
+            </TableRow>
+        </TableLayout>
+
+    </LinearLayout>
+
+    <SlidingDrawer
+        android:id="@+id/slidingDrawer"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:allowSingleTap="true"
+        android:animateOnClick="true"
+        android:content="@+id/frotectLogView"
+        android:handle="@+id/frotectHandle"
+        android:orientation="vertical" >
+
+        <ImageButton
+            android:id="@+id/frotectHandle"
+            style="@style/button"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/slider"
+            android:focusableInTouchMode="true"
+            android:maxLines="1"
+            android:padding="5dp"
+            android:scrollHorizontally="false"
+            android:scrollbarAlwaysDrawVerticalTrack="false"
+            android:src="@android:drawable/arrow_up_float"
+            android:text="Logfile"
+            android:textColor="@android:color/white"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/frotectLogView"
+            android:layout_width="fill_parent"
+            android:layout_height="match_parent"
+            android:background="#333"
+            android:scrollHorizontally="false"
+            android:scrollbarAlwaysDrawVerticalTrack="true"
+            android:scrollbarStyle="outsideInset"
+            android:scrollbars="vertical" />
+    </SlidingDrawer>
+
+</RelativeLayout>

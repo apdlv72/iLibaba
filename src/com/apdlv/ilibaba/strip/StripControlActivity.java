@@ -8,6 +8,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -24,12 +26,11 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
-import android.widget.Button;
+import android.widget.ArrayAdapter;
 import android.widget.Scroller;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -40,12 +41,13 @@ import android.widget.Toast;
 import com.apdlv.ilibaba.R;
 import com.apdlv.ilibaba.color.HSVColorWheel;
 import com.apdlv.ilibaba.color.OnColorSelectedListener;
+import com.apdlv.ilibaba.frotect.FrotectActivity;
 import com.apdlv.ilibaba.gate.BluetoothSerialService;
 import com.apdlv.ilibaba.gate.DeviceListActivity;
 import com.apdlv.ilibaba.gate.GateControlActivity;
 import com.apdlv.ilibaba.shake.Shaker.Callback;
 
-public class StripControlActivity extends Activity implements OnSeekBarChangeListener, OnClickListener, Callback, OnColorSelectedListener, OnItemSelectedListener
+public class StripControlActivity extends Activity implements OnSeekBarChangeListener, Callback, OnColorSelectedListener, OnItemSelectedListener
 {
     private TextView mTextCommand;
     private BluetoothAdapter mBluetoothAdapter;
@@ -87,9 +89,28 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	mTitle = (TextView) findViewById(R.id.title_right_text);
 	mTitle.setText("test");
 
+	mLogView = (TextView) findViewById(R.id.logView);
+	mLogView.setMaxLines(1000);
+	mLogView.setMovementMethod(ScrollingMovementMethod.getInstance());
+	Scroller scroller = new Scroller(mLogView.getContext());
+	mLogView.setScroller(scroller);	
+
 	setContentView(R.layout.activity_strip);
 
-	(mSpinnerMode = ((Spinner)findViewById(R.id.spinnerMode))).setOnItemSelectedListener(this);
+	(mSpinnerMode = ((Spinner)findViewById(R.id.spinnerMode))).setOnItemSelectedListener(this);		
+	{
+	    analyzeHelloLine("HELLO\r\n");
+	    StringBuilder sb = new StringBuilder();
+	    // Version, Kind, Power, Bright, Amplitude, Speed, Fade, Brightness, Random, sTrength, Color
+	    sb.append("H:V=1 K=");
+	    sb.append("ARGB"); // common Anode, RGB
+	    sb.append(" P=0-2 B=0-FF A=0-FF S=0-FFF F=0-FFF R=0-FF T=0-FFF C=0-FFFFFF ");
+
+	    // supported mode numbers and names
+	    sb.append("M=0=WATER\t1=WATER2\t2=FADE\t3=RAINBOW\t4=CONST\t5=RAINFLOW\t\r\n");
+	    analyzeHelloLine(sb.toString());
+	}
+
 
 	((SeekBar) findViewById(R.id.seekBright)).setOnSeekBarChangeListener(this);
 	((SeekBar) findViewById(R.id.seekAmplitude)).setOnSeekBarChangeListener(this);
@@ -97,12 +118,6 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	((SeekBar) findViewById(R.id.seekFade)).setOnSeekBarChangeListener(this);
 	((SeekBar) findViewById(R.id.seekStrength)).setOnSeekBarChangeListener(this);
 	((SeekBar) findViewById(R.id.seekRand)).setOnSeekBarChangeListener(this);
-
-	mLogView = (TextView) findViewById(R.id.logView);
-	mLogView.setMaxLines(1000);
-	mLogView.setMovementMethod(ScrollingMovementMethod.getInstance());
-	Scroller scroller = new Scroller(mLogView.getContext());
-	mLogView.setScroller(scroller);	
 
 	mTextCommand = (TextView) findViewById(R.id.textCommand);
 
@@ -157,7 +172,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
     public boolean onOptionsItemSelected(MenuItem item) 
     {
-	switch (item.getItemId()) {
+	switch (item.getItemId()) 
+	{
 	case R.id.menu_water_reconnect:
 	    if (null!=mmSelectedAddress)
 	    {
@@ -169,10 +185,10 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    nextActivity();
 	    return true;
 	case R.id.menu_water_on:
-	    setCmd("POW=1");
+	    setCmd("P=1");
 	    return true;
 	case R.id.menu_water_off:
-	    setCmd("POW=0");
+	    setCmd("P=0");
 	    return true;
 	case R.id.menu_water_select:
 	    // Launch the PresetsActivity to see devices and do scan
@@ -198,7 +214,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
     private void nextActivity()
     {
-	Intent i = new Intent(getApplicationContext(), GateControlActivity.class);
+	//Intent i = new Intent(getApplicationContext(), GateControlActivity.class);
+	Intent i = new Intent(getApplicationContext(), FrotectActivity.class);
 	startActivity(i);            
 	finish();	
     }
@@ -209,6 +226,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	String command = null==s.getTag() ? null : "" + s.getTag() + "=" + s.getProgress();	
 	if (null!=command)
 	{
+	    // use the tag from the respective scale and send as command prefix
 	    setCmd(command);
 	}
     }
@@ -275,18 +293,6 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	Log.d(TAG, s);
     }
 
-    public void onClick(View v)
-    {
-	if (v instanceof Button)
-	{
-	    Button b = (Button)v;
-	    if (b==v)
-	    {
-		setCmd("STA=2");
-	    }
-	}
-    }
-
     public void onActivityResult(int requestCode, int resultCode, Intent data)
     {
 	switch (requestCode) 
@@ -336,38 +342,11 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	}
     }
 
-    /*
-    private View findViewWithTag(ViewGroup root, String tag)
-    {
-	for (int i=0; i<root.getChildCount(); i++)
-	{
-	    View child = root.getChildAt(i);
-	    Object o = child.getTag();
-	    if (o instanceof String)
-	    {
-		String found = (String)o;
-		if (null!=found && found.equals(tag))
-		{
-		    return child;
-		}
-		Log.d(TAG, "found view with tag: " + tag);
-	    }
-	    else if (o instanceof ViewGroup)
-	    {
-		ViewGroup vg = (ViewGroup)o;
-		vg.findViewWithTag(tag);
-	    }
-	}
-
-    }
-     */
-
-
     private void applyPresets( String action, String name)
     {
 	ViewGroup root = (ViewGroup)findViewById(R.id.topLinearLayout);
 
-	String tags[] = { "BRI", "SPD", "FAD", "AMP", "RND", "STR", "RGB" };
+	String tags[] = { "B", "S", "F", "A", "R", "T", "C" };
 
 	if (action.equalsIgnoreCase("load"))
 	{
@@ -376,17 +355,17 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    {
 		return;
 	    }
-	    Integer mode = b.get("MOD");
+	    Integer mode = b.get("M");
 	    if (null!=mode)
 	    {
-		setCmd(String.format("MOD=%x", mode));
+		setCmd(String.format("M=%x", mode));
 		mSpinnerMode.setSelection(mode);
 	    }
-	    Integer color = b.get("RGB");
+	    Integer color = b.get("C");
 	    if (null!=color)
 	    {	    
 		mColorWheel.setColor(color);
-		setCmd(String.format("RGB=%x", color & 0xffffff));
+		setCmd(String.format("C=%x", color & 0xffffff));
 	    }
 
 	    for (String tag : tags)
@@ -418,8 +397,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    //mMo
 	    int mode  = mSpinnerMode.getSelectedItemPosition();
 	    int color = mColorWheel.getSelectedColor();
-	    b.put("MOD", mode);
-	    b.put("RGB", color);
+	    b.put("M", mode);
+	    b.put("C", color);
 	    savePreset(name, b);
 	}
     }
@@ -455,7 +434,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	{
 	    ObjectInputStream oos = new ObjectInputStream(openFileInput(FILENAME));
 	    @SuppressWarnings("unchecked")
-            HashMap<String, Integer> b = (HashMap<String, Integer>) oos.readObject();
+	    HashMap<String, Integer> b = (HashMap<String, Integer>) oos.readObject();
 	    oos.close();
 	    showToast("Preset '" + name + "' loaded");
 	    return b;
@@ -505,16 +484,16 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     // interface OnColorSelectedListener
     public void colorSelected(Integer color)
     {
-	setCmd(String.format("RGB=%06x", color & 0xFFFFFF));
+	setCmd(String.format("C=%06x", color & 0xFFFFFF));
     }
 
 
     public void onItemSelected(AdapterView<?> av, View v, int arg2, long arg3)
     {
 	Spinner spinner = (Spinner)av;
-	Object item = spinner.getSelectedItem();
+	//Object item = spinner.getSelectedItem();
 	int idx = spinner.getSelectedItemPosition();
-	setCmd("MOD=" + idx + "," + item);
+	setCmd("M=" + idx); // + "," + item);
     }
 
 
@@ -526,6 +505,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     {
 	mTitle.setText(s);
     }
+
     /*
     public void onBTStateChanged(int state, String msg)
     {
@@ -581,6 +561,55 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	}
     }
 
+
+    private void setStripModes(String ... names)
+    {
+	ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item);
+	mSpinnerMode.setAdapter(adapter);
+	
+	for (String name : names)
+	{
+	    adapter.add(name);
+	};
+    }
+
+
+    private void analyzeUpdateLine(String line)
+    {
+	doLog("GOT Update LINE: " + line);
+    }
+    
+
+    private void analyzeHelloLine(String line)
+    {
+	doLog("GOT HELLO LINE: " + line);
+	try
+	{
+	    Pattern pKind = Pattern.compile("K=([^ ]*)");
+	    Matcher matcher = pKind.matcher(line);
+	    if (matcher.find())
+	    {
+		String kind = matcher.group(1);
+		if ("ARGB".equalsIgnoreCase(kind))
+		{
+		    setStripModes("WATER",  "WATER2", "FADE", "RAINBOW", "CONST", "RAINFLOW");
+		}
+		else if ("LPD6803".equalsIgnoreCase(kind))
+		{
+		    setStripModes("WATER1", "WATER2", "RAINBOW1", "RAINBOW2", "RAINBOW3",  "FADING1", "FADING2", "FUNKY");
+		}
+		return;
+	    }		
+	}
+	catch (Exception e)
+	{
+	    doLog("analyzeHelloLine: " + e);
+	}
+
+	setStripModes("Water1", "Water2", "Rainbow1", "Rainbow2", "Rainbow3",  "Fading1", "Fading2", "Funky");
+    }
+
+
     private final Handler mHandler = new Handler() {
 
 	private Object mConnectedDeviceName;
@@ -604,7 +633,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 		case BluetoothSerialService.STATE_CONNECTED:
 		    doLog("STATE_CONNECTED");
 		    setTitleMessage("connected to " + mConnectedDeviceName);
-		    setCmd("HELLO");
+		    setCmd("H"); // send hello commands
 		    enableControls(true);
 		    break;
 		case BluetoothSerialService.STATE_CONNECTING:
@@ -674,29 +703,30 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 		//doLog("RCVD: " + receivedLine);
 	    }
 
+	    // old version send just a hello
 	    if (receivedLine.startsWith("HELLO"))
 	    {
-		mSupportedFeatures = receivedLine.substring(5);
-		for (char c : mSupportedFeatures.toUpperCase().toCharArray())
-		{
-		    switch (c)
-		    {
-		    case 'B': // brightness 
-			break;
-		    case 'A': // amplitude
-			break;
-		    case 'P': // sPeed 
-			break;
-		    case 'F': // fade 
-			break;
-		    case 'R': // random 
-			break;
-		    case 'S': // strength
-			break;
-		    }
-		}
+		mSupportedFeatures = receivedLine.substring(5);		
+		analyzeHelloLine(mSupportedFeatures);
 	    }
+
+	    if (receivedLine.startsWith("H:"))
+	    {
+		mSupportedFeatures = receivedLine.substring(2);		
+		analyzeHelloLine(mSupportedFeatures);		
+		// Ask arduino to send an update line with current values
+		setCmd("G");				
+	    }
+
+	    if (receivedLine.startsWith("G:"))
+	    {
+		String getUpdateLine = receivedLine.substring(2);
+		analyzeUpdateLine(getUpdateLine);
+	    }
+
 	}
+
+
     };
 
 

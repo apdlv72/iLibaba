@@ -49,7 +49,7 @@
                         android:paddingTop="5dp"
                         android:progress="220"
                         android:progressDrawable="@drawable/seek_bg"
-                        android:tag="BRI"
+                        android:tag="B"
                         android:thumb="@drawable/seek_bright" />
                 </LinearLayout>
 
@@ -72,7 +72,7 @@
                         android:paddingTop="5dp"
                         android:progress="220"
                         android:progressDrawable="@drawable/seek_bg"
-                        android:tag="AMP"
+                        android:tag="A"
                         android:thumb="@drawable/seek_amplitude" />
                 </LinearLayout>
 
@@ -95,7 +95,7 @@
                         android:paddingTop="5dp"
                         android:progress="10"
                         android:progressDrawable="@drawable/seek_bg"
-                        android:tag="SPD"
+                        android:tag="S"
                         android:thumb="@drawable/seek_speed" />
                 </LinearLayout>
 
@@ -118,7 +118,7 @@
                         android:paddingTop="5dp"
                         android:progress="10"
                         android:progressDrawable="@drawable/seek_bg"
-                        android:tag="FAD"
+                        android:tag="F"
                         android:thumb="@drawable/seek_fade" />
                 </LinearLayout>
 
@@ -141,7 +141,7 @@
                         android:paddingTop="5dp"
                         android:progress="2"
                         android:progressDrawable="@drawable/seek_bg"
-                        android:tag="RND"
+                        android:tag="R"
                         android:thumb="@drawable/seek_random" />
                 </LinearLayout>
 
@@ -165,7 +165,7 @@
                         android:paddingTop="5dp"
                         android:progress="220"
                         android:progressDrawable="@drawable/seek_bg"
-                        android:tag="STR"
+                        android:tag="T"
                         android:thumb="@drawable/seek_strength" />
                 </LinearLayout>
             </LinearLayout>

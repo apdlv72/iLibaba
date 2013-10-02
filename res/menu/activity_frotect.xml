@@ -1,0 +1,7 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/menu_frotect_reconnect" android:title="reconnect"></item>
+    <item android:id="@+id/menu_frotect_select" android:title="select"></item>
+    <item android:id="@+id/menu_frotect_disconnect" android:title="disconnect"></item>
+    <item android:id="@+id/menu_frotect_next" android:title="next"></item>
+    
+</menu>
