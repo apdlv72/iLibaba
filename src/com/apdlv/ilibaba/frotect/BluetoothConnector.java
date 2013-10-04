@@ -446,7 +446,7 @@ public class BluetoothConnector
                 }
                 setState(STATE_DISCONNECTED);
                 // Start the service over to restart listening mode
-                //BluetoothConnector.this.start();
+                //BTSerialService.this.start();
                 return;
             }
 

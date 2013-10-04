@@ -15,26 +15,55 @@
 
 package com.apdlv.ilibaba.strip;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.UUID;
 
+import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.content.Intent;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 
 import com.apdlv.ilibaba.gate.GateControlActivity;
 
-public class BluetoothConnector 
+public class BTSerialService  extends Service
 {
+    @Override
+    public IBinder onBind(Intent intent) 
+    {
+	return new BTSerialBinder(this);
+    }
+
+    public class BTSerialBinder extends Binder 
+    {
+	public BTSerialBinder(BTSerialService btc)
+        {
+	    this.btc = btc;
+        }
+
+	public BTSerialService getService() 
+	{
+	    return btc;
+	}
+		
+	private BTSerialService btc;
+    }
+
+    
     public static final String TOAST = "TOAST";
     public static final String DEVICE_NAME = "device_name";
 
@@ -77,42 +106,46 @@ public class BluetoothConnector
     public static final int STATE_TIMEOUT = 5;  // now connected to a remote device
 
     // Message types sent from the BluetoothChatService Handler
+    public static final int MESSAGE_HELLO        = -1;
     public static final int MESSAGE_STATE_CHANGE = 1;
-    public static final int MESSAGE_READ = 2;
-    public static final int MESSAGE_WRITE = 3;
-    public static final int MESSAGE_DEVICE_NAME = 4;
-    public static final int MESSAGE_TOAST = 5;
-    public static final int MESSAGE_DEBUG_MSG = 6;
+    public static final int MESSAGE_READ         = 2; // sending to handler a message received from the peer device
+    public static final int MESSAGE_WRITE        = 3;
+    public static final int MESSAGE_DEVICE_NAME  = 4;
+    public static final int MESSAGE_TOAST        = 5;
+    public static final int MESSAGE_DEBUG_MSG    = 6;
+    
+    public static final int MESSAGE_READLINE     = 7;
 
-
-    Handler mHandler = null;
+    private Handler mHandler = null;
+    private boolean mLinewise;
 
     /**
      * Constructor. Prepares a new BluetoothChat session.
      * @param context  The UI Activity Context
      * @param handler  A Handler to send messages back to the UI Activity
      */
-    public BluetoothConnector(Context context, Handler handler) 
+    public BTSerialService(Context context, Handler handler, boolean linewise) 
     {
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mState = STATE_NONE;
-        //mHandler = handler;
-        mHandler = handler;
+        setHandler(handler, linewise);
+    }    
+    
+    public void setHandler(Handler handler, boolean linewise)
+    {
+	mLinewise = linewise;
+	mHandler = handler;
+	mHandler.obtainMessage(MESSAGE_HELLO).sendToTarget();
     }
-
-    /**
-     * Set the current state of the chat connection
-     * @param state  An integer defining the current connection state
-     */
-    private synchronized void setState(int state) {
+    
+    private synchronized void setState(int state) 
+    {
         if (D) Log.d(TAG, "setState() " + mState + " -> " + state);
         mState = state;
 
         // Give the new state to the Handler so the UI Activity can update
         mHandler.obtainMessage(MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
     }
-    
-    
     
     private synchronized void log(String msg)
     {
@@ -446,7 +479,7 @@ public class BluetoothConnector
                 }
                 setState(STATE_DISCONNECTED);
                 // Start the service over to restart listening mode
-                //BluetoothConnector.this.start();
+                //BTSerialService.this.start();
                 return;
             }
 
@@ -457,12 +490,59 @@ public class BluetoothConnector
             msg.setData(bundle);
             mHandler.sendMessage(msg);
             setState(STATE_CONNECTED);
-            communicate();
+            
+            if (mLinewise)
+        	communicateLinewise();
+            else
+        	communicateBytewise();
         }
-        
-        public void communicate() {
 
-            log("communicate starting");
+        public void communicateLinewise() 
+        {
+            log("line wise communicate starting");
+            
+            BluetoothSocket socket = mmSocket;
+            InputStream tmpIn = null;
+            OutputStream tmpOut = null;
+
+            // Get the BluetoothSocket input and output streams
+            try 
+            {
+                tmpIn  = socket.getInputStream();
+                tmpOut = socket.getOutputStream();
+            } 
+            catch (IOException e) 
+            {
+                log("ConnectedThread: temp sockets not created: " + e);
+            }
+
+            mmInStream = tmpIn;
+            mmOutStream = tmpOut;
+            
+            BufferedReader br = new BufferedReader(new InputStreamReader(tmpIn));
+
+            // Keep listening to the InputStream while connected
+            while (true) 
+            {
+                try {
+                    String line = br.readLine();
+                    log("ConnectedThread: read line: " + line);
+
+                    mHandler.obtainMessage(MESSAGE_READLINE, line).sendToTarget();
+                } 
+                catch (IOException e) 
+                {
+                    log("ConnectedThread: disconnected: " + e);
+                    connectionLost();
+                    break;
+                }
+            }
+            log("ConnectedThread terminating");            
+        }
+
+        public void communicateBytewise() 
+        {
+            log("byte wise communicate starting");
             
             //mmSocket = socket;
             BluetoothSocket socket = mmSocket;

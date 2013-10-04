@@ -57,7 +57,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     private static final int REQUEST_PRESET    = 3;
     private static final int REQUEST_CONNECT_DEVICE = 1;
 
-    private BluetoothConnector mmBTConnector;
+    private BTSerialService mmBTConnector;
     private TextView mLogView;
     private HSVColorWheel mColorWheel;
     private Vibrator mVibrator;
@@ -136,7 +136,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    return;
 	}
 
-	mmBTConnector = new BluetoothConnector(getApplicationContext(), mHandler);
+	mmBTConnector = new BTSerialService(getApplicationContext(), mHandler, false /* bytewise */);
 
 	//Shaker shaker = new Shaker(this, 2*1.25d, 500, this);
 
@@ -512,12 +512,12 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	Log.d(TAG, "onBTStateChanged: " + state + ", " + msg);
 	switch (state)
 	{
-	case BluetoothConnector.STATE_NONE: 		setTitleMessage("none"); break;
-	case BluetoothConnector.STATE_LISTEN:		setTitleMessage("listen"); break;	
-	case BluetoothConnector.STATE_CONNECTING:	setTitleMessage("connecting"); break;
-	case BluetoothConnector.STATE_CONNECTED:	setTitleMessage("connected"); break;
-	case BluetoothConnector.STATE_DISCONNECTED:	setTitleMessage("disconnected"); break;
-	case BluetoothConnector.STATE_TIMEOUT:		setTitleMessage("timeout"); break;
+	case BTSerialService.STATE_NONE: 		setTitleMessage("none"); break;
+	case BTSerialService.STATE_LISTEN:		setTitleMessage("listen"); break;	
+	case BTSerialService.STATE_CONNECTING:	setTitleMessage("connecting"); break;
+	case BTSerialService.STATE_CONNECTED:	setTitleMessage("connected"); break;
+	case BTSerialService.STATE_DISCONNECTED:	setTitleMessage("disconnected"); break;
+	case BTSerialService.STATE_TIMEOUT:		setTitleMessage("timeout"); break;
 	default: setTitleMessage("unknown(" + state + ")");
 	}
     }
@@ -620,12 +620,12 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    Log.d(TAG, "Got message "+ msg);
 	    switch (msg.what) {
 
-	    case BluetoothConnector.MESSAGE_DEBUG_MSG:
+	    case BTSerialService.MESSAGE_DEBUG_MSG:
 		String logLine = (String)msg.obj; Log.d(TAG, logLine);
 		doLog(logLine);
 		break;
 
-	    case BluetoothConnector.MESSAGE_STATE_CHANGE:
+	    case BTSerialService.MESSAGE_STATE_CHANGE:
 		doLog("MESSAGE_STATE_CHANGE: " + msg.arg1);
 
 		enableControls(false);
@@ -656,7 +656,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 		}
 		break;
 
-	    case BluetoothConnector.MESSAGE_READ:                
+	    case BTSerialService.MESSAGE_READ:                
 		Log.d(TAG, "Got MESSAGE_READ "+ msg);
 		byte[] readBuf = (byte[]) msg.obj;
 		//Log.d(TAG, "Got payload "+ format(readBuf, 128));	
@@ -676,9 +676,9 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
 		break;
 
-	    case BluetoothConnector.MESSAGE_DEVICE_NAME:
+	    case BTSerialService.MESSAGE_DEVICE_NAME:
 		// save the connected device's name
-		mConnectedDeviceName = msg.getData().getString(BluetoothConnector.DEVICE_NAME);
+		mConnectedDeviceName = msg.getData().getString(BTSerialService.DEVICE_NAME);
 		Toast.makeText(getApplicationContext(), "Connected to "
 			+ mConnectedDeviceName, Toast.LENGTH_SHORT).show();
 		break;
@@ -688,8 +688,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 		//          	Log.d(TAG, "Got MESSAGE_WRITE "+ msg);
 		//                  break;
 
-	    case BluetoothConnector.MESSAGE_TOAST:
-		Toast.makeText(getApplicationContext(), msg.getData().getString(BluetoothConnector.TOAST), Toast.LENGTH_SHORT).show();
+	    case BTSerialService.MESSAGE_TOAST:
+		Toast.makeText(getApplicationContext(), msg.getData().getString(BTSerialService.TOAST), Toast.LENGTH_SHORT).show();
 		break;
 	    }
 	}

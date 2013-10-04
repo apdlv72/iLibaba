@@ -24,7 +24,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.apdlv.ilibaba.TempActivity"
+            android:name="com.apdlv.ilibaba.frotect.TempActivity"
             android:label="@string/title_activity_temp" >
         </activity>
         <activity
