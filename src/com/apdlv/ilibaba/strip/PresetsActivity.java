@@ -16,19 +16,12 @@
 
 package com.apdlv.ilibaba.strip;
 
-import java.util.Set;
-
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -72,7 +65,7 @@ public class PresetsActivity extends Activity implements OnItemLongClickListener
 	// Set result CANCELED incase the user backs out
 	setResult(Activity.RESULT_CANCELED);
 
-	// Initialize the button to perform device discovery
+	// Initialize the value to perform device discovery
 	Button scanButton = (Button) findViewById(R.id.button_scan);
 	/*
         scanButton.setOnClickListener(new OnClickListener() {

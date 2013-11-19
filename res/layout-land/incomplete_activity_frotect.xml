@@ -14,10 +14,10 @@
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
+            android:layout_marginBottom="5dp"
             android:layout_marginLeft="42dp"
             android:layout_marginRight="20dp"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="5dp"
             android:orientation="horizontal" >
 
             <ImageView
@@ -105,12 +105,12 @@
                             </TableRow>
 
                             <TableRow
-                                android:id="@+id/sensorMiscRow1"
+                                android:id="@+id/sensorLimitsRow1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content" >
 
                                 <TextView
-                                    android:id="@+id/sensorMisc1"
+                                    android:id="@+id/sensorLimits1"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="" />
@@ -122,7 +122,7 @@
                                 android:layout_height="wrap_content" >
 
                                 <TextView
-                                    android:id="@+id/sensorLimits1"
+                                    android:id="@+id/sensorMisc1"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content" />
                             </TableRow>
@@ -141,7 +141,7 @@
                     android:onClick="onStrandClick"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="5dip">
+                    android:layout_marginLeft="0dip">
 
                     <TableRow
                         android:id="@+id/TableRow03"
@@ -173,12 +173,12 @@
                             </TableRow>
 
                             <TableRow
-                                android:id="@+id/sensorMiscRow2"
+                                android:id="@+id/sensorLimitsRow2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content" >
 
                                 <TextView
-                                    android:id="@+id/sensorMisc2"
+                                    android:id="@+id/sensorLimits2"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="" />
@@ -190,7 +190,7 @@
                                 android:layout_height="wrap_content" >
 
                                 <TextView
-                                    android:id="@+id/sensorLimits2"
+                                    android:id="@+id/sensorMisc2"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content" />
                             </TableRow>
@@ -203,14 +203,6 @@
                         </TableLayout>
                     </TableRow>
                 </TableLayout>
-            </TableRow>
-
-            <TableRow
-                android:id="@+id/TableRow06"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="5dp"
-                android:layout_marginTop="20dp" >
 
                 <TableLayout
                     android:id="@+id/sensorTable3"
@@ -248,12 +240,12 @@
                             </TableRow>
 
                             <TableRow
-                                android:id="@+id/sensorMiscRow3"
+                                android:id="@+id/sensorLimitsRow3"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content" >
 
                                 <TextView
-                                    android:id="@+id/sensorMisc3"
+                                    android:id="@+id/sensorLimits3"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="" />
@@ -265,7 +257,7 @@
                                 android:layout_height="wrap_content" >
 
                                 <TextView
-                                    android:id="@+id/sensorLimits3"
+                                    android:id="@+id/sensorMisc3"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content" />
                             </TableRow>
@@ -289,7 +281,7 @@
                         android:id="@+id/sensorTable1"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginLeft="5dip">
+                        android:layout_marginLeft="0dip">
 
                         <ImageView
                             android:id="@+id/sensorIcon4"
@@ -316,12 +308,12 @@
                             </TableRow>
 
                             <TableRow
-                                android:id="@+id/sensorMiscRow4"
+                                android:id="@+id/sensorLimitsRow4"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content" >
 
                                 <TextView
-                                    android:id="@+id/sensorMisc4"
+                                    android:id="@+id/sensorLimits4"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="" />
@@ -333,7 +325,7 @@
                                 android:layout_height="wrap_content" >
 
                                 <TextView
-                                    android:id="@+id/sensorLimits4"
+                                    android:id="@+id/sensorMisc4"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content" />
                             </TableRow>
@@ -349,6 +341,7 @@
 
             </TableRow>
 
+
             <TableRow
                 android:id="@+id/TableRow53"
                 android:layout_width="wrap_content"
@@ -361,8 +354,8 @@
                     android:onClick="onStrandClick"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="10dp"
-                    android:layout_marginRight="10dp" >
+                    android:layout_marginLeft="15dp"
+                    android:layout_marginRight="0dp" >
 
                     <TableRow
                         android:id="@+id/TableRow24"
@@ -396,12 +389,12 @@
                             </TableRow>
 
                             <TableRow
-                                android:id="@+id/sensorLimitsRow5"
+                                android:id="@+id/sensorMiscRow5"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content" >
 
                                 <TextView
-                                    android:id="@+id/sensorLimits5"
+                                    android:id="@+id/sensorMisc5"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content" />
                             </TableRow>
@@ -423,7 +416,6 @@
                         <Button
                             android:id="@+id/frotectButtonInfo"
                             style="?android:attr/buttonStyleSmall"
-                            android:layout_marginLeft="10dip" 
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:background="@android:drawable/ic_menu_help" />
@@ -431,25 +423,15 @@
                         <Button
                             android:id="@+id/frotectButtonUpdate"
                             style="?android:attr/buttonStyleSmall"
-                            android:layout_marginLeft="10dip" 
+                            android:layout_marginLeft="20dip" 
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:background="@android:drawable/ic_menu_rotate" />
 
-                        <Button
-                            android:id="@+id/frotectButtonConfig"
-                            style="?android:attr/buttonStyleSmall"
-                            android:layout_marginLeft="10dip" 
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:background="@android:drawable/ic_menu_preferences" />
-
-                        </TableRow>
+                    </TableRow>
                 </TableLayout>
-            </TableRow>
-        </TableLayout>
-
-        <LinearLayout
+                
+                        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dip" 
@@ -488,6 +470,10 @@
                 android:text="Duty" />
 
         </LinearLayout>
+
+            </TableRow>
+        </TableLayout>
+
 
     </LinearLayout>
 

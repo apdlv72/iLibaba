@@ -6,6 +6,8 @@
     <!--  
     <item android:id="@+id/discoverable" android:icon="@android:drawable/ic_menu_mylocation" android:title="@string/discoverable" />
     -->
-    <item android:id="@+id/menu_garage_test" android:title="Test dialog" />
-    <item android:id="@+id/menu_garage_next" android:title="Water Strip Control" android:icon="@android:drawable/ic_media_ff" />
+	<!--     
+	<item android:id="@+id/menu_garage_test" android:title="Test dialog" />
+ 	-->    
+ 	<item android:id="@+id/menu_garage_next" android:title="Water Strip Control" android:icon="@android:drawable/ic_media_ff" />
 </menu>

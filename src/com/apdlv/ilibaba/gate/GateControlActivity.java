@@ -40,6 +40,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -49,13 +50,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.apdlv.ilibaba.R;
+import com.apdlv.ilibaba.frotect.BTFrotectSerialService;
 import com.apdlv.ilibaba.shake.Shaker.Callback;
 import com.apdlv.ilibaba.strip.StripControlActivity;
 
 /**
  * This is the main Activity that displays the current chat session.
  */
-public class GateControlActivity extends Activity implements Callback {
+public class GateControlActivity extends Activity implements Callback, OnClickListener {
     // Debugging
     private static final String TAG = "GateControlActivity";
     private static final boolean D = true;
@@ -109,13 +111,15 @@ public class GateControlActivity extends Activity implements Callback {
 
         // Set up the custom title
         mTitle = (TextView) findViewById(R.id.title_left_text);
-        if (null!=mTitle) mTitle.setText(R.string.view_name_garage);
-        
+        if (null!=mTitle) mTitle.setText(R.string.view_name_garage);        
         mTitle = (TextView) findViewById(R.id.title_right_text);
 
         (mPinArea = (TextView) findViewById(R.id.pinText)).setCursorVisible(false);        
         (mInfoArea = (TextView) findViewById(R.id.infoArea)).setTextColor(Color.RED);
         mLogView = (TextView) findViewById(R.id.logView);
+        
+        
+        mInfoArea.setOnClickListener(this);
         
         mLogView.setMaxLines(1000);
         mLogView.setMovementMethod(ScrollingMovementMethod.getInstance());
@@ -184,7 +188,7 @@ public class GateControlActivity extends Activity implements Callback {
         // not enabled during onStart(), so we were paused to enable it...
         // onResume() will be called when ACTION_REQUEST_ENABLE activity returns.
         if (mChatService != null) {
-            // Only if the state is STATE_NONE, do we know that we haven't started already
+            // Only if the state is STATE_NONE, do we know that we haven'temp started already
             if (mChatService.getState() == BluetoothSerialService.STATE_NONE) {
               // Start the Bluetooth chat services
               mChatService.start();
@@ -362,7 +366,7 @@ public class GateControlActivity extends Activity implements Callback {
     private void setupChat() {
         Log.d(TAG, "setupChat()");
 
-        // Initialize the send button with a listener that for click events
+        // Initialize the send value with a listener that for click events
         mButtonBS   = (ImageButton) findViewById(R.id.buttonBS);
         mButtonOpen = (ImageButton) findViewById(R.id.buttonOpen);
         
@@ -551,7 +555,8 @@ public class GateControlActivity extends Activity implements Callback {
                 break;
             case MESSAGE_DEVICE_NAME:
                 // save the connected device's name
-                mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
+		mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
+		if (null==mConnectedDeviceName) mConnectedDeviceName = (String)msg.obj;
                 sendToast("Connected to " + mConnectedDeviceName);
                 break;
             case MESSAGE_TOAST:
@@ -797,12 +802,14 @@ public class GateControlActivity extends Activity implements Callback {
 
     
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected(MenuItem item) 
+    {
         switch (item.getItemId()) {
         
-        case R.id.menu_garage_test:
-            showProgress();
-            break;
+        // clik on the info area now to see the demo
+//        case R.id.menu_garage_test:
+//            showProgress();
+//            break;
         
         case R.id.menu_garage_next:
             nextActivity();
@@ -856,6 +863,15 @@ public class GateControlActivity extends Activity implements Callback {
 	if (Calendar.getInstance().getTimeInMillis()-activityStarted>1000)
 	{
 	    nextActivity();
+	}
+    }
+
+
+    public void onClick(View view)
+    {
+	if (mInfoArea==view)
+	{
+	    showProgress();
 	}
     }
 }

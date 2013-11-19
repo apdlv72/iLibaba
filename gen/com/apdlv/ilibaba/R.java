@@ -9,143 +9,305 @@ package com.apdlv.ilibaba;
 
 public final class R {
     public static final class array {
-        public static final int mode_array=0x7f050000;
+        /**  modes for an RGB strip 
+         */
+        public static final int mode_array=0x7f060000;
     }
     public static final class attr {
     }
+    public static final class dimen {
+        /**  Default screen margins, per the Android Design guidelines. 
+
+         Customize dimensions originally defined in res/values/dimens.xml (such as
+         screen margins) for sw720dp devices (e.g. 10" tablets) in landscape here.
+    
+         */
+        public static final int activity_horizontal_margin=0x7f040000;
+        public static final int activity_vertical_margin=0x7f040001;
+    }
     public static final class drawable {
         public static final int app_icon=0x7f020000;
-        public static final int button=0x7f020001;
-        public static final int button_disabled=0x7f020002;
-        public static final int button_enabled=0x7f020003;
-        public static final int button_focused=0x7f020004;
-        public static final int button_pressed=0x7f020005;
-        public static final int ic_launcher=0x7f020006;
-        public static final int logo=0x7f020007;
-        public static final int rounded=0x7f020008;
-        public static final int seek_amplitude=0x7f020009;
-        public static final int seek_bg=0x7f02000a;
-        public static final int seek_bright=0x7f02000b;
-        public static final int seek_fade=0x7f02000c;
-        public static final int seek_random=0x7f02000d;
-        public static final int seek_speed=0x7f02000e;
-        public static final int seek_strength=0x7f02000f;
-        public static final int seek_thumb=0x7f020010;
-        public static final int seek_thumb_inactive=0x7f020011;
-        public static final int slider=0x7f020012;
+        public static final int blue_bulb=0x7f020001;
+        public static final int blue_bulb_48=0x7f020002;
+        public static final int blue_bulb_64=0x7f020003;
+        public static final int blue_dheart_48=0x7f020004;
+        public static final int blue_dheart_64=0x7f020005;
+        public static final int blue_flame_1=0x7f020006;
+        public static final int blue_heart_24=0x7f020007;
+        public static final int blue_heart_32=0x7f020008;
+        public static final int blue_heart_48=0x7f020009;
+        public static final int blue_lheart_48=0x7f02000a;
+        public static final int blue_lheart_64=0x7f02000b;
+        public static final int blue_thermo_48=0x7f02000c;
+        public static final int blue_thermo_64=0x7f02000d;
+        public static final int button=0x7f02000e;
+        public static final int button_disabled=0x7f02000f;
+        public static final int button_enabled=0x7f020010;
+        public static final int button_focused=0x7f020011;
+        public static final int button_pressed=0x7f020012;
+        public static final int frotect_progress=0x7f020013;
+        public static final int gray_bulb_48=0x7f020014;
+        public static final int gray_bulb_64=0x7f020015;
+        public static final int gray_thermo_48=0x7f020016;
+        public static final int gray_thermo_64=0x7f020017;
+        public static final int ic_launcher=0x7f020018;
+        public static final int logo=0x7f020019;
+        public static final int rounded=0x7f02001a;
+        public static final int seek_amplitude=0x7f02001b;
+        public static final int seek_bg=0x7f02001c;
+        public static final int seek_bright=0x7f02001d;
+        public static final int seek_fade=0x7f02001e;
+        public static final int seek_random=0x7f02001f;
+        public static final int seek_speed=0x7f020020;
+        public static final int seek_strength=0x7f020021;
+        public static final int seek_thumb=0x7f020022;
+        public static final int seek_thumb_inactive=0x7f020023;
+        public static final int slider=0x7f020024;
     }
     public static final class id {
-        public static final int Button0=0x7f080011;
-        public static final int Button1=0x7f080004;
-        public static final int Button2=0x7f080005;
-        public static final int Button3=0x7f080006;
-        public static final int Button4=0x7f080008;
-        public static final int Button5=0x7f080009;
-        public static final int Button7=0x7f08000c;
-        public static final int Button8=0x7f08000d;
-        public static final int Button9=0x7f08000e;
-        public static final int TableRow01=0x7f080021;
-        public static final int TableRow1=0x7f080003;
-        public static final int TableRow2=0x7f080007;
-        public static final int TableRow3=0x7f08000b;
-        public static final int TableRow4=0x7f08000f;
-        public static final int button6=0x7f08000a;
-        public static final int buttonBS=0x7f080012;
-        public static final int buttonOpen=0x7f080010;
-        public static final int button_scan=0x7f08002b;
-        public static final int disconnect=0x7f080030;
-        public static final int hSVColorWheel=0x7f08001e;
-        public static final int handle=0x7f080016;
-        public static final int infoArea=0x7f080013;
-        public static final int logView=0x7f080015;
-        public static final int menu_garage_next=0x7f080032;
-        public static final int menu_garage_test=0x7f080031;
-        public static final int menu_water_disconnect=0x7f080035;
-        public static final int menu_water_next=0x7f080038;
-        public static final int menu_water_off=0x7f080037;
-        public static final int menu_water_on=0x7f080036;
-        public static final int menu_water_presets=0x7f080033;
-        public static final int menu_water_reconnect=0x7f080034;
-        public static final int menu_water_select=0x7f080039;
-        public static final int new_devices=0x7f08002a;
-        public static final int paired_devices=0x7f080028;
-        public static final int pinText=0x7f080002;
-        public static final int progressBar=0x7f08002d;
-        public static final int reconnect=0x7f08002e;
-        public static final int scrollView=0x7f080017;
-        public static final int scrollView1=0x7f080001;
-        public static final int seekAmplitude=0x7f08001c;
-        public static final int seekBright=0x7f08001b;
-        public static final int seekFade=0x7f080023;
-        public static final int seekRand=0x7f080020;
-        public static final int seekSpeed=0x7f08001d;
-        public static final int seekStrength=0x7f080022;
-        public static final int select=0x7f08002f;
-        public static final int slidingDrawer=0x7f080014;
-        public static final int slidingDrawer1=0x7f080018;
-        public static final int spinnerMode=0x7f08001a;
-        public static final int tableRow3=0x7f08001f;
-        public static final int textCommand=0x7f080024;
-        public static final int textView1=0x7f08002c;
-        public static final int title_left_text=0x7f080025;
-        public static final int title_new_devices=0x7f080029;
-        public static final int title_paired_devices=0x7f080027;
-        public static final int title_right_text=0x7f080026;
-        public static final int topLayout=0x7f080000;
-        public static final int topLinearLayout=0x7f080019;
+        public static final int Button0=0x7f09004f;
+        public static final int Button1=0x7f090042;
+        public static final int Button2=0x7f090043;
+        public static final int Button3=0x7f090044;
+        public static final int Button4=0x7f090046;
+        public static final int Button5=0x7f090047;
+        public static final int Button7=0x7f09004a;
+        public static final int Button8=0x7f09004b;
+        public static final int Button9=0x7f09004c;
+        public static final int TableRow01=0x7f09001a;
+        public static final int TableRow02=0x7f09000d;
+        public static final int TableRow03=0x7f09000f;
+        public static final int TableRow04=0x7f090005;
+        public static final int TableRow06=0x7f090018;
+        public static final int TableRow07=0x7f090003;
+        public static final int TableRow08=0x7f09001c;
+        public static final int TableRow1=0x7f090041;
+        public static final int TableRow11=0x7f090011;
+        public static final int TableRow12=0x7f09000b;
+        public static final int TableRow13=0x7f090022;
+        public static final int TableRow14=0x7f090020;
+        public static final int TableRow15=0x7f090017;
+        public static final int TableRow16=0x7f090007;
+        public static final int TableRow17=0x7f090015;
+        public static final int TableRow2=0x7f090045;
+        public static final int TableRow21=0x7f090034;
+        public static final int TableRow24=0x7f09002e;
+        public static final int TableRow27=0x7f090030;
+        public static final int TableRow3=0x7f090049;
+        public static final int TableRow4=0x7f09004d;
+        public static final int TableRow53=0x7f09002c;
+        public static final int action_settings=0x7f0900a2;
+        public static final int button6=0x7f090048;
+        public static final int buttonBS=0x7f090050;
+        public static final int buttonCost=0x7f090039;
+        public static final int buttonDuty=0x7f09003a;
+        public static final int buttonInfoGeneral=0x7f09006e;
+        public static final int buttonInfoHelp=0x7f09006f;
+        public static final int buttonInfoMinMax=0x7f090070;
+        public static final int buttonInfoStats=0x7f090071;
+        public static final int buttonOpen=0x7f09004e;
+        public static final int buttonPower=0x7f090037;
+        public static final int buttonStrandFlash=0x7f090091;
+        public static final int buttonTemp=0x7f090038;
+        public static final int buttonThresSave=0x7f090092;
+        public static final int button_scan=0x7f09006b;
+        public static final int decHi=0x7f09008b;
+        public static final int decLo=0x7f090088;
+        public static final int decPower=0x7f09008e;
+        public static final int dialogButtonCost=0x7f090063;
+        public static final int dialogButtonPCycl=0x7f090064;
+        public static final int dialogButtonPower=0x7f090061;
+        public static final int dialogButtonTemp=0x7f090062;
+        public static final int disconnect=0x7f090099;
+        public static final int frotectButtonInfo=0x7f090035;
+        public static final int frotectButtonUpdate=0x7f090036;
+        public static final int frotectHandle=0x7f09003d;
+        public static final int frotectInfoView=0x7f090072;
+        public static final int frotectLogView=0x7f09003c;
+        public static final int frotectPingProgress=0x7f090001;
+        public static final int hSVColorWheel=0x7f09005b;
+        public static final int handle=0x7f090053;
+        public static final int imgHeartBeat=0x7f090000;
+        public static final int incHi=0x7f09008d;
+        public static final int incLo=0x7f09008a;
+        public static final int incPower=0x7f090090;
+        public static final int infoArea=0x7f090051;
+        public static final int linearLayout=0x7f090060;
+        public static final int logView=0x7f090052;
+        public static final int menu_frotect_disconnect=0x7f090095;
+        public static final int menu_frotect_next=0x7f090096;
+        public static final int menu_frotect_reconnect=0x7f090093;
+        public static final int menu_frotect_refresh=0x7f0900a3;
+        public static final int menu_frotect_select=0x7f090094;
+        public static final int menu_garage_next=0x7f09009a;
+        public static final int menu_water_disconnect=0x7f09009e;
+        public static final int menu_water_next=0x7f0900a1;
+        public static final int menu_water_off=0x7f0900a0;
+        public static final int menu_water_on=0x7f09009f;
+        public static final int menu_water_presets=0x7f09009c;
+        public static final int menu_water_reconnect=0x7f09009b;
+        public static final int menu_water_select=0x7f09009d;
+        public static final int new_devices=0x7f09006a;
+        public static final int paired_devices=0x7f090068;
+        public static final int pinText=0x7f090040;
+        public static final int progressBar=0x7f09006d;
+        public static final int reconnect=0x7f090097;
+        public static final int scrollView=0x7f090054;
+        public static final int scrollView1=0x7f09003f;
+        public static final int seekAmplitude=0x7f090059;
+        public static final int seekBright=0x7f090058;
+        public static final int seekFade=0x7f09005e;
+        public static final int seekRand=0x7f09005c;
+        public static final int seekSpeed=0x7f09005a;
+        public static final int seekStrength=0x7f09005d;
+        public static final int select=0x7f090098;
+        public static final int sensorAddr1=0x7f09006c;
+        public static final int sensorAddr2=0x7f090079;
+        public static final int sensorAddr3=0x7f09007d;
+        public static final int sensorAddr4=0x7f090081;
+        public static final int sensorAddr5=0x7f090085;
+        public static final int sensorDown1=0x7f090076;
+        public static final int sensorDown2=0x7f09007a;
+        public static final int sensorDown3=0x7f09007e;
+        public static final int sensorDown4=0x7f090082;
+        public static final int sensorDown5=0x7f090086;
+        public static final int sensorIcon1=0x7f090006;
+        public static final int sensorIcon2=0x7f090010;
+        public static final int sensorIcon3=0x7f09001b;
+        public static final int sensorIcon4=0x7f090024;
+        public static final int sensorIcon5=0x7f09002f;
+        public static final int sensorLimits1=0x7f09000a;
+        public static final int sensorLimits2=0x7f090014;
+        public static final int sensorLimits3=0x7f09001f;
+        public static final int sensorLimits4=0x7f090028;
+        public static final int sensorLimitsRow1=0x7f090009;
+        public static final int sensorLimitsRow2=0x7f090013;
+        public static final int sensorLimitsRow3=0x7f09001e;
+        public static final int sensorLimitsRow4=0x7f090027;
+        public static final int sensorMisc1=0x7f09000c;
+        public static final int sensorMisc2=0x7f090016;
+        public static final int sensorMisc3=0x7f090021;
+        public static final int sensorMisc4=0x7f09002a;
+        public static final int sensorMisc5=0x7f090033;
+        public static final int sensorMiscRow5=0x7f090032;
+        public static final int sensorNo1=0x7f090074;
+        public static final int sensorNo2=0x7f090077;
+        public static final int sensorNo3=0x7f09007b;
+        public static final int sensorNo4=0x7f09007f;
+        public static final int sensorNo5=0x7f090083;
+        public static final int sensorTable1=0x7f090004;
+        public static final int sensorTable2=0x7f09000e;
+        public static final int sensorTable3=0x7f090019;
+        public static final int sensorTable4=0x7f090023;
+        public static final int sensorTable5=0x7f09002d;
+        public static final int sensorUp1=0x7f090075;
+        public static final int sensorUp2=0x7f090078;
+        public static final int sensorUp3=0x7f09007c;
+        public static final int sensorUp4=0x7f090080;
+        public static final int sensorUp5=0x7f090084;
+        public static final int sensorValue1=0x7f090008;
+        public static final int sensorValue2=0x7f090012;
+        public static final int sensorValue3=0x7f09001d;
+        public static final int sensorValue4=0x7f090026;
+        public static final int sensorValue5=0x7f090031;
+        public static final int sensorValueRow4=0x7f090025;
+        public static final int slidingDrawer=0x7f09003b;
+        public static final int slidingDrawer1=0x7f090055;
+        public static final int spinnerMode=0x7f090057;
+        public static final int tableRow3=0x7f090029;
+        public static final int tableRow4=0x7f09002b;
+        public static final int textCommand=0x7f09005f;
+        public static final int textView1=0x7f090073;
+        public static final int textView3=0x7f090087;
+        public static final int textViewPing=0x7f090002;
+        public static final int title_left_text=0x7f090065;
+        public static final int title_new_devices=0x7f090069;
+        public static final int title_paired_devices=0x7f090067;
+        public static final int title_right_text=0x7f090066;
+        public static final int topLayout=0x7f09003e;
+        public static final int topLinearLayout=0x7f090056;
+        public static final int valueHi=0x7f09008c;
+        public static final int valueLo=0x7f090089;
+        public static final int valuePower=0x7f09008f;
     }
     public static final class layout {
-        public static final int activity_gate=0x7f030000;
-        public static final int activity_strip=0x7f030001;
-        public static final int custom_title=0x7f030002;
-        public static final int device_list=0x7f030003;
-        public static final int device_name=0x7f030004;
-        public static final int dialog_gate=0x7f030005;
-        public static final int message=0x7f030006;
-        public static final int preset_list=0x7f030007;
-        public static final int preset_name=0x7f030008;
+        public static final int activity_frotect=0x7f030000;
+        public static final int activity_gate=0x7f030001;
+        public static final int activity_strip=0x7f030002;
+        public static final int activity_temp=0x7f030003;
+        public static final int custom_title=0x7f030004;
+        public static final int device_list=0x7f030005;
+        public static final int device_name=0x7f030006;
+        public static final int dialog_gate=0x7f030007;
+        public static final int dialog_info=0x7f030008;
+        public static final int dialog_sensors=0x7f030009;
+        public static final int dialog_temperature=0x7f03000a;
+        public static final int message=0x7f03000b;
+        public static final int preset_list=0x7f03000c;
+        public static final int preset_name=0x7f03000d;
     }
     public static final class menu {
-        public static final int options_gate=0x7f070000;
-        public static final int options_strip=0x7f070001;
+        public static final int activity_frotect=0x7f080000;
+        public static final int options_gate=0x7f080001;
+        public static final int options_strip=0x7f080002;
+        public static final int temp=0x7f080003;
+        public static final int temp_chart=0x7f080004;
     }
     public static final class string {
-        public static final int app_name=0x7f040000;
-        public static final int bt_not_enabled_leaving=0x7f040006;
-        public static final int button_scan=0x7f040010;
-        public static final int disconnect=0x7f040013;
-        public static final int discoverable=0x7f040012;
-        public static final int hello_world=0x7f040015;
-        public static final int menu_settings=0x7f040016;
-        public static final int none_found=0x7f04000d;
-        public static final int none_paired=0x7f04000c;
-        public static final int not_connected=0x7f040005;
-        public static final int reconnect=0x7f040014;
+        public static final int action_settings=0x7f05001b;
+        public static final int app_name=0x7f050000;
+        public static final int bt_not_enabled_leaving=0x7f050006;
+        public static final int button_scan=0x7f050010;
+        public static final int disconnect=0x7f050013;
+        public static final int discoverable=0x7f050012;
+        public static final int hello_world=0x7f050015;
+        public static final int menu_settings=0x7f050016;
+        public static final int none_found=0x7f05000d;
+        public static final int none_paired=0x7f05000c;
+        public static final int not_connected=0x7f050005;
+        public static final int reconnect=0x7f050014;
         /**  DeviceListActivity 
          */
-        public static final int scanning=0x7f04000a;
+        public static final int scanning=0x7f05000a;
         /**  Options Menu 
          */
-        public static final int select=0x7f040011;
-        public static final int select_device=0x7f04000b;
-        public static final int sendMas=0x7f040004;
+        public static final int select=0x7f050011;
+        public static final int select_device=0x7f05000b;
+        public static final int sendMas=0x7f050004;
         /**  BluetoothChat 
          */
-        public static final int sendMenos=0x7f040003;
-        public static final int title_activity_door_opens=0x7f040017;
-        public static final int title_activity_waterstrip=0x7f040018;
-        public static final int title_connected_to=0x7f040008;
-        public static final int title_connecting=0x7f040007;
-        public static final int title_not_connected=0x7f040009;
-        public static final int title_other_devices=0x7f04000f;
-        public static final int title_paired_devices=0x7f04000e;
-        public static final int view_name_garage=0x7f040001;
-        public static final int view_name_water=0x7f040002;
+        public static final int sendMenos=0x7f050003;
+        public static final int title_activity_door_opens=0x7f050017;
+        /**  modes for an Dream LED strip 
+
+    <string-array name="mode_array">
+        <item>Water1</item>
+        <item>Water2</item>
+        <item>Rainbow1</item>
+        <item>Rainbow2</item>
+        <item>Rainbow3</item>
+        <item>Fading1</item>
+        <item>Fading2</item>
+        <item>Funky</item>
+    </string-array>
+    
+         */
+        public static final int title_activity_frotect=0x7f050019;
+        public static final int title_activity_temp=0x7f05001c;
+        public static final int title_activity_temp_chart=0x7f05001a;
+        public static final int title_activity_waterstrip=0x7f050018;
+        public static final int title_connected_to=0x7f050008;
+        public static final int title_connecting=0x7f050007;
+        public static final int title_not_connected=0x7f050009;
+        public static final int title_other_devices=0x7f05000f;
+        public static final int title_paired_devices=0x7f05000e;
+        public static final int view_name_garage=0x7f050001;
+        public static final int view_name_water=0x7f050002;
     }
     public static final class style {
-        public static final int YourApplicationTheme=0x7f060001;
+        public static final int YourApplicationTheme=0x7f070001;
         /**  >style name="AppTheme" parent="android:Theme.Light" / 
          */
-        public static final int button=0x7f060000;
+        public static final int button=0x7f070000;
     }
 }

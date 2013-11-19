@@ -7,21 +7,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
-import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
+import android.app.Dialog;
 import android.graphics.Color;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.LayoutInflater;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 
 import com.apdlv.ilibaba.R;
+import com.apdlv.ilibaba.frotect.FrotectActivity.FrotectBTDataCompleteListener;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GraphView.GraphViewData;
 import com.jjoe64.graphview.GraphViewSeries;
@@ -29,82 +27,93 @@ import com.jjoe64.graphview.GraphViewSeries.GraphViewSeriesStyle;
 import com.jjoe64.graphview.LineGraphView;
 
 
-public class TempActivity extends Activity
+public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener, OnCheckedChangeListener
 {
-    private static final String TAG = TempActivity.class.getSimpleName();
+    final static String TAG = StatsDialog.class.getSimpleName();
+    
     private HashMap<String, GraphViewData[]> statistics;
     private HashMap<String, GraphViewData[]> minmaxHist;
 
     private GraphView mGraphView;
+    private FrotectActivity frotect;
 
-    @Override
-    protected void onNewIntent(Intent intent)
+    public StatsDialog(FrotectActivity frotect, String style)
     {
-	super.onNewIntent(intent);
-	System.out.println("intent: " + intent);
-    }
+	super(frotect);
+	
+	this.frotect = frotect;
+	this.mStyle = style;
+	LayoutInflater inflater = this.getLayoutInflater();
+	setContentView(inflater.inflate(R.layout.dialog_stats, null));
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
-	super.onCreate(savedInstanceState);
-	setContentView(R.layout.dialog_stats);
-
-	mStyle = getIntent().getAction();      
 	if (FrotectActivity.POWER.equals(mStyle))
 	{
+	    setTitle("Power consumption");
 	    initPower();
 	}
-	if (FrotectActivity.TEMP.equals(mStyle))
+	else if (FrotectActivity.TEMP.equals(mStyle))
 	{
+	    setTitle("Temperature history");
 	    initTemp();
 	}
-	if (FrotectActivity.COST.equals(mStyle))
+	else if (FrotectActivity.COST.equals(mStyle))
 	{
+	    setTitle("Cost");
 	    initCost();
 	}
-	if (FrotectActivity.DUTY.equals(mStyle))
+	else if (FrotectActivity.DUTY.equals(mStyle))
 	{
+	    setTitle("Duty cycle");
 	    initDuty();
 	}
 
-	statisticsBuffer = new StringBuilder(); //Parser.TEST_STATISTICS);
-	minmaxHistBuffer = new StringBuilder(); // Parser.TEST_MINMAXHIST);       
+	for (int n=0; n<checkboxId.length; n++)
+	{
+	    CheckBox cb = (CheckBox) findViewById(checkboxId[n]);
+	    cb.setOnCheckedChangeListener(this);
+	}
 
+    }
+    
+
+    @Override
+    public void show()
+    {
+	super.show();
+
+	statistics = Parser.parseStats(frotect.statsCompleted);
+	minmaxHist = Parser.parseHistories(frotect.minMaxCompleted);
+	
 	refreshData();
     }
 
-
-    @Override
-    protected void onStart()
+    
+    public void onDataComplete(TYPE type, String data)
     {
-	super.onStart();
+	switch (type)
+	{
+	case STATS: 
+	    statistics = Parser.parseStats(data);
+	    refreshData(); 
+	    break;
+	
+	case MINMAX:
+	    minmaxHist  = Parser.parseHistories(data);
+	    refreshData(); 
+	    break;
 
-	Intent intent = new Intent(this, BTFrotectSerialService.class);
-	bindService(intent, mConnection, Context.BIND_AUTO_CREATE);			
-    }
-
-
-    @Override
-    protected void onStop() 
-    {
-	super.onStop();
-	Log.d(TAG, "Unbinding from service");
-	mConnection.unbind(this);
-    };
+	case STARTTIMES:
+	    startTimesBuffer = data;
+	    refreshData(); 
+	    break;
+	    
+	default:
+	}
+    }	
 
 
     private void refreshData()
     {
-	if (null!=statisticsBuffer)
-	{
-	    statistics = Parser.parseStats(statisticsBuffer.toString());
-	}
-	if (null!=minmaxHistBuffer)
-	{
-	    minmaxHist  = Parser.parseHistories(minmaxHistBuffer.toString());
-	}
-
 	if (FrotectActivity.POWER.equals(mStyle))
 	{
 	    refreshPower();
@@ -126,7 +135,7 @@ public class TempActivity extends Activity
     void refreshStartTimes(double min, double max)
     {
 	if (null==startTimesBuffer) return;
-	StringReader sr = new StringReader(startTimesBuffer.toString());
+	StringReader sr = new StringReader(startTimesBuffer);
 	BufferedReader br = new BufferedReader(sr);
 
 	String line = null;
@@ -153,7 +162,7 @@ public class TempActivity extends Activity
     void initDuty()
     {       
 	// graph with dynamically genereated horizontal and vertical labels
-	LineGraphView gv = new LineGraphView(this, "Duty cycle %");
+	LineGraphView gv = new LineGraphView(frotect, "% on");
 
 	gv.setDrawingCacheQuality(GraphView.DRAWING_CACHE_QUALITY_HIGH);
 	gv.getGraphViewStyle().setTextSize(10);
@@ -185,28 +194,55 @@ public class TempActivity extends Activity
 	    if (!k.startsWith("r")) continue;
 
 	    GraphViewData[] values = statistics.get(k);	    
-	    GraphViewSeriesStyle style = grayStyle;
-	    if (k.endsWith("1")) style = style01;
-	    if (k.endsWith("2")) style = style02;
-	    if (k.endsWith("3")) style = style03;
-	    if (k.endsWith("4")) style = style04;
+	    GraphViewSeriesStyle style = getStyle(k);
 
-	    GraphViewSeries series = new GraphViewSeries(k, style, values);
-	    for (GraphViewData v : values)
-	    {
-		System.out.println("refreshDuty: " + v.valueX + "," + v.valueY);
+	    if (isChecked(k))
+	    {	    
+		GraphViewSeries series = new GraphViewSeries(k, style, values);
+//		for (GraphViewData v : values)
+//		{
+//		    System.out.println("refreshDuty: " + v.valueX + "," + v.valueY);
+//		}
+		mGraphView.addSeries(series);
 	    }
 
-	    mGraphView.addSeries(series);
 	}
 
 	refreshStartTimes(0,1.0);
+    }
+    
+    
+    public GraphViewSeriesStyle getStyle(String key)
+    {
+	return getStyle(key, false);
+    }
+    
+    public GraphViewSeriesStyle getStyle(String key, boolean lo)
+    {
+	GraphViewSeriesStyle style = grayStyle;
+	if (lo)
+	{
+	    if (key.endsWith("1")) style = style01Lo;
+	    if (key.endsWith("2")) style = style02Lo;
+	    if (key.endsWith("3")) style = style03Lo;
+	    if (key.endsWith("4")) style = style04Lo;
+	    if (key.endsWith("5")) style = style05Lo;
+	}
+	else
+	{
+	    	if (key.endsWith("1")) style = style01;
+	    	if (key.endsWith("2")) style = style02;
+	    	if (key.endsWith("3")) style = style03;
+	    	if (key.endsWith("4")) style = style04;
+	    	if (key.endsWith("5")) style = style05;	    
+	}
+	return style;
     }
 
     void initPower()
     {       
 	// graph with dynamically genereated horizontal and vertical labels
-	LineGraphView gv = new LineGraphView(this, "Power kWh/day");
+	LineGraphView gv = new LineGraphView(frotect, "kWh/day");
 
 	gv.setDrawingCacheQuality(GraphView.DRAWING_CACHE_QUALITY_HIGH);
 	gv.getGraphViewStyle().setTextSize(10);
@@ -236,14 +272,12 @@ public class TempActivity extends Activity
 	    if (!k.startsWith("P")) continue;
 
 	    GraphViewData[] values = statistics.get(k);	    
-	    GraphViewSeriesStyle style = grayStyle;
-	    if (k.endsWith("1")) style = style01;
-	    if (k.endsWith("2")) style = style02;
-	    if (k.endsWith("3")) style = style03;
-	    if (k.endsWith("4")) style = style04;
-
-	    GraphViewSeries series = new GraphViewSeries(k, style, values);
-	    mGraphView.addSeries(series);
+	    GraphViewSeriesStyle style = getStyle(k);
+	    if (isChecked(k))
+	    {
+		GraphViewSeries series = new GraphViewSeries(k, style, values);
+		mGraphView.addSeries(series);		
+	    }
 	}
 
 	refreshStartTimes(0,100);
@@ -265,7 +299,7 @@ public class TempActivity extends Activity
 	//	loStyle.thickness=10;
 
 	// graph with dynamically genereated horizontal and vertical labels
-	LineGraphView graphView = new LineGraphView(this, "Temperature °C");
+	LineGraphView graphView = new LineGraphView(frotect, "°C");
 
 	graphView.setDrawingCacheQuality(GraphView.DRAWING_CACHE_QUALITY_HIGH);
 	graphView.getGraphViewStyle().setTextSize(10);
@@ -294,22 +328,44 @@ public class TempActivity extends Activity
 	LinearLayout layout = (LinearLayout) findViewById(R.id.linearLayout);
 	layout.addView(mGraphView = graphView);	
     }
+    
+    int checkboxId[] = { R.id.checkBoxSensor1, R.id.checkBoxSensor2, R.id.checkBoxSensor3, R.id.checkBoxSensor4, R.id.checkBoxSensor5 };     
+    
+    private boolean isChecked(String key)
+    {
+	try
+	{
+	    String numStr = key.replaceAll("^[^0-9]*", "");
+	    int num = Integer.parseInt(numStr)-1;
+	    CheckBox cb = (CheckBox) findViewById(checkboxId[num]);	
+	    return null!=cb && cb.isChecked();
+	}
+	catch (Exception e)
+	{
+	    Log.e(TAG, "isChecked: key='" + key + "': " + e);
+	}
+	return false;
+    }
+    
 
     private void refreshTemp()
     {
 	if (null==minmaxHist) return;
 
-	mGraphView.removeAllSeries();	    
-	for (String k : minmaxHist.keySet())
+	mGraphView.removeAllSeries();	   
+	Set<String> keySet = minmaxHist.keySet(); 
+	System.out.println("refreshTemp: keys: " + keySet);
+		
+	for (String key : minmaxHist.keySet())
 	{
-	    GraphViewData[] values = minmaxHist.get(k);
+	    GraphViewData[] values = minmaxHist.get(key);
 
-	    GraphViewSeriesStyle style = grayStyle;
-	    if (k.startsWith("hi")) style = hiStyle;
-	    if (k.startsWith("lo")) style = loStyle;
-
-	    GraphViewSeries series = new GraphViewSeries(k, style, values);
-	    mGraphView.addSeries(series);	    
+	    GraphViewSeriesStyle style = getStyle(key, key.startsWith("lo"));
+	    if (isChecked(key))
+	    {
+		GraphViewSeries series = new GraphViewSeries(key, style, values);
+		mGraphView.addSeries(series);
+	    }
 	}
 	refreshStartTimes(-10,30);
     }
@@ -317,7 +373,7 @@ public class TempActivity extends Activity
     void initCost()
     {       
 	// graph with dynamically genereated horizontal and vertical labels
-	LineGraphView graphView = new LineGraphView(this, "Cost €/day");
+	LineGraphView graphView = new LineGraphView(frotect, "€/day");
 
 	graphView.setDrawingCacheQuality(GraphView.DRAWING_CACHE_QUALITY_HIGH);
 	graphView.getGraphViewStyle().setTextSize(10);
@@ -346,11 +402,6 @@ public class TempActivity extends Activity
 
 	    GraphViewData[] values = statistics.get(k);	    
 	    GraphViewSeriesStyle style = grayStyle;
-	    if (k.endsWith("1")) style = style01;
-	    if (k.endsWith("2")) style = style02;
-	    if (k.endsWith("3")) style = style03;
-	    if (k.endsWith("4")) style = style04;
-
 	    GraphViewSeries series = new GraphViewSeries(k, style, values);
 	    mGraphView.addSeries(series);
 	}
@@ -375,109 +426,31 @@ public class TempActivity extends Activity
     }
 
 
-    private void handleCommand(String line)
-    {
-	if (line.startsWith("SH") || line.startsWith("SD") || line.startsWith("SW"))
-	{
-	    if (null==statisticsBuffer) statisticsBuffer=new StringBuilder();
-	    statisticsBuffer.append(line).append("\n");
-	}
-	else if (line.startsWith("MM"))
-	{
-	    if (null==minmaxHistBuffer) minmaxHistBuffer=new StringBuilder();
-	    minmaxHistBuffer.append(line).append("\n");	    
-	}
-	else if (line.startsWith("T.") || line.startsWith("T:"))
-	{
-	    startTimesBuffer.append(line).append("\n");
-	}
-	else if (line.startsWith("EV: "))
-	{
-	    // received an change event while aiting for end of stats. remember this and request when complete
-	    if (mUpdateOngoing)	mUpdateSuppressed=true; else requestUpdate();
-	}
-	else if (line.startsWith("S:")) // stats complete
-	{
-	    // there was a change event while reading last update. assume its out of sync and request again
-	    if (mUpdateSuppressed) requestUpdate(); else refreshData();	    
-	}
-    }
-
-    private void requestUpdate()
-    {
-	statisticsBuffer = minmaxHistBuffer = null;
-	mConnection.sendLine("\n");
-	mConnection.sendLine("D\n"); // request device to send complete status, lo/hi history etc.
-	mUpdateOngoing = true;
-	mUpdateSuppressed = false;
-    }
-
-    private final Handler mHandler = new Handler() 
-    {
-
-	@Override
-	public void handleMessage(Message msg) 
-	{
-	    switch (msg.what) 
-	    {
-
-	    case BTFrotectSerialService.MESSAGE_HELLO:
-		Toast.makeText(getApplicationContext(), "TempActivity connected to service", Toast.LENGTH_SHORT).show();
-		requestUpdate();
-		break;
-
-	    case BTFrotectSerialService.MESSAGE_READLINE:                
-		String line = (String) msg.obj;
-		Log.d(TAG, "got msg: " + line);
-		handleCommand(line);
-		break;
-
-	    default:
-		Log.d(TAG, "unhandled message: " + msg);
-	    }
-	}
-
-    };
-
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu)
-    {
-	// Inflate the menu; this adds items to the action bar if it is present.
-	getMenuInflater().inflate(R.menu.temp_chart, menu);
-	return true;
-    }
-
-
-    public boolean onOptionsItemSelected(MenuItem item) 
-    {
-	switch (item.getItemId()) 
-	{
-	case R.id.menu_frotect_refresh:
-	    mConnection.sendLine("D\n");
-	    break;
-	}
-
-	return false;
-    }
-
-
-    private BTFrotectSerialServiceConnection mConnection = new BTFrotectSerialServiceConnection(mHandler);
-
-    private StringBuilder startTimesBuffer = new StringBuilder();
-    private StringBuilder minmaxHistBuffer = new StringBuilder();
-    private StringBuilder statisticsBuffer = new StringBuilder();
-    private boolean mUpdateOngoing  = false;
-    private boolean mUpdateSuppressed = false;
+    //private BTFrotectSerialServiceConnection mConnection = new BTFrotectSerialServiceConnection(mHandler);
 
     private GraphViewSeriesStyle whStyle   = new GraphViewSeriesStyle(Color.YELLOW, 5);	
-    private GraphViewSeriesStyle loStyle   = new GraphViewSeriesStyle(Color.BLUE, 5);	
-    private GraphViewSeriesStyle hiStyle   = new GraphViewSeriesStyle(Color.RED, 5);	
     private GraphViewSeriesStyle grayStyle = new GraphViewSeriesStyle(Color.GRAY, 5);	
+
     private GraphViewSeriesStyle style01   = new GraphViewSeriesStyle(Color.RED, 1);	
     private GraphViewSeriesStyle style02   = new GraphViewSeriesStyle(Color.GREEN, 1);	
     private GraphViewSeriesStyle style03   = new GraphViewSeriesStyle(Color.BLUE, 1);	
     private GraphViewSeriesStyle style04   = new GraphViewSeriesStyle(Color.YELLOW, 1);
-    private String mStyle;	
+    private GraphViewSeriesStyle style05   = new GraphViewSeriesStyle(Color.MAGENTA, 1);
+
+    private GraphViewSeriesStyle style01Lo   = new GraphViewSeriesStyle(Color.RED, 2);	
+    private GraphViewSeriesStyle style02Lo   = new GraphViewSeriesStyle(Color.GREEN, 2);	
+    private GraphViewSeriesStyle style03Lo   = new GraphViewSeriesStyle(Color.BLUE, 2);	
+    private GraphViewSeriesStyle style04Lo   = new GraphViewSeriesStyle(Color.YELLOW, 2);
+    private GraphViewSeriesStyle style05Lo   = new GraphViewSeriesStyle(Color.MAGENTA, 2);
+
+    
+    private String mStyle;
+
+    private String startTimesBuffer = null;
+
+    public void onCheckedChanged(CompoundButton arg0, boolean arg1)
+    {
+	this.refreshData();
+    } 
 }
 

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:minWidth="300dip"
+    android:orientation="vertical"
+    android:padding="10dip" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <Button
+            android:id="@+id/buttonInfoGeneral"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="fill_parent" 
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Info" />
+
+        <Button
+            android:id="@+id/buttonInfoHelp"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="fill_parent" 
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Help" />
+        
+        <Button
+            android:id="@+id/buttonInfoMinMax"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="fill_parent" 
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Hist" />
+        
+        <Button
+            android:id="@+id/buttonInfoStats"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="fill_parent" 
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Stats" />
+		
+		<Button
+		    android:id="@+id/buttonSendInfoText"
+		    style="?android:attr/buttonStyleSmall"
+            android:layout_width="fill_parent" 
+            android:layout_weight="1"
+		    android:layout_height="wrap_content"
+		    android:text="Send" />
+		
+        </LinearLayout>
+    
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="match_parent"
+        android:scrollbarStyle="insideOverlay"
+        android:scrollbarAlwaysDrawHorizontalTrack="true"
+        android:fadeScrollbars="false"   
+        android:overScrollMode="always"             
+	    android:layout_weight="1" 
+        >
+
+        <TextView
+            android:id="@+id/frotectInfoView"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:scrollbars="vertical"
+            android:scrollHorizontally="true"
+            android:text="\nselect type of info above" />
+    </ScrollView>
+
+</LinearLayout>

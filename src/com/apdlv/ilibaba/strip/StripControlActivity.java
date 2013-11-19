@@ -57,7 +57,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     private static final int REQUEST_PRESET    = 3;
     private static final int REQUEST_CONNECT_DEVICE = 1;
 
-    private BTSerialService mmBTConnector;
+    private BTStripSerialService mmBTConnector;
     private TextView mLogView;
     private HSVColorWheel mColorWheel;
     private Vibrator mVibrator;
@@ -107,7 +107,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    sb.append(" P=0-2 B=0-FF A=0-FF S=0-FFF F=0-FFF R=0-FF T=0-FFF C=0-FFFFFF ");
 
 	    // supported mode numbers and names
-	    sb.append("M=0=WATER\t1=WATER2\t2=FADE\t3=RAINBOW\t4=CONST\t5=RAINFLOW\t\r\n");
+	    sb.append("M=0=WATER\t1=WATER2\t2=FADE\t3=RAINBOW\t4=CONST\t5=RAINFLOW\temp\r\n");
 	    analyzeHelloLine(sb.toString());
 	}
 
@@ -136,7 +136,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    return;
 	}
 
-	mmBTConnector = new BTSerialService(getApplicationContext(), mHandler, false /* bytewise */);
+	mmBTConnector = new BTStripSerialService(getApplicationContext(), mHandler, false /* bytewise */);
 
 	//Shaker shaker = new Shaker(this, 2*1.25d, 500, this);
 
@@ -512,12 +512,12 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	Log.d(TAG, "onBTStateChanged: " + state + ", " + msg);
 	switch (state)
 	{
-	case BTSerialService.STATE_NONE: 		setTitleMessage("none"); break;
-	case BTSerialService.STATE_LISTEN:		setTitleMessage("listen"); break;	
-	case BTSerialService.STATE_CONNECTING:	setTitleMessage("connecting"); break;
-	case BTSerialService.STATE_CONNECTED:	setTitleMessage("connected"); break;
-	case BTSerialService.STATE_DISCONNECTED:	setTitleMessage("disconnected"); break;
-	case BTSerialService.STATE_TIMEOUT:		setTitleMessage("timeout"); break;
+	case BTStripSerialService.STATE_NONE: 		setTitleMessage("none"); break;
+	case BTStripSerialService.STATE_LISTEN:		setTitleMessage("listen"); break;	
+	case BTStripSerialService.STATE_CONNECTING:	setTitleMessage("connecting"); break;
+	case BTStripSerialService.STATE_CONNECTED:	setTitleMessage("connected"); break;
+	case BTStripSerialService.STATE_DISCONNECTED:	setTitleMessage("disconnected"); break;
+	case BTStripSerialService.STATE_TIMEOUT:		setTitleMessage("timeout"); break;
 	default: setTitleMessage("unknown(" + state + ")");
 	}
     }
@@ -620,12 +620,12 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    Log.d(TAG, "Got message "+ msg);
 	    switch (msg.what) {
 
-	    case BTSerialService.MESSAGE_DEBUG_MSG:
+	    case BTStripSerialService.MESSAGE_DEBUG_MSG:
 		String logLine = (String)msg.obj; Log.d(TAG, logLine);
 		doLog(logLine);
 		break;
 
-	    case BTSerialService.MESSAGE_STATE_CHANGE:
+	    case BTStripSerialService.MESSAGE_STATE_CHANGE:
 		doLog("MESSAGE_STATE_CHANGE: " + msg.arg1);
 
 		enableControls(false);
@@ -656,7 +656,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 		}
 		break;
 
-	    case BTSerialService.MESSAGE_READ:                
+	    case BTStripSerialService.MESSAGE_READ:                
 		Log.d(TAG, "Got MESSAGE_READ "+ msg);
 		byte[] readBuf = (byte[]) msg.obj;
 		//Log.d(TAG, "Got payload "+ format(readBuf, 128));	
@@ -676,9 +676,9 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
 		break;
 
-	    case BTSerialService.MESSAGE_DEVICE_NAME:
+	    case BTStripSerialService.MESSAGE_DEVICE_NAME:
 		// save the connected device's name
-		mConnectedDeviceName = msg.getData().getString(BTSerialService.DEVICE_NAME);
+		mConnectedDeviceName = msg.getData().getString(BTStripSerialService.DEVICE_NAME);
 		Toast.makeText(getApplicationContext(), "Connected to "
 			+ mConnectedDeviceName, Toast.LENGTH_SHORT).show();
 		break;
@@ -688,8 +688,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 		//          	Log.d(TAG, "Got MESSAGE_WRITE "+ msg);
 		//                  break;
 
-	    case BTSerialService.MESSAGE_TOAST:
-		Toast.makeText(getApplicationContext(), msg.getData().getString(BTSerialService.TOAST), Toast.LENGTH_SHORT).show();
+	    case BTStripSerialService.MESSAGE_TOAST:
+		Toast.makeText(getApplicationContext(), msg.getData().getString(BTStripSerialService.TOAST), Toast.LENGTH_SHORT).show();
 		break;
 	    }
 	}

@@ -37,7 +37,7 @@ public class TestPeer
 		if (!done)
 		{
 		    System.out.println("READ:  " + line);
-		    if (line.startsWith("t"))
+		    if (line.startsWith("temp"))
 		    {
 			line = String.format("T%x", (long)(0xFFFFFFFFL*Math.random()));
 		    }

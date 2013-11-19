@@ -193,10 +193,11 @@ public class BluetoothSerialService {
         mConnectedThread.start();
 
         // Send the name of the connected device back to the UI Activity
-        Message msg = mHandler.obtainMessage(GateControlActivity.MESSAGE_DEVICE_NAME);
-        Bundle bundle = new Bundle();
-        bundle.putString(GateControlActivity.DEVICE_NAME, device.getName());
-        msg.setData(bundle);
+        Message msg = mHandler.obtainMessage(GateControlActivity.MESSAGE_DEVICE_NAME, device.getName());
+        // no need for a buncdle, set name as message object
+//        Bundle bundle = new Bundle();
+//        bundle.putString(GateControlActivity.DEVICE_NAME, device.getName());
+//        msg.setData(bundle);
         mHandler.sendMessage(msg);
 
         setState(STATE_CONNECTED);
