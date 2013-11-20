@@ -22,6 +22,8 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.apdlv.ilibaba.R;
+import com.apdlv.ilibaba.bt.SPPService;
+import com.apdlv.ilibaba.bt.SPPConnection;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GraphView.GraphViewData;
 import com.jjoe64.graphview.GraphViewSeries;
@@ -51,19 +53,19 @@ public class TempActivity extends Activity
 	setContentView(R.layout.dialog_stats);
 
 	mStyle = getIntent().getAction();      
-	if (FrotectActivity.POWER.equals(mStyle))
+	if (StatsDialog.POWER.equals(mStyle))
 	{
 	    initPower();
 	}
-	if (FrotectActivity.TEMP.equals(mStyle))
+	if (StatsDialog.TEMP.equals(mStyle))
 	{
 	    initTemp();
 	}
-	if (FrotectActivity.COST.equals(mStyle))
+	if (StatsDialog.COST.equals(mStyle))
 	{
 	    initCost();
 	}
-	if (FrotectActivity.DUTY.equals(mStyle))
+	if (StatsDialog.DUTY.equals(mStyle))
 	{
 	    initDuty();
 	}
@@ -80,7 +82,7 @@ public class TempActivity extends Activity
     {
 	super.onStart();
 
-	Intent intent = new Intent(this, BTFrotectSerialService.class);
+	Intent intent = new Intent(this, SPPService.class);
 	bindService(intent, mConnection, Context.BIND_AUTO_CREATE);			
     }
 
@@ -105,19 +107,19 @@ public class TempActivity extends Activity
 	    minmaxHist  = Parser.parseHistories(minmaxHistBuffer.toString());
 	}
 
-	if (FrotectActivity.POWER.equals(mStyle))
+	if (StatsDialog.POWER.equals(mStyle))
 	{
 	    refreshPower();
 	}
-	if (FrotectActivity.TEMP.equals(mStyle))
+	if (StatsDialog.TEMP.equals(mStyle))
 	{
 	    refreshTemp();
 	}
-	if (FrotectActivity.COST.equals(mStyle))
+	if (StatsDialog.COST.equals(mStyle))
 	{
 	    refreshCost();
 	}
-	if (FrotectActivity.DUTY.equals(mStyle))
+	if (StatsDialog.DUTY.equals(mStyle))
 	{
 	    refreshDuty();
 	}	
@@ -421,12 +423,12 @@ public class TempActivity extends Activity
 	    switch (msg.what) 
 	    {
 
-	    case BTFrotectSerialService.MESSAGE_HELLO:
+	    case SPPService.MESSAGE_HELLO:
 		Toast.makeText(getApplicationContext(), "TempActivity connected to service", Toast.LENGTH_SHORT).show();
 		requestUpdate();
 		break;
 
-	    case BTFrotectSerialService.MESSAGE_READLINE:                
+	    case SPPService.MESSAGE_READLINE:                
 		String line = (String) msg.obj;
 		Log.d(TAG, "got msg: " + line);
 		handleCommand(line);
@@ -462,7 +464,7 @@ public class TempActivity extends Activity
     }
 
 
-    private BTFrotectSerialServiceConnection mConnection = new BTFrotectSerialServiceConnection(mHandler);
+    private SPPConnection mConnection = new SPPConnection(mHandler);
 
     private StringBuilder startTimesBuffer = new StringBuilder();
     private StringBuilder minmaxHistBuffer = new StringBuilder();

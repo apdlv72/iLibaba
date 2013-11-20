@@ -71,7 +71,6 @@
 
                 <TableLayout
                     android:id="@+id/sensorTable1"
-                    android:onClick="onStrandClick"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content">
 
@@ -138,7 +137,6 @@
 
                 <TableLayout
                     android:id="@+id/sensorTable2"
-                    android:onClick="onStrandClick"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="5dip">
@@ -214,7 +212,6 @@
 
                 <TableLayout
                     android:id="@+id/sensorTable3"
-                    android:onClick="onStrandClick"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content">
 
@@ -281,7 +278,6 @@
 
                 <TableLayout
                     android:id="@+id/sensorTable4"
-                    android:onClick="onStrandClick"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content">
 
@@ -358,7 +354,6 @@
 
                 <TableLayout
                     android:id="@+id/sensorTable5"
-                    android:onClick="onStrandClick"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="10dp"

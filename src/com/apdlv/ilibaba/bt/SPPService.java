@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package com.apdlv.ilibaba.frotect;
+package com.apdlv.ilibaba.bt;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -35,10 +35,10 @@ import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 
-public class BTFrotectSerialService  extends Service
+public class SPPService  extends Service
 {
 
-    public BTFrotectSerialService()
+    public SPPService()
     {
 	Log.d(TAG, "instantiated");
     }
@@ -51,17 +51,17 @@ public class BTFrotectSerialService  extends Service
 
     public class BTSerialBinder extends Binder 
     {
-	public BTSerialBinder(BTFrotectSerialService btc)
+	public BTSerialBinder(SPPService btc)
 	{
 	    this.btc = btc;
 	}
 
-	public BTFrotectSerialService getService() 
+	public SPPService getService() 
 	{
 	    return btc;
 	}
 
-	private BTFrotectSerialService btc;
+	private SPPService btc;
     }
 
 
@@ -73,7 +73,7 @@ public class BTFrotectSerialService  extends Service
     }
 
     // Debugging
-    private static final String TAG = BTFrotectSerialService.class.getSimpleName();
+    private static final String TAG = SPPService.class.getSimpleName();
     private static final boolean D = true;
 
     // Name for the SDP record when creating server socket
@@ -97,12 +97,15 @@ public class BTFrotectSerialService  extends Service
 
     // Constants that indicate the current connection state
     public static final int STATE_NONE = 0;       // we're doing nothing
-    public static final int STATE_LISTEN = 1;     // now listening for incoming connections
+    public static final int STATE_FAILED = 1;     // now listening for incoming connections
     public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
     public static final int STATE_CONNECTED = 3;  // now connected to a remote device
     public static final int STATE_DISCONNECTED = 4;  // now connected to a remote device
-    public static final int STATE_TIMEOUT = 5;  // now connected to a remote device
+    public static final int STATE_CONN_TIMEOUT = 5;  // now connected to a remote device
+    public static final int STATE_LOST = 6;     // now listening for incoming connections
 
+
+    
     // Message types sent from the BluetoothChatService Handler
     public static final int MESSAGE_HELLO        = -1;
     public static final int MESSAGE_STATE_CHANGE =  1;
@@ -118,13 +121,14 @@ public class BTFrotectSerialService  extends Service
     {
 	switch (state)
 	{
-	case STATE_NONE: return "NONE";
-	case STATE_LISTEN: return "LISTEN";
-	case STATE_CONNECTING: return "CONNECTING";
-	case STATE_CONNECTED: return "CONNECTED";
+	case STATE_NONE:         return "NONE";
+	case STATE_FAILED:       return "FAILED";
+	case STATE_CONNECTING:   return "CONNECTING";
+	case STATE_CONNECTED:    return "CONNECTED";
 	case STATE_DISCONNECTED: return "DISCONNECTED";
-	case STATE_TIMEOUT: return "TIMEOUT";	
-	default: return "UNKNOWN";
+	case STATE_CONN_TIMEOUT: return "TIMEOUT";	
+	case STATE_LOST:         return "LOST";	
+	default:                 return "UNKNOWN";
 	}
     }
 
@@ -327,8 +331,9 @@ public class BTFrotectSerialService  extends Service
     /**
      * Indicate that the connection attempt failed and notify the UI Activity.
      */
-    private void connectionFailed() {
-	setState(STATE_LISTEN);
+    private void connectionFailed() 
+    {
+	setState(STATE_FAILED);
 
 	// Send a failure message back to the Activity
 	if (null!=mHandler)
@@ -344,7 +349,7 @@ public class BTFrotectSerialService  extends Service
      */
     private void connectionLost() 
     {
-	setState(STATE_LISTEN);
+	setState(STATE_LOST);
 
 	// Send a failure message back to the Activity
 	if (null!=mHandler)
@@ -417,14 +422,14 @@ public class BTFrotectSerialService  extends Service
     private class ConnectThread extends Thread 
     {
 	private BluetoothSocket mmSocket;
-	private final BluetoothDevice mmDevice;
+	//private final BluetoothDevice mmDevice;
 	private boolean connected;
 	private OutputStream mmOutStream;
 	private InputStream mmInStream;
 
 	public ConnectThread(BluetoothDevice device) 
 	{
-	    mmDevice = device;
+	    //mmDevice = device;
 	    BluetoothSocket tmp = null;
 
 	    logDeviceServices(device);
@@ -593,7 +598,7 @@ public class BTFrotectSerialService  extends Service
 		}
 		setState(STATE_DISCONNECTED);
 		// Start the service over to restart listening mode
-		//BTFrotectSerialService.this.start();
+		//SPPService.this.start();
 		return;
 	    }
 
@@ -761,7 +766,7 @@ public class BTFrotectSerialService  extends Service
 	{
 	    if (connected) return false;
 	    cancel();
-	    setState(STATE_TIMEOUT);
+	    setState(STATE_CONN_TIMEOUT);
 	    return true;
 	}
     }

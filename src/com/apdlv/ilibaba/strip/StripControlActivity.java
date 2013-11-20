@@ -644,8 +644,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 		    doLog("STATE_DISCONNECTED");
 		    setTitleMessage("disconnected");
 		    break;
-		case BluetoothSerialService.STATE_TIMEOUT:
-		    doLog("STATE_TIMEOUT");
+		case BluetoothSerialService.STATE_CONN_TIMEOUT:
+		    doLog("STATE_CONN_TIMEOUT");
 		    setTitleMessage("timeout");
 		    break;
 		case BluetoothSerialService.STATE_LISTEN:

@@ -46,22 +46,22 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	LayoutInflater inflater = this.getLayoutInflater();
 	setContentView(inflater.inflate(R.layout.dialog_stats, null));
 
-	if (FrotectActivity.POWER.equals(mStyle))
+	if (StatsDialog.POWER.equals(mStyle))
 	{
 	    setTitle("Power consumption");
 	    initPower();
 	}
-	else if (FrotectActivity.TEMP.equals(mStyle))
+	else if (StatsDialog.TEMP.equals(mStyle))
 	{
 	    setTitle("Temperature history");
 	    initTemp();
 	}
-	else if (FrotectActivity.COST.equals(mStyle))
+	else if (StatsDialog.COST.equals(mStyle))
 	{
 	    setTitle("Cost");
 	    initCost();
 	}
-	else if (FrotectActivity.DUTY.equals(mStyle))
+	else if (StatsDialog.DUTY.equals(mStyle))
 	{
 	    setTitle("Duty cycle");
 	    initDuty();
@@ -81,8 +81,8 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
     {
 	super.show();
 
-	statistics = Parser.parseStats(frotect.statsCompleted);
-	minmaxHist = Parser.parseHistories(frotect.minMaxCompleted);
+	statistics = Parser.parseStats(frotect.statsBuffer.toString());
+	minmaxHist = Parser.parseHistories(frotect.minmaxBuffer.toString());
 	
 	refreshData();
     }
@@ -114,19 +114,19 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 
     private void refreshData()
     {
-	if (FrotectActivity.POWER.equals(mStyle))
+	if (StatsDialog.POWER.equals(mStyle))
 	{
 	    refreshPower();
 	}
-	if (FrotectActivity.TEMP.equals(mStyle))
+	if (StatsDialog.TEMP.equals(mStyle))
 	{
 	    refreshTemp();
 	}
-	if (FrotectActivity.COST.equals(mStyle))
+	if (StatsDialog.COST.equals(mStyle))
 	{
 	    refreshCost();
 	}
-	if (FrotectActivity.DUTY.equals(mStyle))
+	if (StatsDialog.DUTY.equals(mStyle))
 	{
 	    refreshDuty();
 	}	
@@ -426,7 +426,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
     }
 
 
-    //private BTFrotectSerialServiceConnection mConnection = new BTFrotectSerialServiceConnection(mHandler);
+    //private SPPConnection mConnection = new SPPConnection(mHandler);
 
     private GraphViewSeriesStyle whStyle   = new GraphViewSeriesStyle(Color.YELLOW, 5);	
     private GraphViewSeriesStyle grayStyle = new GraphViewSeriesStyle(Color.GRAY, 5);	
@@ -447,6 +447,14 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
     private String mStyle;
 
     private String startTimesBuffer = null;
+
+    public static final String POWER = "power";
+
+    public static final String TEMP = "temp";
+
+    public static final String COST = "cost";
+
+    public static final String DUTY = "duty";
 
     public void onCheckedChanged(CompoundButton arg0, boolean arg1)
     {

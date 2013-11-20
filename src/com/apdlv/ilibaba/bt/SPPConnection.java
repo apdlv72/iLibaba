@@ -1,6 +1,7 @@
-package com.apdlv.ilibaba.frotect;
+package com.apdlv.ilibaba.bt;
 
-import com.apdlv.ilibaba.frotect.BTFrotectSerialService.BTSerialBinder;
+import com.apdlv.ilibaba.bt.SPPService.BTSerialBinder;
+import com.apdlv.ilibaba.frotect.FrotectActivity;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
@@ -11,12 +12,14 @@ import android.os.IBinder;
 import android.util.Log;
 
 
-public class BTFrotectSerialServiceConnection implements ServiceConnection
+public class SPPConnection implements ServiceConnection
 {
     private Handler         mHandler;
-    private BTFrotectSerialService mService = null;
+    private SPPService mService = null;
 
-    public BTFrotectSerialServiceConnection(Handler handler)
+    final static String TAG = SPPConnection.class.getSimpleName();
+    
+    public SPPConnection(Handler handler)
     {
 	super();
 	this.mHandler = handler;
@@ -28,9 +31,9 @@ public class BTFrotectSerialServiceConnection implements ServiceConnection
 	// We've bound to LocalService, cast the IBinder and get LocalService instance
 	BTSerialBinder  btBinder   = (BTSerialBinder) service;
 	mService = btBinder.getService();
-	Log.d(FrotectActivity.TAG, "Got BT frotect serial service " + mService);
+	Log.d(TAG, "Got BT frotect serial service " + mService);
 	setHandler(mHandler);
-	Log.d(FrotectActivity.TAG, "Registered handler with BT service ");
+	Log.d(TAG, "Registered handler with BT service ");
     }
 
 
@@ -81,8 +84,6 @@ public class BTFrotectSerialServiceConnection implements ServiceConnection
 	}	
     }
 
-
-    static final String TAG = BTFrotectSerialServiceConnection.class.getSimpleName();
     
     public void unbind(Context applicationContext)
     {

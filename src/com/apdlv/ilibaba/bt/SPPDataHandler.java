@@ -1,99 +1,126 @@
-package com.apdlv.ilibaba.frotect;
+package com.apdlv.ilibaba.bt;
 
 import java.util.HashSet;
 
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 
-import com.apdlv.ilibaba.gate.BluetoothSerialService;
-
-public class BTDataHandler extends Handler
+public class SPPDataHandler extends Handler
 {
-    public void addDataListener(BTDataListener l)
+    private boolean mConnected;
+    
+    final static String TAG = SPPDataHandler.class.getSimpleName();
+    
+    public void addDataListener(SPPDataListener l)
     {
-        dataListeners.add(l);
+        if (null!=l)
+        {
+            dataListeners.add(l);
+        }
     }
 
-    public void removeDataListener(BTDataListener l)
+    public void removeDataListener(SPPDataListener l)
     {
-        dataListeners.remove(l);
+        if (null!=l)
+        {
+            dataListeners.remove(l);
+        }
     }
 
-    public void addConnectionStatusListener(BTConnectionStatusListener l)
+    public void addStatusListener(SPPStatusListener l)
     {
-	statusListeners.add(l);
+        if (null!=l)
+        {
+            statusListeners.add(l);
+            l.setStatus(mConnected);
+        }
     }
 
-    public void removeConnectionStatusListener(BTConnectionStatusListener l)
+    public void removeStatusListener(SPPStatusListener l)
     {
-	statusListeners.remove(l);
+        if (null!=l)
+        {
+            statusListeners.remove(l);
+        }
     }
 
     @Override
     public void handleMessage(Message msg) 
     {    
         int what = msg.what;
-        //onDebugMessage("Got message " + what + "(" + BTFrotectSerialService.message2String(what) + ")");
+        //onDebugMessage("Got message " + what + "(" + SPPService.message2String(what) + ")");
         switch (what) 
         {
 
-        case BTFrotectSerialService.MESSAGE_HELLO:
+        case SPPService.MESSAGE_HELLO:
         	onServiceConnected();
         	break;
 
-        case BTFrotectSerialService.MESSAGE_DEBUG_MSG:
+        case SPPService.MESSAGE_DEBUG_MSG:
         	onDebugMessage((String) msg.obj);
         	break;
 
-        case BTFrotectSerialService.MESSAGE_STATE_CHANGE:
-            //onDebugMessage("MESSAGE_STATE_CHANGE: " + msg.arg1 + "(" + BTFrotectSerialService.state2String(msg.arg1) + ")");                
+        case SPPService.MESSAGE_STATE_CHANGE:
+            //onDebugMessage("MESSAGE_STATE_CHANGE: " + msg.arg1 + "(" + SPPService.state2String(msg.arg1) + ")");
+            
+            Log.e(TAG, "MESSAGE_STATE_CHANGE: " + SPPService.state2String(msg.arg1));
             
             switch (msg.arg1) 
             {
-            case BluetoothSerialService.STATE_CONNECTING:
+            case SPPService.STATE_CONNECTING:
                 onConnectingDevice();
                 break;
                 
-            case BluetoothSerialService.STATE_CONNECTED:
+            case SPPService.STATE_CONNECTED:
+                mConnected = true;
                 dispatchDeviceConnect(name, addr);
                 break;
                 
-            case BluetoothSerialService.STATE_DISCONNECTED:
+            case SPPService.STATE_DISCONNECTED:
+                mConnected = false;
                 dispatchDeviceDisconnect(name, addr);
                 break;
                 
-            case BluetoothSerialService.STATE_TIMEOUT:
+            case SPPService.STATE_CONN_TIMEOUT:
+                mConnected = false;
                 onTimeout();
                 break;
-            case BluetoothSerialService.STATE_LISTEN:
-            case BluetoothSerialService.STATE_NONE:
+                
+            case SPPService.STATE_FAILED:
+            case SPPService.STATE_LOST:
+        	mConnected = false;
+        	dispatchDeviceDisconnect(name, addr);
+        	break;
+        	
+            case SPPService.STATE_NONE:
                 onIdle();
                 break;
             }
             break;
     	
-        case BTFrotectSerialService.MESSAGE_READLINE:
+        case SPPService.MESSAGE_READLINE:
         	dispatchLine((String) msg.obj);
         	break;
 
-        case BTFrotectSerialService.MESSAGE_READ:                
+        case SPPService.MESSAGE_READ:                
         	onDebugMessage("Got MESSAGE_READ "+ msg);
         	onDataReceived((byte[]) msg.obj, msg.arg1);
         	break;
 
-        case BTFrotectSerialService.MESSAGE_DEVICE_NAME:
+        case SPPService.MESSAGE_DEVICE_NAME:
         	// save the connected device's name
             	this.name = (String)msg.obj;
         	onDeviceName(name);
         	break;
 
-        case BTFrotectSerialService.MESSAGE_DEVICE_ADDR:
+        case SPPService.MESSAGE_DEVICE_ADDR:
         	// save the connected device's addr
         	this.addr = (String)msg.obj;
         	onDeviceAddr(addr);
         	break;
 
-        case BTFrotectSerialService.MESSAGE_TOAST:
+        case SPPService.MESSAGE_TOAST:
         	onToast((String) msg.obj);
         	break;
         }
@@ -103,7 +130,7 @@ public class BTDataHandler extends Handler
     {
         onDeviceConnected();
         
-        for (BTConnectionStatusListener l : statusListeners)
+        for (SPPStatusListener l : statusListeners)
         {
             l.onConnect(name, addr);
         }
@@ -113,7 +140,7 @@ public class BTDataHandler extends Handler
     {
         onDeviceDisconnected();
         
-        for (BTConnectionStatusListener l : statusListeners)
+        for (SPPStatusListener l : statusListeners)
         {
             l.onDisconnect(name, addr);
         }
@@ -125,7 +152,7 @@ public class BTDataHandler extends Handler
         onLineReceived(receivedLine);
         
         // then the listener
-        for (BTDataListener l : dataListeners)
+        for (SPPDataListener l : dataListeners)
         {
             l.onLineReceived(receivedLine);
         }
@@ -146,8 +173,8 @@ public class BTDataHandler extends Handler
     protected void onDebugMessage(String msg) {}
 
     
-    private HashSet<BTDataListener> dataListeners = new HashSet<BTDataListener>();
-    private HashSet<BTConnectionStatusListener> statusListeners = new HashSet<BTConnectionStatusListener>();
+    private HashSet<SPPDataListener> dataListeners = new HashSet<SPPDataListener>();
+    private HashSet<SPPStatusListener> statusListeners = new HashSet<SPPStatusListener>();
     private String name;
     private String addr;
 }

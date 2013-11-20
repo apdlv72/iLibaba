@@ -20,6 +20,19 @@ public class Parser
     {
 	// TODO Auto-generated constructor stub
     }
+    
+    public static HashMap<String, Integer> parseFlashInfo(String c) throws NumberFormatException
+    {
+	    String lStr = c.replaceAll(".*lit=", "");
+	    String nStr = c.replaceAll(",lit.*", "").replaceAll(".*n=", "");
+
+	    HashMap<String, Integer> map = new HashMap<String, Integer>();
+	    map.put("n",   Integer.parseInt(nStr));
+	    map.put("lit", Integer.parseInt(lStr));
+	    return map;
+    }
+
+
 
     static public HashMap<String,Object> parseMeasurement(String line)
     {

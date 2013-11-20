@@ -50,7 +50,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.apdlv.ilibaba.R;
-import com.apdlv.ilibaba.frotect.BTFrotectSerialService;
+import com.apdlv.ilibaba.bt.SPPService;
 import com.apdlv.ilibaba.shake.Shaker.Callback;
 import com.apdlv.ilibaba.strip.StripControlActivity;
 
@@ -517,8 +517,8 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
                     setTitleMsg("disconnected");
                     mInfoArea.setTextColor(Color.RED);
                     break;
-                case BluetoothSerialService.STATE_TIMEOUT:
-                    log("STATE_TIMEOUT");
+                case BluetoothSerialService.STATE_CONN_TIMEOUT:
+                    log("STATE_CONN_TIMEOUT");
                     setTitleMsg("timeout");
                     mInfoArea.setTextColor(Color.RED);
                     break;

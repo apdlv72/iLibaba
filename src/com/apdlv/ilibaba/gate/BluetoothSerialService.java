@@ -70,7 +70,7 @@ public class BluetoothSerialService {
     public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
     public static final int STATE_CONNECTED = 3;  // now connected to a remote device
     public static final int STATE_DISCONNECTED = 4;  // now connected to a remote device
-    public static final int STATE_TIMEOUT = 5;  // now connected to a remote device
+    public static final int STATE_CONN_TIMEOUT = 5;  // now connected to a remote device
 
     /**
      * Constructor. Prepares a new BluetoothChat session.
@@ -573,7 +573,7 @@ public class BluetoothSerialService {
         {
             if (connected) return false;
             cancel();
-            setState(STATE_TIMEOUT);
+            setState(STATE_CONN_TIMEOUT);
             return true;
         }
     }
