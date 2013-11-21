@@ -3,6 +3,8 @@ package com.apdlv.ilibaba.bt;
 
 import java.util.HashSet;
 
+import com.apdlv.ilibaba.bt.SPPDataHandler.Device;
+
 
 import android.app.Dialog;
 import android.content.Context;
@@ -65,12 +67,12 @@ public abstract class SPPStatusAwareDialog extends Dialog implements SPPStatusLi
 	}	
     }
 
-    public void onConnect(String name, String addr)
+    public void onConnect(Device device)
     {
 	setStatus(true);
     }
 
-    public void onDisconnect(String name, String addr)
+    public void onDisconnect(Device device)
     {
 	setStatus(false);
     }

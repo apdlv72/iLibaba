@@ -40,12 +40,12 @@ public class BTStripSerialService
 //    @Override
 //    public IBinder onBind(Intent intent) 
 //    {
-//	return new BTSerialBinder(this);
+//	return new SPPBinder(this);
 //    }
 
-//    public class BTSerialBinder extends Binder 
+//    public class SPPBinder extends Binder 
 //    {
-//	public BTSerialBinder(BTStripSerialService btc)
+//	public SPPBinder(BTStripSerialService btc)
 //        {
 //	    this.btc = btc;
 //        }

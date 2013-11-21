@@ -17,14 +17,14 @@ public class U
         if (null!=tv) tv.setText(text);
     }
 
-    public static void setVisibile(View v, boolean b)
+    public static void setVisible(View v, boolean b)
     {
         if (null!=v) v.setVisibility(b ? View.VISIBLE : View.INVISIBLE);
     }
 
     public static void setInvisibile(View v)
     {
-        setVisibile(v, false);
+        setVisible(v, false);
     }
 
     public static void setEnabled(View v, boolean e)
@@ -32,7 +32,6 @@ public class U
         if (null!=v) v.setEnabled(e);
     }
 
-    @SuppressWarnings("unused")
     public static void setChecked(Checkable c, boolean b)
     {
         if (null!=c) c.setChecked(b);

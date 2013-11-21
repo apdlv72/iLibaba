@@ -418,26 +418,26 @@
                         <Button
                             android:id="@+id/frotectButtonInfo"
                             style="?android:attr/buttonStyleSmall"
-                            android:layout_marginLeft="10dip" 
+                            android:layout_marginLeft="8dip" 
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:background="@android:drawable/ic_menu_help" />
 
                         <Button
-                            android:id="@+id/frotectButtonUpdate"
-                            style="?android:attr/buttonStyleSmall"
-                            android:layout_marginLeft="10dip" 
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:background="@android:drawable/ic_menu_rotate" />
-
-                        <Button
                             android:id="@+id/frotectButtonConfig"
                             style="?android:attr/buttonStyleSmall"
-                            android:layout_marginLeft="10dip" 
+                            android:layout_marginLeft="8dip" 
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:background="@android:drawable/ic_menu_preferences" />
+
+                        <Button
+                            android:id="@+id/frotectButtonUpdate"
+                            style="?android:attr/buttonStyleSmall"
+                            android:layout_marginLeft="8dip" 
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@android:drawable/ic_menu_rotate" />
 
                         </TableRow>
                 </TableLayout>

@@ -6,7 +6,7 @@
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
+ * Unless required by applicable law or agreed timeout in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
@@ -30,6 +30,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -37,6 +38,14 @@ import android.util.Log;
 
 public class SPPService  extends Service
 {
+    public static final String KEY_DEVICE_NAME = "KEY_DEVICE_NAME";
+    public static final String KEY_DEVICE_ADDR = "KEY_DEVICE_ADDR";
+
+    public interface OnBluetoothListener
+    {
+	void onBTStateChanged(int state, String msg);
+	void onBTDataReceived(byte data[], int len);
+    }
 
     public SPPService()
     {
@@ -46,30 +55,14 @@ public class SPPService  extends Service
     @Override
     public IBinder onBind(Intent intent) 
     {
-	return new BTSerialBinder(this);
+	return new SPPBinder(this);
     }
 
-    public class BTSerialBinder extends Binder 
+    public class SPPBinder extends Binder 
     {
-	public BTSerialBinder(SPPService btc)
-	{
-	    this.btc = btc;
-	}
-
-	public SPPService getService() 
-	{
-	    return btc;
-	}
-
-	private SPPService btc;
-    }
-
-
-
-    public interface OnBluetoothListener
-    {
-	void onBTStateChanged(int state, String msg);
-	void onBTDataReceived(byte data[], int len);
+	public SPPBinder(SPPService service) { this.service = service; }
+	public SPPService getService() 	     { return service; }
+	private SPPService service;
     }
 
     // Debugging
@@ -79,56 +72,52 @@ public class SPPService  extends Service
     // Name for the SDP record when creating server socket
     //private static final String NAME = "iLibaba"; //"BluetoothChat";
 
-    // Unique UUID for this application
-    private static final UUID MY_UUID =
-	    // the standard Serial Port Profile UUID
-	    UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
-    // from original example (not sure if that matters)
-    //UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
+    // the standard Serial Port Profile UUID
+    private static final UUID MY_UUID =  UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
 
     // Member fields
     private  BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
 
-    //private final Handler mHandler;
-    //private AcceptThread mSecureAcceptThread;
-    private ConnectThread mConnectThread;
-    //private ConnectedThread mConnectedThread;
-    private int mState = STATE_NONE;
-
     // Constants that indicate the current connection state
-    public static final int STATE_NONE = 0;       // we're doing nothing
-    public static final int STATE_FAILED = 1;     // now listening for incoming connections
-    public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
-    public static final int STATE_CONNECTED = 3;  // now connected to a remote device
-    public static final int STATE_DISCONNECTED = 4;  // now connected to a remote device
-    public static final int STATE_CONN_TIMEOUT = 5;  // now connected to a remote device
-    public static final int STATE_LOST = 6;     // now listening for incoming connections
+    public static final int STATE_NONE           = 0; // we're doing nothing
+    public static final int STATE_CONNECTING     = 1; // now initiating an outgoing connection
+    public static final int STATE_CONNECTED      = 2; // now connected timeout a remote device
+    public static final int STATE_DISCONNECTED   = 3; // now connected timeout a remote device
+    public static final int STATE_CONN_TIMEOUT   = 4; // now connected timeout a remote device
+    public static final int STATE_LOST           = 5; // now listening for incoming connections
+    public static final int STATE_FAILED         = 6; // now listening for incoming connections
 
-
-    
     // Message types sent from the BluetoothChatService Handler
-    public static final int MESSAGE_HELLO        = -1;
-    public static final int MESSAGE_STATE_CHANGE =  1;
-    public static final int MESSAGE_READ         =  2; // sending to handler a message received from the peer device
-    public static final int MESSAGE_WRITE        =  3;
-    public static final int MESSAGE_DEVICE_ADDR  =  4;
-    public static final int MESSAGE_DEVICE_NAME  =  5;
+    public static final int MESSAGE_HELLO        =  1; // sent to handler upon registration 
+    public static final int MESSAGE_STATE_CHANGE =  2; // state changed
+    public static final int MESSAGE_READ         =  3; // sending timeout handler a message received from the peer device
+    public static final int MESSAGE_WRITE        =  4; 
+    public static final int MESSAGE_DEVICE_INFO  =  5;
     public static final int MESSAGE_TOAST        =  6;
     public static final int MESSAGE_READLINE     =  7;
     public static final int MESSAGE_DEBUG_MSG    =  8;
+    public static final int MESSAGE_BYEBYE       =  9;
+
+    //private final Handler mHandler;
+    //private AcceptThread mSecureAcceptThread;
+    private ConnectThread mConnectThread;
+    private int     mState    = STATE_NONE;
+    private Handler mHandler  = null;
+    private boolean mLinewise = true;
+
 
     public static String state2String(int state)
     {
 	switch (state)
 	{
-	case STATE_NONE:         return "NONE";
-	case STATE_FAILED:       return "FAILED";
-	case STATE_CONNECTING:   return "CONNECTING";
-	case STATE_CONNECTED:    return "CONNECTED";
-	case STATE_DISCONNECTED: return "DISCONNECTED";
-	case STATE_CONN_TIMEOUT: return "TIMEOUT";	
-	case STATE_LOST:         return "LOST";	
-	default:                 return "UNKNOWN";
+        	case STATE_NONE:         return "NONE";
+        	case STATE_FAILED:       return "FAILED";
+        	case STATE_CONNECTING:   return "CONNECTING";
+        	case STATE_CONNECTED:    return "CONNECTED";
+        	case STATE_DISCONNECTED: return "DISCONNECTED";
+        	case STATE_CONN_TIMEOUT: return "TIMEOUT";	
+        	case STATE_LOST:         return "LOST";	
+        	default:                 return "UNKNOWN";
 	}
     }
 
@@ -136,21 +125,18 @@ public class SPPService  extends Service
     {
 	switch (state)
 	{
-	case MESSAGE_HELLO:          return "HELLO";
-	case MESSAGE_STATE_CHANGE:   return "STATE_CHANGE";
-	case MESSAGE_READ:           return "READ";
-	case MESSAGE_WRITE:          return "WRITE";
-	case MESSAGE_DEVICE_ADDR:    return "DEVICE_ADDR";
-	case MESSAGE_DEVICE_NAME:    return "DEVICE_NAME";
-	case MESSAGE_TOAST:          return "TOAST";	
-	case MESSAGE_READLINE:       return "READLINE";	
-	case MESSAGE_DEBUG_MSG:      return "DEBUG_MSG";
-	default:                     return "UNKNOWN";
+        	case MESSAGE_HELLO:          return "HELLO";
+        	case MESSAGE_BYEBYE:         return "BYEBYE";
+        	case MESSAGE_STATE_CHANGE:   return "STATE_CHANGE";
+        	case MESSAGE_READ:           return "READ";
+        	case MESSAGE_WRITE:          return "WRITE";
+        	case MESSAGE_DEVICE_INFO:    return "DEVICE_INFO";
+        	case MESSAGE_TOAST:          return "TOAST";	
+        	case MESSAGE_READLINE:       return "READLINE";	
+        	case MESSAGE_DEBUG_MSG:      return "DEBUG_MSG";
+        	default:                     return "UNKNOWN";
 	}
     }
-
-    private Handler mHandler = null;
-    private boolean mLinewise;
 
     @Override
     public void onCreate() 
@@ -164,137 +150,153 @@ public class SPPService  extends Service
     {
 	super.onStart(intent, startId); Log.d(TAG, "onStart");
     };
-
+    
+    @Override
+    public void onDestroy() 
+    {
+	disconnect();
+	super.onDestroy();
+    };
 
     public void setHandler(Handler handler, boolean linewise)
     {
-	if (null==handler)
+	synchronized (this)
 	{
-	    System.err.println(TAG + "ERROR: handler=null in setHandler");
-	}
-	else
-	{
-	    mHandler = handler;
-	    mLinewise = linewise;
-	    mHandler.obtainMessage(MESSAGE_HELLO).sendToTarget();
-	}
-    }
-
-    private synchronized void setState(int state) 
-    {
-	if (D) Log.d(TAG, "setState() " + state2String(mState) + " -> " + state2String(state));
-	mState = state;
-	
-	// Give the new state to the Handler so the UI Activity can update
-	if (null!=mHandler)
-	{
-	    mHandler.obtainMessage(MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
-	}
-    }
-
-    private synchronized void log(String msg)
-    {
-	if (null==mHandler) 
-	{
-	    Log.d(TAG, msg);
-	    return;
-	}
-	mHandler.obtainMessage(MESSAGE_DEBUG_MSG, msg).sendToTarget();
-	//Log.d(TAG, msg);
-    }
-
-    /**
-     * Return the current connection state. */
-    public synchronized int getState() {
-	return mState;
-    }
-
-    /**
-     * Start the chat service. Specifically start AcceptThread to begin a
-     * session in listening (server) mode. Called by the Activity onResume() */
-    public synchronized void start() {
-	if (D) Log.d(TAG, "start");
-
-	// Cancel any thread attempting to make a connection
-	if (mConnectThread != null) 
-	{
-	    mConnectThread.cancel(); 
-	    mConnectThread = null;
-	}
-
-	// Cancel any thread currently running a connection
-	//if (mConnectedThread != null) {mConnectedThread.cancel(); mConnectedThread = null;}
-
-	setState(STATE_NONE);
-    }
-
-
-    public synchronized void disconnect()
-    {
-	Log.d(TAG, "disconnecting");
-	if (mConnectThread != null) 
-	{
-	    mConnectThread.cancel(); 
-	    mConnectThread = null;
-	}	
-	setState(STATE_DISCONNECTED);
-    }
-
-    /**
-     * Start the ConnectThread to initiate a connection to a remote device.
-     * @param device  The BluetoothDevice to connect
-     */
-    public synchronized void connect(BluetoothDevice device) {
-	log("connect to: " + device);
-
-	// Cancel any thread attempting to make a connection
-	if (mState == STATE_CONNECTING) 
-	{
-	    if (mConnectThread != null) 	    
+	    if (null==handler)
 	    {
-		try
-		{
-		    mConnectThread.interrupt();
-		}
-		catch (Exception e)
-		{
-		    Log.e(TAG, "connect: " + e);
-		}
-		mConnectThread.cancel(); 
-		mConnectThread = null;
-		
+		System.err.println(TAG + "ERROR: handler=null in setHandler");
+	    }
+	    else
+	    {
+		mHandler  = handler;
+		mLinewise = linewise;
+		mHandler.obtainMessage(MESSAGE_HELLO).sendToTarget();
 	    }
 	}
-
-	// Cancel any thread currently running a connection
-	//if (mConnectedThread != null) {mConnectedThread.cancel(); mConnectedThread = null;}
-
-	// Start the thread to connect with the given device
-	mConnectThread = new ConnectThread(device);
-	mConnectThread.start();
-
-	//CancelThread cancelThread = new CancelThread(5000);
-	//cancelThread.start();
-
-	if (null!=mHandler)
+    }
+    
+    public void removeHandler(Handler handler)
+    {
+	synchronized (this)
 	{
-	    String name = device.getName();
-	    String addr = device.getAddress();
-	    Message msg;
-
-	    msg = mHandler.obtainMessage(MESSAGE_DEVICE_ADDR, addr);
-	    mHandler.sendMessage(msg);
-
-	    msg = mHandler.obtainMessage(MESSAGE_DEVICE_NAME, name);
-	    mHandler.sendMessage(msg);		
+	    if (mHandler==handler)
+	    {
+		mHandler.obtainMessage(MESSAGE_BYEBYE).sendToTarget();
+		mHandler=null;
+	    }
+	    else
+	    {
+		Log.e(TAG, "removeHandler: stale handler " + handler + ", current: " + mHandler);
+	    }
 	}
-	setState(STATE_CONNECTING);
+    }
+
+    private void setState(int state) 
+    {
+	synchronized (this)
+	{
+	    if (D) Log.d(TAG, "setState() " + state2String(mState) + " -> " + state2String(state));
+	    mState = state;
+
+	    // Give the new state timeout the Handler so the UI Activity can update
+	    if (null!=mHandler)
+	    {
+		mHandler.obtainMessage(MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
+	    }
+	}
+    }
+
+    public int getState() 
+    {
+	synchronized (this)
+	{
+	    return mState;
+	}
+    }
+
+    public void start() 
+    {
+	synchronized(this)
+	{
+	    if (D) Log.d(TAG, "start");
+
+	    // Cancel any thread attempting to make a connection
+	    if (mConnectThread != null) 
+	    {
+		mConnectThread.cancel(); 
+		mConnectThread = null;
+	    }
+
+	    // Cancel any thread currently running a connection
+	    //if (mConnectedThread != null) {mConnectedThread.cancel(); mConnectedThread = null;}
+
+	    setState(STATE_NONE);
+	}
+    }
+
+
+    public void disconnect()
+    {
+	synchronized(this)
+	{
+	    Log.d(TAG, "disconnecting");
+	    if (mConnectThread != null) 
+	    {
+		mConnectThread.cancel(); 
+		mConnectThread = null;
+	    }	
+	    setState(STATE_DISCONNECTED);
+	}
+    }
+
+    public void connect(BluetoothDevice device) 
+    {
+	synchronized (this)
+	{
+	    log("connect(" + device + ")");
+
+	    // Cancel any thread attempting timeout making or maintaining a connection
+	    //if (mState == STATE_CONNECTING) 
+	    {
+		if (mConnectThread != null) 	    
+		{
+		    mConnectThread.cancel(); 
+		    mConnectThread = null;
+		}
+	    }
+
+	    // Cancel any thread currently running a connection
+	    //if (mConnectedThread != null) {mConnectedThread.cancel(); mConnectedThread = null;}
+
+	    // Start the thread timeout connect with the given device
+	    mConnectThread = new ConnectThread(device);
+	    mConnectThread.start();
+
+	    //CancelThread cancelThread = new CancelThread(5000);
+	    //cancelThread.start();
+
+	    if (null!=mHandler)
+	    {
+		String name = device.getName();
+		String addr = device.getAddress();
+		Message msg;
+
+		Bundle bundle = new Bundle();
+		bundle.putString(KEY_DEVICE_ADDR, addr);
+		bundle.putString(KEY_DEVICE_NAME, name);
+		msg = mHandler.obtainMessage(MESSAGE_DEVICE_INFO, bundle);
+		mHandler.sendMessage(msg);
+	    }
+	    
+	    setState(STATE_CONNECTING);
+	}
     }
 
     /**
      * Stop all threads
      */
-    public synchronized void stop() {
+    public synchronized void stop() 
+    {
 	if (D) Log.d(TAG, "stop");
 
 	if (mConnectThread != null) 
@@ -312,35 +314,60 @@ public class SPPService  extends Service
     }
 
     /**
-     * Write to the ConnectedThread in an unsynchronized manner
-     * @param out The bytes to write
-     * @see ConnectedThread#write(byte[])
+     * Write synchronized
      */
-    public void write(byte[] out) {
-	// Create temporary object
-	ConnectThread r;
-	// Synchronize a copy of the ConnectedThread
-	synchronized (this) {
-	    if (mState != STATE_CONNECTED) return;
-	    r = mConnectThread;
-	}
-	// Perform the write unsynchronized
-	r.write(out);
+    public void write(byte[] out) 
+    {
+	synchronized (this)
+	{
+	    if (mState!=STATE_CONNECTED) return;
+	    try
+	    {
+		mConnectThread.write(out);
+	    }
+	    catch (Exception e)
+	    {
+		Log.e(TAG, "write(byte[]): " + e);
+	    }
+	}	
     }
+    
+//	/**
+//	 * Write timeout the ConnectedThread in an unsynchronized manner
+//	 * @param out The bytes timeout write
+//	 * @see ConnectedThread#write(byte[])
+//	 */
+//	public void write(byte[] out) 
+//	{
+//	// Create temporary object
+//	ConnectThread r;
+//
+//	// Synchronize a copy of the ConnectedThread
+//	synchronized (this) 
+//	{
+//	    if (mState != STATE_CONNECTED) return;
+//	    r = mConnectThread;
+//	}
+//	// Perform the write unsynchronized
+//	r.write(out);
+//    	}
 
     /**
      * Indicate that the connection attempt failed and notify the UI Activity.
      */
     private void connectionFailed() 
     {
-	setState(STATE_FAILED);
-
-	// Send a failure message back to the Activity
-	if (null!=mHandler)
+	synchronized (this)
 	{
-	    Message msg = mHandler.obtainMessage(MESSAGE_TOAST, "Unable to connect device");
-	    //Bundle bundle = new Bundle();
-	    mHandler.sendMessage(msg);
+	    setState(STATE_FAILED);
+
+	    // Send a failure message back timeout the Activity
+	    if (null!=mHandler)
+	    {
+		Message msg = mHandler.obtainMessage(MESSAGE_TOAST, "Unable timeout connect device");
+		//Bundle bundle = new Bundle();
+		mHandler.sendMessage(msg);
+	    }
 	}
     }
 
@@ -349,28 +376,32 @@ public class SPPService  extends Service
      */
     private void connectionLost() 
     {
-	setState(STATE_LOST);
-
-	// Send a failure message back to the Activity
-	if (null!=mHandler)
+	synchronized (this)
 	{
-	    Message msg = mHandler.obtainMessage(MESSAGE_TOAST, "Device connection was lost");
-	    mHandler.sendMessage(msg);
+	    setState(STATE_LOST);
+
+	    // Send a failure message back timeout the Activity
+	    if (null!=mHandler)
+	    {
+		Message msg = mHandler.obtainMessage(MESSAGE_TOAST, "Device connection was lost");
+		mHandler.sendMessage(msg);
+	    }
 	}
     }
 
-    @SuppressWarnings("unused")
-    private class CancelThread extends Thread {
-	private long to;
+    /*
+    private class CancelThread extends Thread 
+    {
+	private long timeout;
 
 	public CancelThread(long timeoutMillies)
 	{
-	    this.to = timeoutMillies;
+	    this.timeout = timeoutMillies;
 	}
 
 	public void run() 
 	{
-	    long left = to;
+	    long left = timeout;
 	    while (null!=mConnectThread && !mConnectThread.isConnected() && left>0)
 	    {
 		try { Thread.sleep(left<250 ? left : 250); } catch (InterruptedException e) {}
@@ -387,55 +418,42 @@ public class SPPService  extends Service
 	    }
 	}
     }
+     */
 
-    
-    private class DisconnectThread extends Thread
+    private void log(String msg)
     {
-	private BluetoothSocket mmSocket;
-
-	public DisconnectThread(BluetoothSocket socket)
+	synchronized (this)
 	{
-	    this.mmSocket = socket;
-	}
-	
-	@Override
-	public void run()
-	{
-	    try
-            {
-	        this.mmSocket.close();
-            } 
-	    catch (IOException e)
-            {
-		Log.e("DisconnectThread", "mmSocket.close(): " + e);
-
-            }
+	    if (null==mHandler) 
+	    {
+		Log.d(TAG, msg);
+		return;
+	    }
+	    mHandler.obtainMessage(MESSAGE_DEBUG_MSG, msg).sendToTarget();
 	}
     }
 
-    
-    /**
-     * This thread runs while attempting to make an outgoing connection
-     * with a device. It runs straight through; the connection either
-     * succeeds or fails.
-     */
     private class ConnectThread extends Thread 
     {
-	private BluetoothSocket mmSocket;
-	//private final BluetoothDevice mmDevice;
-	private boolean connected;
-	private OutputStream mmOutStream;
-	private InputStream mmInStream;
+	private final String TAG = ConnectThread.class.getSimpleName();
+
+	private BluetoothSocket mmSocket;	
+	private boolean         connected;
+	private OutputStream    mmOutStream;
+	private InputStream     mmInStream;
+	private boolean         mCancelled;
+
 
 	public ConnectThread(BluetoothDevice device) 
 	{
 	    //mmDevice = device;
-	    BluetoothSocket tmp = null;
-
+	    BluetoothSocket tmp = null;	
 	    logDeviceServices(device);
 
-	    // Try to connect with HC-05 device
-	    if (isHC05(device) || isUncategorized(device))
+	    mCancelled = false;
+
+	    // Try timeout connect with HC-05 device
+	    if (BTMagics.isHC05(device) || BTMagics.isUncategorized(device))
 	    {
 		log("ConnectThread: creating socket via createRfcommSocket");
 		try {
@@ -452,7 +470,7 @@ public class SPPService  extends Service
 		}
 	    }
 
-	    // Try to connect to regular rfcomm device, e.g. a PC
+	    // Try timeout connect timeout regular rfcomm device, e.g. a PC
 	    if (null==tmp)
 	    {
 		// Get a BluetoothSocket for a connection with the given BluetoothDevice
@@ -474,6 +492,19 @@ public class SPPService  extends Service
 	    mmSocket = tmp;
 	}
 
+	private void log(String msg)
+	{
+	    synchronized (this)
+	    {
+		if (null==mHandler) 
+		{
+		    Log.d(TAG, msg);
+		    return;
+		}
+		mHandler.obtainMessage(MESSAGE_DEBUG_MSG, msg).sendToTarget();
+		//Log.d(TAG, msg);
+	    }
+	}
 
 	public void write(byte[] buffer)
 	{
@@ -485,38 +516,17 @@ public class SPPService  extends Service
 		    mmOutStream.flush();
 		}
 
-		// Share the sent message back to the UI Activity
+		// Share the sent message back timeout the UI Activity
 		// Don'temp... why is this useful?
-//		if (null!=mHandler)
-//		{
-//		    mHandler.obtainMessage(MESSAGE_WRITE, -1, -1, buffer).sendToTarget();
-//		}
+		//		if (null!=mHandler)
+		//		{
+		//		    mHandler.obtainMessage(MESSAGE_WRITE, -1, -1, buffer).sendToTarget();
+		//		}
 	    } 
 	    catch (IOException e) 
 	    {
 		Log.e(TAG, "Exception during write", e);
 	    }
-	}
-
-
-	private boolean isPc(BluetoothDevice device)
-	{
-	    BluetoothClass btc = device.getBluetoothClass();
-	    int mdc = btc.getMajorDeviceClass();
-	    return (mdc == BluetoothClass.Device.Major.COMPUTER);
-	}
-
-	private boolean isUncategorized(BluetoothDevice device)
-	{
-	    BluetoothClass btc = device.getBluetoothClass();
-	    int mdc = btc.getMajorDeviceClass();
-	    return (mdc == BluetoothClass.Device.Major.UNCATEGORIZED);
-	}
-
-	private boolean isHC05(BluetoothDevice device)
-	{
-	    String addr = device.getAddress();
-	    return addr.startsWith("20:13:01");
 	}
 
 	protected void logDeviceServices(BluetoothDevice device)
@@ -533,9 +543,9 @@ public class SPPService  extends Service
 
 		    StringBuilder sb = new StringBuilder();
 		    sb.append("Categories: ");
-		    if (isPc(device)) sb.append("PC ");
-		    if (isUncategorized(device)) sb.append("UNCAT ");
-		    if (isUncategorized(device)) sb.append("HC05 ");
+		    if (BTMagics.isPc(device)) sb.append("PC ");
+		    if (BTMagics.isUncategorized(device)) sb.append("UNCAT ");
+		    if (BTMagics.isUncategorized(device)) sb.append("HC05 ");
 		    log(sb.toString());
 
 		    sb = new StringBuilder();        	   
@@ -565,14 +575,15 @@ public class SPPService  extends Service
 	}
 
 
-	public void run() {
+	public void run() 
+	{
 	    log("BEGIN mConnectThread");
 	    setName("ConnectThread");
 
 	    // Always cancel discovery because it will slow down a connection
 	    mAdapter.cancelDiscovery();
 
-	    // Make a connection to the BluetoothSocket
+	    // Make a connection timeout the BluetoothSocket
 	    try {
 		// This is a blocking call and will only return on a
 		// successful connection or an exception
@@ -594,21 +605,21 @@ public class SPPService  extends Service
 		    if (null!=mmSocket) mmSocket.close();
 		} 
 		catch (IOException ioex) {
-		    log("unable to close() socket during connection failure: " + ioex);
+		    log("unable timeout close() socket during connection failure: " + ioex);
 		}
 		setState(STATE_DISCONNECTED);
-		// Start the service over to restart listening mode
+		// Start the service over timeout restart listening mode
 		//SPPService.this.start();
 		return;
 	    }
 
-	    // no need to announce device here. already done in connect()
-//	    if (null!=mHandler)
-//	    {
-//		String name = mmDevice.getName();
-//		Message msg = mHandler.obtainMessage(MESSAGE_DEVICE_NAME, name);
-//		mHandler.sendMessage(msg);
-//	    }
+	    // no need timeout announce device here. already done in connect()
+	    //	    if (null!=mHandler)
+	    //	    {
+	    //		String name = mmDevice.getName();
+	    //		Message msg = mHandler.obtainMessage(MESSAGE_DEVICE_NAME, name);
+	    //		mHandler.sendMessage(msg);
+	    //	    }
 	    setState(STATE_CONNECTED);
 
 	    if (mLinewise)
@@ -639,31 +650,13 @@ public class SPPService  extends Service
 	    mmInStream = tmpIn;
 	    mmOutStream = tmpOut;
 
-	    // do not send anytghing. derived calsses may send their own hellos in the
-	    // onDeviceConnected() method
-/*	    
-	    //String helloCmd = "HELLO\r\n";
-	    String helloCmd = "D\n";
-	    
-	    try 
-	    {
-		mmOutStream.write(helloCmd.getBytes());
-		mmOutStream.write(helloCmd.getBytes());
-		mmOutStream.flush();
-	    }
-	    catch (IOException e) 
-	    {
-	    }
-*/
-
 	    BufferedReader br = new BufferedReader(new InputStreamReader(tmpIn));
 
-	    // Keep listening to the InputStream while connected
-	    while (true) 
+	    // Keep listening timeout the InputStream while connected
+	    while (!mCancelled) 
 	    {
-		try {
-
-
+		try 
+		{
 		    String line = br.readLine();
 		    //log("ConnectedThread: read line: " + line);
 		    if (null!=mHandler)
@@ -695,10 +688,13 @@ public class SPPService  extends Service
 	    OutputStream tmpOut = null;
 
 	    // Get the BluetoothSocket input and output streams
-	    try {
+	    try 
+	    {
 		tmpIn  = socket.getInputStream();
 		tmpOut = socket.getOutputStream();
-	    } catch (IOException e) {
+	    } 
+	    catch (IOException e) 
+	    {
 		log("ConnectedThread: temp sockets not created: " + e);
 	    }
 
@@ -708,10 +704,11 @@ public class SPPService  extends Service
 	    byte[] buffer = new byte[1024];
 	    int bytes;
 
-	    // Keep listening to the InputStream while connected
-	    while (true) 
+	    // Keep listening timeout the InputStream while connected
+	    while (!mCancelled) 
 	    {
-		try {
+		try 
+		{
 		    // Read from the InputStream
 		    bytes = mmInStream.read(buffer);
 		    log("ConnectedThread: read " + bytes + " bytes)");
@@ -720,7 +717,9 @@ public class SPPService  extends Service
 		    {
 			mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
 		    }
-		} catch (IOException e) {
+		} 
+		catch (IOException e) 
+		{
 		    log("ConnectedThread: disconnected: " + e);
 		    connectionLost();
 		    break;
@@ -729,136 +728,85 @@ public class SPPService  extends Service
 	    log("ConnectedThread terminating");
 	}
 
-
-
-	public synchronized void cancel() 
-	{
-	    try 
+	public void cancel() 
+	{	    
+	    synchronized(this) 
 	    {
-		if (null==mmSocket)
+		try  
 		{
-		    Log.e(TAG, "no (more) socket to close");		    
-		}
-		else
+		    mCancelled = true;
+		    this.interrupt();
+		} 
+		catch (Exception e) 
 		{
-		    Log.e(TAG, "closing socket " + mmSocket);
-
-		    DisconnectThread dt = new DisconnectThread(mmSocket);
-		    mmSocket = null;
-		    dt.start();
-
-		    Log.e(TAG, "socket closed (in background)");
+		    Log.e(TAG, "cancel(): ", e);
 		}
-	    } 
-	    catch (Exception e) 
-	    {
-		Log.e(TAG, "close() of connect socket failed", e);
+
+		try
+		{
+		    if (null==mmSocket)
+		    {
+			Log.e(TAG, "no (more) socket timeout close");		    
+		    }
+		    else
+		    {
+			Log.e(TAG, "closing socket " + mmSocket);
+
+			DisconnectThread dt = new DisconnectThread(mmSocket);
+			mmSocket = null;
+			dt.start();
+
+			Log.e(TAG, "socket closed (in background)");
+		    }
+		} 
+		catch (Exception e) 
+		{
+		    Log.e(TAG, "close() of connect socket failed", e);
+		}
+		setState(STATE_DISCONNECTED);
 	    }
-	    setState(STATE_DISCONNECTED);
 	}
 
-	public boolean isConnected()
-	{
-	    return connected;
-	}
-
-	public boolean cancelIfNotConnected() 
-	{
-	    if (connected) return false;
-	    cancel();
-	    setState(STATE_CONN_TIMEOUT);
-	    return true;
-	}
+//	public boolean isConnected()
+//	{
+//	    return connected;
+//	}
+//
+//	public boolean cancelIfNotConnected() 
+//	{
+//	    synchronized (this)
+//	    {
+//		if (connected) return false;
+//		cancel();
+//		setState(STATE_CONN_TIMEOUT);
+//		return true;
+//	    }
+//	}
     }
 
-    public void removeHandler(Handler handler)
+    private class DisconnectThread extends Thread
     {
-	if (mHandler==handler)
+	private final String TAG = DisconnectThread.class.getSimpleName();
+	
+	private BluetoothSocket mmSocket;
+
+	public DisconnectThread(BluetoothSocket socket)
 	{
-	    mHandler=null;
+	    this.mmSocket = socket;
 	}
-	else
+
+	@Override
+	public void run()
 	{
-	    Log.e(TAG, "removeHandler invoked with stale handler " + handler);
+	    try
+	    {
+		this.mmSocket.close();
+	    } 
+	    catch (IOException e)
+	    {
+		Log.e(TAG, "mmSocket.close(): " + e);
+	    }
 	}
     }
-
-    /**
-     * This thread runs during a connection with a remote device.
-     * It handles all incoming and outgoing transmissions.
-     */
-    //    
-    //    private class ConnectedThread extends Thread {
-    //        private final BluetoothSocket mmSocket;
-    //        private final InputStream mmInStream;
-    //        private final OutputStream mmOutStream;
-    //
-    //        public ConnectedThread(BluetoothSocket socket) {
-    //            log("ConnectedThread created");
-    //            mmSocket = socket;
-    //            InputStream tmpIn = null;
-    //            OutputStream tmpOut = null;
-    //
-    //            // Get the BluetoothSocket input and output streams
-    //            try {
-    //                tmpIn  = socket.getInputStream();
-    //                tmpOut = socket.getOutputStream();
-    //            } catch (IOException e) {
-    //                log("ConnectedThread: temp sockets not created: " + e);
-    //            }
-    //
-    //            mmInStream = tmpIn;
-    //            mmOutStream = tmpOut;
-    //        }
-    //
-    //        public void run() {
-    //            log("ConnectedThread starting");
-    //            byte[] buffer = new byte[1024];
-    //            int bytes;
-    //
-    //            // Keep listening to the InputStream while connected
-    //            while (true) {
-    //                try {
-    //                    // Read from the InputStream
-    //                    bytes = mmInStream.read(buffer);
-    //                    log("ConnectedThread: read " + bytes + " bytes)");
-    //
-    //                    // Send the obtained bytes to the UI Activity
-    //                    mHandler.obtainMessage(GateControlActivity.MESSAGE_READ, bytes, -1, buffer)
-    //                            .sendToTarget();
-    //                } catch (IOException e) {
-    //                    log("ConnectedThread: disconnected: " + e);
-    //                    connectionLost();
-    //                    break;
-    //                }
-    //            }
-    //            log("ConnectedThread terminating");
-    //        }
-    //
-    //        /**
-    //         * Write to the connected OutStream.
-    //         * @param buffer  The bytes to write
-    //         */
-    //        public void write(byte[] buffer) {
-    //            try {
-    //                mmOutStream.write(buffer);
-    //
-    //                // Share the sent message back to the UI Activity
-    //                mHandler.obtainMessage(GateControlActivity.MESSAGE_WRITE, -1, -1, buffer)
-    //                        .sendToTarget();
-    //            } catch (IOException e) {
-    //                Log.e(TAG, "Exception during write", e);
-    //            }
-    //        }
-    //        
-    //
-    //        public void cancel() {
-    //            try {
-    //        	log("ConnectedThread:cancel(). C|losing socket");
-    //                mmSocket.close();
-    //            } catch (IOException e) {
-    //                Log.e(TAG, "close() of connect socket failed", e);
-    //            }
-    //        }
-    //    }
+    
 }

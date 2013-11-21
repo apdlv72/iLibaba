@@ -21,6 +21,8 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.text.Layout;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -29,9 +31,11 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
+import android.view.View.OnTouchListener;
 import android.view.Window;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -42,6 +46,7 @@ import android.widget.Toast;
 import com.apdlv.ilibaba.R;
 import com.apdlv.ilibaba.bt.SPPConnection;
 import com.apdlv.ilibaba.bt.SPPDataHandler;
+import com.apdlv.ilibaba.bt.SPPDataHandler.Device;
 import com.apdlv.ilibaba.bt.SPPDataListener;
 import com.apdlv.ilibaba.bt.SPPService;
 import com.apdlv.ilibaba.bt.SPPStatusAwareDialog;
@@ -73,7 +78,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
     private ProgressBar pingProgress = null;
 
 
-    private String mmSelectedAddress = "F0:B4:79:07:AE:EE"; // "BuzBekci1"
+    private String mmSelectedDeviceAddress = "F0:B4:79:07:AE:EE"; // "BuzBekci1"
     //private String mmSelectedName;
 
     int tableIds[] = { R.id.sensorTable1,  R.id.sensorTable2,  R.id.sensorTable3,  R.id.sensorTable4,  R.id.sensorTable5 };
@@ -85,12 +90,22 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
     public boolean   mConnected = false;
 
     private BluetoothAdapter mBluetoothAdapter;
-    private String   mConnectedDeviceName;
+    private Device   mConnectedDevice = null;
     private long startupMillis;
 
     private final FrotectBTDataHandler mHandler = new FrotectBTDataHandler();
 
-    protected SPPConnection mConnection = new SPPConnection(mHandler);
+    protected SPPConnection mConnection = new SPPConnection(mHandler)
+    {
+	@Override
+	public void disconnect() 
+	{
+	    // connection about to terminate, E0 will make uC indicate this via the status LED (flash it 3x)
+	    sendLine("\nE0"); 
+	    sendLine("\n");
+	    super.disconnect();
+	};
+    };
 
     private long lastPingLocal;
     private long lastUpdateLocal;
@@ -165,6 +180,8 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	OnClickHelper.registerViews(this, this, buttonTemp, buttonPower,  buttonCost, buttonDuty);
 	OnClickHelper.registerViews(this, this, buttonInfo, buttonUpdate, buttonConfig);
+	
+	OnClickHelper.registerViews(this, this, tableIds);
 	OnClickHelper.registerViewsLong(this, this, tableIds);
 	
 	for (int i=0; i<5; i++)
@@ -267,12 +284,10 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	switch (item.getItemId()) 
 	{
 	case R.id.menu_frotect_reconnect:
-	    if (null!=mmSelectedAddress)
-	    {
-		if (null==mmSelectedAddress || mmSelectedAddress.length()<1) return false;
-		BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(mmSelectedAddress);
-		mConnection.connect(device); // F0:B4:79:07:AE:EE
-	    }
+	    if (U.isEmpty(mmSelectedDeviceAddress)) return false;
+
+	    BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(mmSelectedDeviceAddress);
+	    mConnection.connect(device); // F0:B4:79:07:AE:EE
 	    break;
 	case R.id.menu_frotect_next:
 	    nextActivity();
@@ -318,7 +333,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		
 		// Get the BLuetoothDevice object
 		BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-		mmSelectedAddress = address;
+		mmSelectedDeviceAddress = address;
 		//savePeerInfo();
 
 		// Attempt to connect to the device
@@ -330,37 +345,38 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
     }
 
     public void onClick(View view)
-    {
+    {  
 	onClick(view.getId());
     }
 
     public boolean onLongClick(View view)
     {
 	int n = findClickedSensor(view.getId());	
-	if (n<0) return false;
+	if (n<0) return false; // click was not consumed
+
+	if (!strandsBuffer.isComplete()) //if (!mConnected)
+	{
+	    mHandler.onToast("No sensor info.");
+	    return true; // click was consumed
+	}
 
 	// not a strand but the extra unbound sensor -> open sensor dialog if connected
 	if (n>=4)
 	{
-	    if (!mConnected)
-	    {
-		mHandler.onToast("No connection!");
-		return true;
-	    }
-
 	    SensorDialog dialog = new SensorDialog(this);
 	    mHandler.addStatusListener(dialog);
 	    mHandler.addDataCompleteListener(dialog);
 	    dialog.setOnDismissListener(this);
 	    dialog.show();
-	    return true;
 	}
-
-	int strand = n+1;
-	StrandDialog dialog = new StrandDialog(this, strand);
-	mHandler.addStatusListener(dialog);
-	dialog.setOnDismissListener(this);
-	dialog.show();
+	else
+	{
+	    int strand = n+1;
+	    StrandDialog dialog = new StrandDialog(this, strand);
+	    mHandler.addStatusListener(dialog);
+	    dialog.setOnDismissListener(this);
+	    dialog.show();
+	}
 	return false;
     }
 
@@ -425,16 +441,17 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
     private void updateControls()
     {
-	boolean connected  = mConnected;
+	boolean connected = mConnected;
 
 	setMainTitle("Frotect");
 
 	U.setText(tvLastPing, connected ? "connected" : "not connected");
 
 	pingProgress.setProgress(0);
-	U.setEnabled(pingProgress,  connected);
-	U.setEnabled(buttonUpdate,  connected);
-	U.setVisibile(imgHeartBeat, connected);	
+	U.setEnabled(pingProgress, connected);
+
+	U.setVisible(imgHeartBeat, connected);
+	U.setVisible(buttonUpdate, connected);
 
 	checkDataAvailability();
 
@@ -446,17 +463,18 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
     private void checkDataAvailability()
     {
-	boolean haveStats  = statsBuffer.isComplete(); //U.notEmpty(statsCompleted);
-	boolean haveMinMax = minmaxBuffer.isComplete(); //U.notEmpty(minMaxCompleted);
-	boolean haveInfo   = infoBuffer.isComplete(); //U.notEmpty(infoCompleted);
-	boolean haveHelp   = helpBuffer.isComplete(); // U.notEmpty(helpCompleted);
+	boolean haveStats  = statsBuffer.isComplete(); 
+	boolean haveMinMax = minmaxBuffer.isComplete(); 
+	boolean haveInfo   = infoBuffer.isComplete(); 
+	boolean haveHelp   = helpBuffer.isComplete(); 
 
-	U.setEnabled(buttonInfo,   haveStats || haveMinMax || haveHelp || haveInfo);
+	U.setVisible(buttonInfo,   haveStats || haveMinMax || haveHelp || haveInfo);
+	U.setVisible(buttonConfig, haveInfo); // have info? => have values for cost etc.
+	
 	U.setEnabled(buttonCost,   haveStats);
 	U.setEnabled(buttonDuty,   haveStats);
 	U.setEnabled(buttonPower,  haveStats);
-	U.setEnabled(buttonTemp,   haveMinMax);	
-	U.setEnabled(buttonConfig, haveInfo); // have info -> have valueas for cost etc.
+	U.setEnabled(buttonTemp,   haveMinMax);		
     }
 
     private void nextActivity()
@@ -550,7 +568,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		{
 		    mHandler.onToast("No connection!");
 		}
-		else if (sensors[n].bound)
+		else if (n<4) //(sensors[n].bound)
 		{
 		    mConnection.sendLine("I" + (n+1)); // send "identify" command
 		}		    		    
@@ -625,17 +643,9 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	}
 
 	@Override
-	protected void onDeviceName(String deviceName)
+	protected void onDeviceInfo(Device device)
 	{
-	    mConnectedDeviceName = deviceName;
-	    //Toast.makeText(getApplicationContext(), "Connected to " + deviceName, Toast.LENGTH_SHORT).show();
-	}
-
-	@Override
-	protected void onDeviceAddr(String deviceAddr)
-	{
-	    mmSelectedAddress = deviceAddr;
-	    //Toast.makeText(getApplicationContext(), "Connected to " + deviceName, Toast.LENGTH_SHORT).show();
+	    mConnectedDevice = device;
 	}
 
 	@Override
@@ -648,19 +658,16 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	protected void onTimeout() { setTitleMsg("timeout"); }
 
 	@Override
-	protected void onConnectingDevice() { setTitleMsg("connecting to " + mConnectedDeviceName); }
+	protected void onConnectingDevice() { setTitleMsg("connecting to " + mConnectedDevice.getName()); }
 
 	@Override
 	protected void onDeviceConnected() 
 	{ 
-	    setTitleMsg("connected to " + mConnectedDeviceName);
-	    mConnection.sendLine("\nS\n"); // dump sensor info 
-	    mConnection.sendLine("\nD\n"); // dump all info including strands, min/max and stats
-	    mConnection.sendLine("\nH\n"); // request help commands accepted 
-
-	    mConnection.sendLine("\nS\n"); // send twice to make sure we receive it 
-	    mConnection.sendLine("\nD\n"); 
-	    mConnection.sendLine("\nH\n");
+	    setTitleMsg("connected to " + mConnectedDevice.getName());
+	    mConnection.sendLine("\nE1\n"); // connection established
+	    mConnection.sendLine("\nS\n");  // dump sensor info 
+	    mConnection.sendLine("\nD\n");  // dump all info including strands, min/max and stats
+	    mConnection.sendLine("\nH\n");  // request help commands accepted 
 
 	    FrotectActivity.this.mConnected = true;	    
 	    updateControls();
@@ -692,7 +699,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	private void handleCommand(String c)
 	{
-	    doLog("LINE: " + c);
+	    //doLog("LINE: " + c);
 	    try
 	    {
 		if (c.startsWith("P.")) // ping
@@ -811,11 +818,11 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		}
 		else if (hasPrefix(c, "I")) // info, ":" means complete -> update
 		{		
-		    infoBuffer.append(c);	    
+		    infoBuffer.append(c.replaceAll("^I.", ""));	    
 		}
 		else if (c.startsWith("I!"))
 		{
-		    finalizeInfo(c);		    
+		    finalizeInfo();		    
 		    checkDataAvailability();
 		} 
 		else if (hasPrefix(c, "I")) // uptime logs
@@ -880,14 +887,13 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		    doLog("onEvent: " + x);
 		}		
 	    }
-
 	}
 
-	private void finalizeInfo(String c)
+	private void finalizeInfo()
 	{
 	    synchronized(this)
 	    {
-		String info = infoBuffer.finish(c);	    
+		String info = infoBuffer.finish();	    
 
 		Map<String, String> map = Parser.parseInfo(info);
 		String sV = map.get("Frotect");
@@ -1121,7 +1127,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	}
     }
 
-    class NumberPicker implements OnClickListener
+    class NumberPicker implements OnClickListener, OnTouchListener
     {
 	private View dec;
 	private View inc;
@@ -1129,39 +1135,99 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	private double min;
 	private double max;
 	private double step;
+	private HoldThread holdThread;
+	private Handler handler;
 
 	public NumberPicker(Dialog dialog, int decID, int valueID, int incID, double start, double min, double max)
 	{
 	    this(dialog, decID, valueID, incID, start, min, max, 0.5f);
 	}
-
-	public NumberPicker(Dialog dialog, int decID, int valueID, int incID, double start, double min, double max, double step)
+	
+	private void setListener(View v)
 	{
-	    this.dec   = dialog.findViewById(decID);
-	    this.inc   = dialog.findViewById(incID);
-	    this.value = (TextView) dialog.findViewById(valueID);
-
-	    this.dec.setOnClickListener(this);
-	    this.inc.setOnClickListener(this);
-	    this.value.setText(String.format(Locale.ENGLISH, "%-2.1f", start));
-	    this.min = min;
-	    this.max = max;
-	    this.step = step;
+	    if (null!=v) 
+	    {
+		//v.setOnClickListener(this);
+		v.setOnTouchListener(this);
+	    }
 	}
 
-	public void onClick(View b)
+	public NumberPicker(Dialog dialog, final int decID, int valueID, final int incID, double start, double minVal, double maxVal, double stepVal)
+	{
+	    setListener(dec = dialog.findViewById(decID));
+	    setListener(inc = dialog.findViewById(incID));
+	    value = (TextView) dialog.findViewById(valueID);
+
+	    min  = minVal;
+	    max  = maxVal;
+	    step = stepVal;
+	    value.setText(String.format(Locale.ENGLISH, "%-2.1f", start));
+	    
+	    this.handler = new Handler()
+	    {
+		public void dispatchMessage(Message msg)
+		{
+		    int id = msg.arg1;
+		    int multiply =  msg.arg2;
+		    if (incID==id)
+		    {
+			incValue(multiply*step);
+		    }
+		    else if (decID==id)
+		    {
+			decValue(multiply*step);
+		    }
+		}
+	    };
+
+	    holdThread = new HoldThread(handler);
+	    holdThread.start();	    
+	}
+	
+	@Override
+	protected void finalize() throws Throwable
+	{
+	    stop();
+	    super.finalize();
+	}
+		
+	public void stop()
+	{
+	    holdThread.cancel();
+	    holdThread.stop();
+	    holdThread = null;
+	}
+
+	public void onClick(View view)
+	{
+	    onClick(view.getId());
+	}	
+
+	public void onClick(int id)
+	{
+	    if (id==dec.getId())
+	    {
+		decValue(step);
+	    }
+	    else if (id==inc.getId())
+	    {
+		incValue(step);
+	    }
+	}
+	
+	private void incValue(double amount)
 	{
 	    double d = getValue();
-	    if (b==dec)
-	    {
-		d = Math.max(min,d-step);
-	    }
-	    if (b==inc)
-	    {
-		d = Math.min(max,d+step);
-	    }
+	    d = Math.min(max, d+amount);
 	    value.setText(String.format(Locale.ENGLISH, "%-2.1f", d));
-	}	
+	}
+
+	private void decValue(double amount)
+	{
+	    double d = getValue();
+	    d = Math.max(min, d-amount);
+	    value.setText(String.format(Locale.ENGLISH, "%-2.1f", d));
+	}
 
 	public double getValue()
 	{
@@ -1176,6 +1242,73 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    dec.setEnabled(e);
 	    inc.setEnabled(e);
 	}
+	
+	final int WHAT_VIEW = 1; 
+		
+	private class HoldThread extends Thread
+	{
+	    private volatile int     viewId    = -1;
+	    private volatile boolean cancelled = false;
+	    private Handler handler;
+
+	    public HoldThread(Handler handler)
+	    {
+		this.viewId = -1;
+		this.handler = handler;
+	    }
+	    
+	    @Override
+	    public void run()
+	    {
+		while (!cancelled)
+		{
+		    while (viewId<0) doSleep(10);
+		    int multiply = 2;
+		    while (viewId>-1)
+		    {	
+			handler.obtainMessage(WHAT_VIEW, viewId, multiply/2).sendToTarget();
+			doSleep(250);
+			multiply++;
+		    }
+		}
+	    }
+	    
+	    public void cancel()
+	    {
+		cancelled = true;
+		interrupt();
+	    }
+	    
+	    private void doSleep(long ms)	    
+	    {
+		try { Thread.sleep(ms); } catch (InterruptedException e) {}
+	    }
+
+	    public void setView(int id)
+            {
+		this.viewId = id;
+            }
+	}
+	
+
+	public boolean onTouch(View view, MotionEvent ev)
+        {
+	    int  action = ev.getAction();
+	    System.out.println("onTouch: action=" + action);
+
+	    switch (action)
+	    {
+	    case MotionEvent.ACTION_DOWN:
+		System.out.println("Setting viewId in holdThread");
+		holdThread.setView(view.getId());
+		break;
+	    case MotionEvent.ACTION_UP:
+		System.out.println("Unsetting viewId in holdThread");
+		holdThread.setView(-1);
+		break;		
+	    }	    
+	    return true;
+        }
     }
 
     class SensorDialog extends SPPStatusAwareDialog implements FrotectBTDataCompleteListener
@@ -1253,7 +1386,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    registerViews(false, R.id.frotectRescan);
 
 	    // make sure the views show the appropriate state
-	    if (mConnected) onConnect("", ""); else onDisconnect("", "");	    
+	    setStatus(mConnected);
 	}
 
 	@Override
@@ -1333,7 +1466,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 		    AddrInfo info = infos[num-1];
 		    info.addr.setText(addr);
-		    U.setVisibile(info.bound, null!=bound && bound);
+		    U.setVisible(info.bound, null!=bound && bound);
 
 		    info.setFound(num-1, avail);
 		}
@@ -1410,24 +1543,36 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		currPower = info.power;
 	    }
 
+	    U.setText(strandAddress, info.addr);
+
+	    // register views to be disabled when there is no connection
+	    registerViews(false, R.id.buttonThresSave, R.id.buttonStrandFlash, R.id.buttonStrandBind, R.id.buttonStrandUnbind);
+	    
+	    // same as above, however to not capture onClick events to make sure the NumberPickers will receive them
+	    registerViews(false, false, R.id.decLo,  R.id.incLo, R.id.decHi, R.id.incHi, R.id.decPower, R.id.incPower);     
+	    setStatus(mConnected);	    
+
 	    lo  = new NumberPicker(this, R.id.decLo,    R.id.valueLo,    R.id.incLo,    currLo, -30, 30); 
 	    hi  = new NumberPicker(this, R.id.decHi,    R.id.valueHi,    R.id.incHi,    currHi, -30, 30); 
 	    pwr = new NumberPicker(this, R.id.decPower, R.id.valuePower, R.id.incPower, currPower, 0, 200); 
 	    bound = info.bound;
 
-	    U.setText(strandAddress, info.addr);
-
-	    // don't register. this will steal the on click handlers from NumberPicker
-	    //registerViews(false, R.id.decLo, R.id.decHi, R.id.decPower);
-	    //registerViews(false, R.id.incLo, R.id.incHi, R.id.incPower);
-	    registerViews(false, R.id.buttonThresSave, R.id.buttonStrandFlash, R.id.buttonStrandBind, R.id.buttonStrandUnbind);	    
-
-	    if (mConnected) onConnect("",""); else onDisconnect("", "");	    
+	    U.setInvisibile(findViewById(bound ? R.id.layoutStrandBind : R.id.layoutStrandUnbind));
 	}
 
-	public void onConnect(String name, String addr)
+	@Override
+	protected void onStop() 
 	{
-	    super.onConnect(name, addr);
+	    lo.stop();
+	    hi.stop();
+	    pwr.stop();
+	    super.onStop();
+	};
+	
+	@Override
+	public void onConnect(Device device)
+	{
+	    super.onConnect(device);
 	    U.setInvisibile(findViewById(bound ? R.id.layoutStrandBind : R.id.layoutStrandUnbind));
 	}
 
@@ -1491,18 +1636,21 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    // register these to be hidden when unconnected:
 	    registerViews(R.id.saveCost, R.id.saveNumStrands, R.id.saveNumSensors);
 	    
-	    // only disable however this view when unconnected:
+	    // only disable however this viewId when unconnected:
 	    registerViews(false, R.id.frotectReboot);
 
 	    frotect.mHandler.addStatusListener(this);
 	}
-
-	@Override
-	public void onDisconnect(String name, String addr) 
-	{
-	    super.onDisconnect(name, addr);
-	};
 	
+	@Override
+	protected void onStop()
+	{
+	    cost.stop();
+	    strands.stop();
+	    sensors.stop();
+	    super.onStop();
+	}
+
 	public void onClick(int id)
 	{
 	    switch (id)

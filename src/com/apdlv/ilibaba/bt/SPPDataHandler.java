@@ -2,6 +2,7 @@ package com.apdlv.ilibaba.bt;
 
 import java.util.HashSet;
 
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -9,6 +10,8 @@ import android.util.Log;
 public class SPPDataHandler extends Handler
 {
     private boolean mConnected;
+
+    private Device device;
     
     final static String TAG = SPPDataHandler.class.getSimpleName();
     
@@ -74,12 +77,12 @@ public class SPPDataHandler extends Handler
                 
             case SPPService.STATE_CONNECTED:
                 mConnected = true;
-                dispatchDeviceConnect(name, addr);
+                dispatchDeviceConnect(device);
                 break;
                 
             case SPPService.STATE_DISCONNECTED:
                 mConnected = false;
-                dispatchDeviceDisconnect(name, addr);
+                dispatchDeviceDisconnect(device);
                 break;
                 
             case SPPService.STATE_CONN_TIMEOUT:
@@ -90,7 +93,7 @@ public class SPPDataHandler extends Handler
             case SPPService.STATE_FAILED:
             case SPPService.STATE_LOST:
         	mConnected = false;
-        	dispatchDeviceDisconnect(name, addr);
+        	dispatchDeviceDisconnect(device);
         	break;
         	
             case SPPService.STATE_NONE:
@@ -108,16 +111,10 @@ public class SPPDataHandler extends Handler
         	onDataReceived((byte[]) msg.obj, msg.arg1);
         	break;
 
-        case SPPService.MESSAGE_DEVICE_NAME:
-        	// save the connected device's name
-            	this.name = (String)msg.obj;
-        	onDeviceName(name);
-        	break;
-
-        case SPPService.MESSAGE_DEVICE_ADDR:
-        	// save the connected device's addr
-        	this.addr = (String)msg.obj;
-        	onDeviceAddr(addr);
+        case SPPService.MESSAGE_DEVICE_INFO:
+        	// save the connected device's name and address
+            	Bundle bundle = (Bundle)msg.obj;
+        	onDeviceInfo(device = new Device(bundle.getString(SPPService.KEY_DEVICE_NAME), bundle.getString(SPPService.KEY_DEVICE_ADDR)));
         	break;
 
         case SPPService.MESSAGE_TOAST:
@@ -125,24 +122,51 @@ public class SPPDataHandler extends Handler
         	break;
         }
     }
+    
+    public class Device
+    {
+	private String name;
+	private String addr;
 
-    private void dispatchDeviceConnect(String name, String addr)
+	public Device(String name, String addr)
+	{
+	    this.name = name; 
+	    this.addr = addr;
+	}
+	
+	public String getName()
+	{
+	    return name;
+	}
+	
+	public String getAddr()
+	{
+	    return addr;
+	}
+	
+	public String toString()
+	{
+	    return "" + name + "[" + addr + "]";
+	}
+    }
+    
+    private void dispatchDeviceConnect(Device device)
     {
         onDeviceConnected();
         
         for (SPPStatusListener l : statusListeners)
         {
-            l.onConnect(name, addr);
+            l.onConnect(device);
         }
     }
 
-    private void dispatchDeviceDisconnect(String name, String addr)
+    private void dispatchDeviceDisconnect(Device device)
     {
         onDeviceDisconnected();
         
         for (SPPStatusListener l : statusListeners)
         {
-            l.onDisconnect(name, addr);
+            l.onDisconnect(device);
         }
     }
 
@@ -160,8 +184,7 @@ public class SPPDataHandler extends Handler
 
     // methods to be overridden by subclasses in order to receive various events:
     protected void onServiceConnected() {}
-    protected void onDeviceAddr(String deviceAddr) {}
-    protected void onDeviceName(String deviceName) {}
+    protected void onDeviceInfo(Device device) {}
     protected void onConnectingDevice() {}
     protected void onDeviceConnected() {}
     protected void onDeviceDisconnected() {}
@@ -173,8 +196,7 @@ public class SPPDataHandler extends Handler
     protected void onDebugMessage(String msg) {}
 
     
-    private HashSet<SPPDataListener> dataListeners = new HashSet<SPPDataListener>();
+    private HashSet<SPPDataListener>   dataListeners = new HashSet<SPPDataListener>();
     private HashSet<SPPStatusListener> statusListeners = new HashSet<SPPStatusListener>();
-    private String name;
-    private String addr;
+    
 }

@@ -1,6 +1,6 @@
 package com.apdlv.ilibaba.bt;
 
-import com.apdlv.ilibaba.bt.SPPService.BTSerialBinder;
+import com.apdlv.ilibaba.bt.SPPService.SPPBinder;
 import com.apdlv.ilibaba.frotect.FrotectActivity;
 
 import android.bluetooth.BluetoothDevice;
@@ -29,7 +29,7 @@ public class SPPConnection implements ServiceConnection
     public void onServiceConnected(ComponentName className, IBinder service) 
     {
 	// We've bound to LocalService, cast the IBinder and get LocalService instance
-	BTSerialBinder  btBinder   = (BTSerialBinder) service;
+	SPPBinder  btBinder   = (SPPBinder) service;
 	mService = btBinder.getService();
 	Log.d(TAG, "Got BT frotect serial service " + mService);
 	setHandler(mHandler);
