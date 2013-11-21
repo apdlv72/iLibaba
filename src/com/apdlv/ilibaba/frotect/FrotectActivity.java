@@ -1656,13 +1656,16 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    switch (id)
 	    {
 	    case R.id.saveCost:
-		frotect.mConnection.sendLine("\nC=" + cost.getValue());
+		// C0.2    set cost/kWh to 0.2
+		frotect.mConnection.sendLine("\nC" + cost.getValue());
 		break;	    	
 	    case R.id.saveNumStrands:
-		frotect.mConnection.sendLine("\nN=" + ((int)strands.getValue()));		
+		// M3      set # of strands to 3
+		frotect.mConnection.sendLine("\nM" + ((int)strands.getValue()));		
 		break;
 	    case R.id.saveNumSensors:
-		frotect.mConnection.sendLine("\nM=" + ((int)sensors.getValue()));
+		// N4      set # of sensors to 4
+		frotect.mConnection.sendLine("\nN" + ((int)sensors.getValue()));
 		break;	    
 	    case R.id.frotectReboot:
 		confirmReboot();
