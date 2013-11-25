@@ -6,157 +6,190 @@
     android:orientation="vertical"
     android:padding="10dip" >
 
-    <LinearLayout
+    <TableLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:orientation="vertical" >
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" >
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_weight="1"
+            android:gravity="center" >
 
             <TextView
                 android:id="@+id/textView3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:minWidth="60dip"
+                android:minWidth="50dip"
                 android:text="Cost:" />
 
-            <Button
-                android:id="@+id/decCost"
+            <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minWidth="40dip"
-                android:text="-" />
+                android:layout_height="wrap_content" >
 
-            <TextView
-                android:id="@+id/valueCost"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="right"
-                android:minWidth="60dip"
-                android:text="20.0"
-                android:textAppearance="?android:attr/textAppearanceLarge" />
+                <Button
+                    android:id="@+id/decCost"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="50dip"
+                    android:text="-"
+                    android:background="@drawable/button"
+                    android:textAppearance="?android:attr/textAppearanceLarge" />
 
-            <Button
-                android:id="@+id/incCost"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minWidth="40dip"
-                android:text="+" />
+                <TextView
+                    android:id="@+id/valueCost"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="right"
+                    android:minWidth="50dip"
+                    android:text="20.0"
+                    android:textAppearance="?android:attr/textAppearanceLarge" />
+
+                <Button
+                    android:id="@+id/incCost"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="50dip"
+                    android:text="+"
+                    android:background="@drawable/button"
+                    android:textAppearance="?android:attr/textAppearanceLarge" />
+            </LinearLayout>
 
             <Button
                 android:id="@+id/saveCost"
-                android:layout_width="wrap_content"
+                android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:background="@android:drawable/ic_menu_save" />
-        </LinearLayout>
+                android:layout_marginLeft="20dip"
+                android:minWidth="50dip"
+                    android:background="@drawable/button"
+                android:text="Save" />
+        </TableRow>
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" >
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_weight="1"
+            android:gravity="center" >
 
             <TextView
                 android:id="@+id/textView3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:minWidth="60dip"
+                android:minWidth="50dip"
                 android:text="Strands" />
 
-            <Button
-                android:id="@+id/decNumStrands"
+            <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minWidth="40dip"
-                android:text="-" />
+                android:layout_height="wrap_content" >
 
-            <TextView
-                android:id="@+id/valueNumStrands"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="right"
-                android:minWidth="60dip"
-                android:text="4"
-                android:textAppearance="?android:attr/textAppearanceLarge" />
+                <Button
+                    android:id="@+id/decNumStrands"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="50dip"
+                    android:text="-"
+                    android:background="@drawable/button"
+                    android:textAppearance="?android:attr/textAppearanceLarge" />
 
-            <Button
-                android:id="@+id/incNumStrands"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minWidth="40dip"
-                android:text="+" />
+                <TextView
+                    android:id="@+id/valueNumStrands"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="right"
+                    android:minWidth="50dip"
+                    android:text="4"
+                    android:textAppearance="?android:attr/textAppearanceLarge" />
+
+                <Button
+                    android:id="@+id/incNumStrands"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="50dip"
+                    android:text="+"
+                    android:background="@drawable/button"
+                    android:textAppearance="?android:attr/textAppearanceLarge" />
+            </LinearLayout>
 
             <Button
                 android:id="@+id/saveNumStrands"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@android:drawable/ic_menu_save"
-                android:minWidth="40dip" />
-        </LinearLayout>
+                android:layout_marginLeft="20dip"
+                android:minWidth="50dip"
+                    android:background="@drawable/button"
+                android:text="Save" />
+        </TableRow>
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" >
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_weight="1"
+            android:gravity="center" >
 
             <TextView
                 android:id="@+id/textView3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:minWidth="60dip"
+                android:minWidth="50dip"
                 android:text="Sensors" />
 
-            <Button
-                android:id="@+id/decNumSensors"
+            <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minWidth="40dip"
-                android:text="-" />
+                android:layout_height="wrap_content" >
 
-            <TextView
-                android:id="@+id/valueNumSensors"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="right"
-                android:minWidth="60dip"
-                android:text="4"
-                android:textAppearance="?android:attr/textAppearanceLarge" />
+                <Button
+                    android:id="@+id/decNumSensors"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="50dip"
+                    android:text="-"
+                    android:background="@drawable/button"
+                    android:textAppearance="?android:attr/textAppearanceLarge" />
 
-            <Button
-                android:id="@+id/incNumSensors"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minWidth="40dip"
-                android:text="+" />
+                <TextView
+                    android:id="@+id/valueNumSensors"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="right"
+                    android:minWidth="50dip"
+                    android:text="4"
+                    android:textAppearance="?android:attr/textAppearanceLarge" />
+
+                <Button
+                    android:id="@+id/incNumSensors"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="50dip"
+                    android:text="+"
+                    android:background="@drawable/button"
+                    android:textAppearance="?android:attr/textAppearanceLarge" />
+            </LinearLayout>
 
             <Button
                 android:id="@+id/saveNumSensors"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@android:drawable/ic_menu_save"
-                android:minWidth="40dip" />
-        </LinearLayout>
+                android:layout_marginLeft="20dip"
+                android:minWidth="50dip"
+                    android:background="@drawable/button"
+                android:text="Save" />
+        </TableRow>
+        
+    </TableLayout>
 
-        <LinearLayout
-            android:layout_width="fill_parent"
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dip"
+        android:gravity="center"
+        android:orientation="horizontal" >
+
+        <Button
+            android:id="@+id/frotectReboot"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dip"
-            android:gravity="center"
-            android:orientation="horizontal" >
-
-<!--             <Button
-                android:id="@+id/frotectRescan"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minWidth="110dip"
-                android:text="Rescan sensors" />
- -->
-            <Button
-                android:id="@+id/frotectReboot"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minWidth="110dip"
-                android:text="Reboot µC" />
-        </LinearLayout>
+            android:minWidth="110dip"
+                    android:background="@drawable/button"
+            android:text="Reboot µC" />
     </LinearLayout>
 
 </LinearLayout>

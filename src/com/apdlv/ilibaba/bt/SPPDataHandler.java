@@ -52,7 +52,7 @@ public class SPPDataHandler extends Handler
     public void handleMessage(Message msg) 
     {    
         int what = msg.what;
-        //onDebugMessage("Got message " + what + "(" + SPPService.message2String(what) + ")");
+        //System.err.println(TAG + ".handleMessage: Got message " + what + "(" + SPPService.message2String(what) + ")");
         switch (what) 
         {
 
@@ -114,7 +114,15 @@ public class SPPDataHandler extends Handler
         case SPPService.MESSAGE_DEVICE_INFO:
         	// save the connected device's name and address
             	Bundle bundle = (Bundle)msg.obj;
-        	onDeviceInfo(device = new Device(bundle.getString(SPPService.KEY_DEVICE_NAME), bundle.getString(SPPService.KEY_DEVICE_ADDR)));
+            	try
+            	{
+            	    device = new Device(bundle.getString(SPPService.KEY_DEVICE_NAME), bundle.getString(SPPService.KEY_DEVICE_ADDR));
+            	    onDeviceInfo(device);
+            	}
+            	catch (Exception e)
+            	{
+            	    System.err.println(TAG + ".handleMessage: " + e);
+            	}
         	break;
 
         case SPPService.MESSAGE_TOAST:

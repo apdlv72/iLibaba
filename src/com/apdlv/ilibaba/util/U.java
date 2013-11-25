@@ -1,5 +1,7 @@
 package com.apdlv.ilibaba.util;
 
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Checkable;
 import android.widget.TextView;
@@ -15,6 +17,11 @@ public class U
     public static void setText(TextView tv, String text)
     {
         if (null!=tv) tv.setText(text);
+    }
+
+    public static void setVisible(View v)
+    {
+        setVisible(v, true);
     }
 
     public static void setVisible(View v, boolean b)
@@ -46,4 +53,40 @@ public class U
     {
         return !isEmpty(s);
     }
+
+    
+    public static void setEnabled(boolean enabled, MenuItem ... items)
+    {
+	for (MenuItem i : items)
+	{
+	    if (null!=i) i.setEnabled(enabled);
+	}
+    }
+
+    public static void setEnabled(boolean enabled, Menu menu, int ... ids)
+    {
+	if (null==menu) return;
+	for (int id : ids)
+	{
+	    MenuItem mi = menu.findItem(id);
+	    if (null!=mi) mi.setEnabled(enabled);
+	}
+    }
+    
+    public static void setCursorVisible(TextView view, boolean visible)
+    {
+	if (null!=view) view.setCursorVisible(visible);
+    }
+    
+    public static void setText(View view, String text)
+    {
+	if (null!=view) setText(view, text);
+    }
+    
+    public static void setText(View view, int resId)
+    {
+	if (null!=view) setText(view, resId);
+    }
+    
+
 }

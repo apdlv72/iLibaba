@@ -16,6 +16,8 @@
             android:layout_width="fill_parent" 
             android:layout_weight="1"
             android:layout_height="wrap_content"
+                android:background="@drawable/button"
+                android:layout_margin="2dip"
             android:text="Info" />
 
         <Button
@@ -24,6 +26,8 @@
             android:layout_width="fill_parent" 
             android:layout_weight="1"
             android:layout_height="wrap_content"
+                android:background="@drawable/button"
+                android:layout_margin="2dip"
             android:text="Help" />
         
         <Button
@@ -32,6 +36,8 @@
             android:layout_width="fill_parent" 
             android:layout_weight="1"
             android:layout_height="wrap_content"
+                android:background="@drawable/button"
+                android:layout_margin="2dip"
             android:text="Hist" />
         
         <Button
@@ -40,6 +46,8 @@
             android:layout_width="fill_parent" 
             android:layout_weight="1"
             android:layout_height="wrap_content"
+                android:background="@drawable/button"
+                android:layout_margin="2dip"
             android:text="Stats" />
 		
 		<Button
@@ -48,6 +56,8 @@
             android:layout_width="fill_parent" 
             android:layout_weight="1"
 		    android:layout_height="wrap_content"
+                android:background="@drawable/button"
+                android:layout_margin="2dip"
 		    android:text="Send" />
 		
         </LinearLayout>

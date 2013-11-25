@@ -27,6 +27,7 @@
                 android:layout_gravity="center_vertical"
                 android:layout_marginRight="5dip"
                 android:src="@drawable/blue_lheart_64" 
+                android:visibility="invisible"
                 android:contentDescription="Heart beat"
                 />
 
@@ -84,7 +85,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginRight="5dip"
-                            android:src="@drawable/blue_bulb_64" />
+                            android:src="@drawable/unkn_bulb_64" />
 
                         <TableLayout
                             android:layout_width="wrap_content"
@@ -99,7 +100,7 @@
                                     android:id="@+id/sensorValue1"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:enabled="true"
+                                    android:enabled="false"
                                     android:text="Strand 1" />
                             </TableRow>
 
@@ -151,7 +152,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginRight="5dip"
-                            android:src="@drawable/blue_bulb_64" />
+                            android:src="@drawable/unkn_bulb_64" />
 
                         <TableLayout
                             android:layout_width="wrap_content"
@@ -166,7 +167,7 @@
                                     android:id="@+id/sensorValue2"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:enabled="true"
+                                    android:enabled="false"
                                     android:text="Strand 1" />
                             </TableRow>
 
@@ -225,7 +226,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginRight="5dip"
-                            android:src="@drawable/blue_bulb_64" />
+                            android:src="@drawable/unkn_bulb_64" />
 
                         <TableLayout
                             android:layout_width="wrap_content"
@@ -240,7 +241,7 @@
                                     android:id="@+id/sensorValue3"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:enabled="true"
+                                    android:enabled="false"
                                     android:text="Strand 1" />
                             </TableRow>
 
@@ -292,7 +293,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginRight="5dip"
-                            android:src="@drawable/blue_bulb_64" />
+                            android:src="@drawable/unkn_bulb_64" />
 
                         <TableLayout
                             android:layout_width="wrap_content"
@@ -307,7 +308,7 @@
                                     android:id="@+id/sensorValue4"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:enabled="true"
+                                    android:enabled="false"
                                     android:text="Strand 1" />
                             </TableRow>
 
@@ -456,6 +457,9 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:background="@drawable/button"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
                 android:text="Power" />
 
             <Button
@@ -464,6 +468,8 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:background="@drawable/button"
+                android:layout_marginRight="5dip"
                 android:text="Temp" />
 
             <Button
@@ -472,6 +478,8 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:background="@drawable/button"
+                android:layout_marginRight="5dip"
                 android:text="Cost" />
 
             <Button
@@ -480,6 +488,8 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:background="@drawable/button"
+                android:layout_marginRight="5dip"
                 android:text="Duty" />
 
         </LinearLayout>

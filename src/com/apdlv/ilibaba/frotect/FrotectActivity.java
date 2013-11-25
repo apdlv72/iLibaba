@@ -1,8 +1,7 @@
 package com.apdlv.ilibaba.frotect;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.File;
+import java.io.FileWriter;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,13 +13,17 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.text.Layout;
@@ -44,6 +47,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.apdlv.ilibaba.R;
+import com.apdlv.ilibaba.R.id;
 import com.apdlv.ilibaba.bt.SPPConnection;
 import com.apdlv.ilibaba.bt.SPPDataHandler;
 import com.apdlv.ilibaba.bt.SPPDataHandler.Device;
@@ -132,15 +136,39 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	public boolean lit, avail, bound, used, last;
 	public double  lo, hi, power, temp;
 	public String  addr;
+	
+	public String toString()
+	{
+	    return "lit=" + lit + ", avail=" + avail + ", used=" + used + ", bound=" + bound + ", last=" + last;
+	}
     }
 
     private Sensor[] sensors = new Sensor[5];
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
 	super.onCreate(savedInstanceState);
 
+	mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+	// If the adapter is null, then Bluetooth is not supported
+	if (mBluetoothAdapter == null) 
+	{
+	    Toast.makeText(this, "WARNING: Bluetooth is not available", Toast.LENGTH_LONG).show();
+	    finish();
+	}
+
+	// Register for broadcasts on BluetoothAdapter state change
+	IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+	registerReceiver(mReceiver, filter);
+	
+	// Enable bluetooth if it's now on already.
+	if (!mBluetoothAdapter.isEnabled()) 
+	{
+	    mBluetoothAdapter.enable();	    
+	} 	
+	    
 	// Set up the window layout
 	requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
 	setContentView(R.layout.activity_frotect);
@@ -160,14 +188,6 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    mLogTextView.setMovementMethod(ScrollingMovementMethod.getInstance());
 	    Scroller scroller = new Scroller(mLogTextView.getContext());
 	    mLogTextView.setScroller(scroller);	
-	}
-
-	mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
-	// If the adapter is null, then Bluetooth is not supported
-	if (mBluetoothAdapter == null) 
-	{
-	    Toast.makeText(this, "WARNING: Bluetooth is not available", Toast.LENGTH_LONG).show();
 	}
 
 	buttonTemp   = findViewById(R.id.buttonTemp); 
@@ -212,6 +232,8 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	startService(intent);
     }
 
+    //private boolean mBluetoothWasEnabled = false;
+
 
     @Override
     protected void onStart()
@@ -219,13 +241,6 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	super.onStart();
 
 	this.startupMillis = Calendar.getInstance().getTimeInMillis();
-
-	if (!mBluetoothAdapter.isEnabled()) 
-	{
-	    Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-	    startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-	    // Otherwise, setup the chat session
-	} 
 
 	updateControls();
 
@@ -269,6 +284,9 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	mConnection.disconnect();	
 	Log.d(TAG, "onDestroy: Unbinding from service");
 	mConnection.unbind(this);
+	
+	Log.d(TAG, "onDestroy: Unregistering bluetooth broadcast receiver");
+	unregisterReceiver(mReceiver);
     };
 
     @Override
@@ -279,23 +297,44 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	return true;
     }
 
+    
+    
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) 
+    {
+	U.setEnabled(mBluetoothAdapter.isEnabled(), menu, id.menu_frotect_select, id.menu_frotect_reconnect, id.menu_frotect_disconnect);
+        return true;
+    }
+    
     public boolean onOptionsItemSelected(MenuItem item) 
     {
 	switch (item.getItemId()) 
 	{
-	case R.id.menu_frotect_reconnect:
+	
+	case R.id.menu_frotect_reconnect:	    
 	    if (U.isEmpty(mmSelectedDeviceAddress)) return false;
-
+	    if (mConnection.isConnected()) return false;
 	    BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(mmSelectedDeviceAddress);
 	    mConnection.connect(device); // F0:B4:79:07:AE:EE
 	    break;
+	    
 	case R.id.menu_frotect_next:
 	    nextActivity();
 	    return true;
+	    
 	case R.id.menu_frotect_select:
-	    // Launch the PresetsActivity to see devices and do scan
-	    Intent serverIntent = new Intent(this, DeviceListActivity.class);
-	    startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+	    if (!mBluetoothAdapter.isEnabled()) 
+	    {
+		// Ask user to enable bluetooth if it's not 
+		Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+		startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+	    }
+	    else
+	    {	    
+		// Launch the PresetsActivity to see devices and do scan
+		Intent serverIntent = new Intent(this, DeviceListActivity.class);
+		startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+	    }
 	    return true;
 	case R.id.menu_frotect_disconnect:
 	    mConnection.disconnect();
@@ -330,7 +369,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    {
 		// Get the device MAC address
 		String address = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
-		
+
 		// Get the BLuetoothDevice object
 		BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
 		mmSelectedDeviceAddress = address;
@@ -365,6 +404,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	{
 	    SensorDialog dialog = new SensorDialog(this);
 	    mHandler.addStatusListener(dialog);
+	    mHandler.addDataListener(dialog);
 	    mHandler.addDataCompleteListener(dialog);
 	    dialog.setOnDismissListener(this);
 	    dialog.show();
@@ -374,6 +414,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    int strand = n+1;
 	    StrandDialog dialog = new StrandDialog(this, strand);
 	    mHandler.addStatusListener(dialog);
+	    mHandler.addDataCompleteListener(dialog);
 	    dialog.setOnDismissListener(this);
 	    dialog.show();
 	}
@@ -842,7 +883,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	private void onSensorInfo(String c)
 	{
-	    HashMap<String, Object> map = Parser.parseSensorInfo(c);
+	    HashMap<String, Object> map = MessageParser.parseSensorInfo(c);
 	    if (null!=map)
 	    {
 		int    n      = (Integer) map.get("n");
@@ -895,7 +936,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    {
 		String info = infoBuffer.finish();	    
 
-		Map<String, String> map = Parser.parseInfo(info);
+		Map<String, String> map = MessageParser.parseInfo(info);
 		String sV = map.get("Frotect");
 		if (!U.isEmpty(sV))
 		{
@@ -920,7 +961,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	{
 	    try
 	    {
-		HashMap<String, Integer> map = Parser.parseFlashInfo(c);
+		HashMap<String, Integer> map = MessageParser.parseFlashInfo(c);
 		int n = map.get("n")-1;
 		Sensor s = sensors[n];
 		s.lit = map.get("lit")>0;
@@ -938,7 +979,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    try
 	    {
 		// STR: n=1, val=0, lit=0, upd=1, tu=28.50, tl=24.00, temp=?, err=50, last=117965829, ago=0, addr=28:50:81:E1:04:00:00:6E, used=1, avail=1
-		HashMap<String, Object> map = Parser.parseStrandInfo(c);
+		HashMap<String, Object> map = MessageParser.parseStrandInfo(c);
 
 		if (null==map)
 		{
@@ -983,7 +1024,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	{
 	    try
 	    {
-		HashMap<String, Object> map = Parser.parseMeasurement(c);
+		HashMap<String, Object> map = MessageParser.parseMeasurement(c);
 		
 		int strand = (Integer) map.get("s");
 		double now = (Double) map.get("now");
@@ -1055,9 +1096,9 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    boolean bound = (null==bound2) ? n<4 : bound2;
 
 	    //	    ImageView sensorBulb  = sensors[n].icon;
-	    TextView  value = sensors[n].value;
-	    TextView  limits      = sensors[n].limits; 
-	    TextView  misc        = sensors[n].misc; 
+	    TextView  value  = sensors[n].value;
+	    TextView  limits = sensors[n].limits; 
+	    TextView  misc   = sensors[n].misc; 
 
 	    visualizeSensorStatus(sensors[n]);
 	    U.setEnabled(value, avail);
@@ -1194,7 +1235,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	public void stop()
 	{
 	    holdThread.cancel();
-	    holdThread.stop();
+	    //holdThread.stop();
 	    holdThread = null;
 	}
 
@@ -1311,7 +1352,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
         }
     }
 
-    class SensorDialog extends SPPStatusAwareDialog implements FrotectBTDataCompleteListener
+    class SensorDialog extends SPPStatusAwareDialog implements FrotectBTDataCompleteListener, SPPDataListener
     {
 	private int sensorAddrIDs[]   = { R.id.sensorAddr1,   R.id.sensorAddr2,   R.id.sensorAddr3,   R.id.sensorAddr4,   R.id.sensorAddr5 };
 	private int sensorUpIDs[]     = { R.id.sensorUp1,     R.id.sensorUp2,     R.id.sensorUp3,     R.id.sensorUp4,     R.id.sensorUp5   };
@@ -1367,7 +1408,8 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    super(frotect);
 	    this.frotect = frotect;
 
-	    setTitle("Sensors");
+	    requestWindowFeature(Window.FEATURE_NO_TITLE); 
+	    //setTitle("Sensors");
 	    LayoutInflater inflater = this.getLayoutInflater();
 	    setContentView(inflater.inflate(R.layout.dialog_sensors, null));
 
@@ -1403,13 +1445,17 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    {
 		if (frotect.sensorsBuffer.isComplete())
 		{
-		    parseStrandInfo(frotect.sensorsBuffer.toString());
+		    refreshViews();
+		    //parseCompleteStrandInfo(frotect.sensorsBuffer.toString());
 		}
 		else
 		{
 		    // request uC to send sensor info
-		    mConnection.sendLine("\nS\n"); // dump sensor info
-		    mConnection.sendLine("\nS\n"); // dump sensor info		    
+		    mConnection.sendLine("");
+		    mConnection.sendLine("S"); // dump sensor info
+		    mConnection.sendLine("");
+		    mConnection.sendLine("S"); // dump sensor info		    
+		    mConnection.sendLine("");
 		}
 	    }
 	};
@@ -1425,7 +1471,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	private void rescanConfirmed()
 	{
-	    mConnection.sendLine("\nX\n"); // Rescan sensors command
+	    mConnection.sendLine(""); mConnection.sendLine("X"); mConnection.sendLine(""); // Rescan sensors command
 	}
 
 	public void confirmRescan()
@@ -1442,42 +1488,73 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	{
 	    if (FrotectBTDataCompleteListener.TYPE.STRANDS==type) 
 	    {
-		parseStrandInfo(data);
+		refreshViews();
 	    }
 	}
 
-	private void parseStrandInfo(String data)
-	{
-	    StringReader sr = new StringReader(data);
-	    BufferedReader br = new BufferedReader(sr);
+//	private void parseCompleteStrandInfo(String data)
+//	{
+//	    StringReader sr = new StringReader(data);
+//	    BufferedReader br = new BufferedReader(sr);
+//
+//	    String line = null;
+//	    do
+//	    {
+//		try { line = br.readLine(); } catch (IOException e) {}
+//		if (!U.isEmpty(line)) try
+//		{
+//		    parseStrandInfoLine(line);
+//		}
+//		catch (Exception e)
+//		{
+//		    frotect.doLog("parseOneLine: " + e + " on '" + line + "'");
+//		}
+//	    }
+//	    while (null!=line);
+//	}
+//
+        private void refreshViews()
+        {   
+            for (int i=0; i<sensors.length; i++) 
+            { 
+        	Sensor s = sensors[i]; 
+        	AddrInfo info = infos[i];
+        	
+        	String addr = s.addr;
+        	addr = OneWireAddrTool.shortenAddr(addr);
+        	String enc = OneWireAddrTool.encodeAddr(addr);
+        	
+        	info.setFound(i, s.avail);
+        	
+        	U.setText(info.addr, enc + "\n[" + addr + "]");
+        	U.setVisible(info.bound, s.bound);
+            }
+            /*
+            try
+            {        
+        	HashMap<String, Object> map = MessageParser.parseSensorInfo(line);
 
-	    String line = null;
-	    do
-	    {
-		try { line = br.readLine(); } catch (IOException e) {}
-		if (!U.isEmpty(line)) try
-		{
-		    HashMap<String, Object> map = Parser.parseSensorInfo(line);
+        	int     num   = (Integer) map.get("n");
+        	boolean avail = (Boolean) map.get("avail");
+        	String  addr  = (String)  map.get("@");
+        	Boolean bound = (Boolean) map.get("bnd");
 
-		    int     num   = (Integer) map.get("n");
-		    boolean avail = (Boolean) map.get("avail");
-		    String  addr  = (String)  map.get("@");
-		    Boolean bound = (Boolean) map.get("bnd");
+        	addr = MessageParser.shortenAddr(addr);
+        	String enc = MessageParser.encodeAddr(addr);
 
-		    AddrInfo info = infos[num-1];
-		    info.addr.setText(addr);
-		    U.setVisible(info.bound, null!=bound && bound);
+        	AddrInfo info = infos[num-1];
+        	info.addr.setText(enc + "\n[" + addr + "]");
+        	U.setVisible(info.bound, null!=bound && bound);
 
-		    info.setFound(num-1, avail);
-		}
-		catch (Exception e)
-		{
-		    frotect.doLog("parseOneLine: " + e + " on '" + line + "'");
-		}
-	    }
-	    while (null!=line);
-	}
-
+        	info.setFound(num-1, avail);
+            }
+            catch (Exception e)
+            {
+        	Log.e(TAG, "parseStrandInfoLine: " + e);
+            }
+            */
+        }
+        
 	@Override
 	public void onClick(int id)
 	{
@@ -1501,6 +1578,14 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		}
 	    }	    
 	}
+
+	public void onLineReceived(String line)
+        {
+	    if (null!=line && (line.startsWith("STR.") || line.startsWith("STR:")))
+	    {
+		refreshViews();
+	    }
+        }
     }
 
     class StrandDialog extends SPPStatusAwareDialog implements FrotectBTDataCompleteListener, SPPDataListener, android.view.View.OnClickListener
@@ -1514,15 +1599,23 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	protected StrandDialog(FrotectActivity frotect, int strandNo)
 	{
 	    super(frotect);
+	    requestWindowFeature(Window.FEATURE_NO_TITLE); 
+
 	    this.frotect = frotect;
 	    this.strandNo = strandNo;
 	    LayoutInflater inflater = this.getLayoutInflater();
 	    setContentView(inflater.inflate(R.layout.dialog_strand, null));
-	    setTitle("Strand " + strandNo);
 
 	    this.strandAddress = (TextView) findViewById(R.id.frotectStrandAddr);
 	}
 
+	@Override
+	protected void onStart() 
+	{
+	    mHandler.addDataCompleteListener(this);
+	    mHandler.addStatusListener(this);	    
+	};
+	
 	@Override
 	public void show()
 	{
@@ -1533,6 +1626,8 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	private void refreshControls()
 	{
 	    Sensor info = sensors[strandNo-1];	    
+	    System.out.println("refreshControls: strand " + strandNo + ": " + info);
+	    
 	    double currLo    = -30;
 	    double currHi    =  30;
 	    double currPower =   0;
@@ -1543,7 +1638,9 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		currPower = info.power;
 	    }
 
-	    U.setText(strandAddress, info.addr);
+	    String addr = OneWireAddrTool.shortenAddr(info.addr);
+	    String enc  = OneWireAddrTool.encodeAddr(addr);
+	    U.setText(strandAddress, enc + "\n[" + addr + "]");
 
 	    // register views to be disabled when there is no connection
 	    registerViews(false, R.id.buttonThresSave, R.id.buttonStrandFlash, R.id.buttonStrandBind, R.id.buttonStrandUnbind);
@@ -1554,10 +1651,11 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	    lo  = new NumberPicker(this, R.id.decLo,    R.id.valueLo,    R.id.incLo,    currLo, -30, 30); 
 	    hi  = new NumberPicker(this, R.id.decHi,    R.id.valueHi,    R.id.incHi,    currHi, -30, 30); 
-	    pwr = new NumberPicker(this, R.id.decPower, R.id.valuePower, R.id.incPower, currPower, 0, 200); 
+	    pwr = new NumberPicker(this, R.id.decPower, R.id.valuePower, R.id.incPower, currPower, 0, 200);
+	    
 	    bound = info.bound;
-
-	    U.setInvisibile(findViewById(bound ? R.id.layoutStrandBind : R.id.layoutStrandUnbind));
+	    U.setVisible(findViewById(R.id.layoutStrandBind),  !bound);
+	    U.setVisible(findViewById(R.id.layoutStrandUnbind), bound);
 	}
 
 	@Override
@@ -1573,12 +1671,13 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	public void onConnect(Device device)
 	{
 	    super.onConnect(device);
-	    U.setInvisibile(findViewById(bound ? R.id.layoutStrandBind : R.id.layoutStrandUnbind));
+	    refreshControls();
+	    //U.setInvisibile(findViewById(bound ? R.id.layoutStrandBind : R.id.layoutStrandUnbind));
 	}
 
 	public void onDataComplete(TYPE type, String data)
 	{
-	    if (type==TYPE.STRANDS) refreshControls();
+	    if (type==TYPE.STRANDS) { refreshControls(); } 
 	}
 
 	public void onLineReceived(String line)
@@ -1595,21 +1694,33 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		String cmd1 = String.format(Locale.ENGLISH, "L%d=%2.1f", strandNo, lo.getValue());
 		String cmd2 = String.format(Locale.ENGLISH, "U%d=%2.1f", strandNo, hi.getValue());
 		String cmd3 = String.format(Locale.ENGLISH, "P%d=%2.1f", strandNo, pwr.getValue());
+		frotect.mConnection.sendLine("");
 		frotect.mConnection.sendLine(cmd1);
+		frotect.mConnection.sendLine("");
 		frotect.mConnection.sendLine(cmd2);
+		frotect.mConnection.sendLine("");
 		frotect.mConnection.sendLine(cmd3);
+		frotect.mConnection.sendLine("");
 		//dismiss();
 		break;
 	    case R.id.buttonStrandFlash:
+		frotect.mConnection.sendLine("");
 		frotect.mConnection.sendLine("I" + strandNo);
+		frotect.mConnection.sendLine("");
 		break;
 	    case R.id.buttonStrandBind:
-		frotect.mConnection.sendLine("\nG" + strandNo);  // re-bind command
-		frotect.mConnection.sendLine("\nS\n" + strandNo);
+		frotect.mConnection.sendLine("");
+		frotect.mConnection.sendLine("G" + strandNo); // re-bind command
+		frotect.mConnection.sendLine("");
+		frotect.mConnection.sendLine("S"); // request sensor info update
+		frotect.mConnection.sendLine("");
 		break;
 	    case R.id.buttonStrandUnbind:
-		frotect.mConnection.sendLine("\nF" + strandNo);
-		frotect.mConnection.sendLine("\nS\n" + strandNo);
+		frotect.mConnection.sendLine("");
+		frotect.mConnection.sendLine("F" + strandNo); // "F"orget the sensor
+		frotect.mConnection.sendLine("");
+		frotect.mConnection.sendLine("S"); // request sensor info update
+		frotect.mConnection.sendLine("");
 		break;
 	    }
 	}
@@ -1623,11 +1734,12 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	protected ConfigDialog(FrotectActivity frotect)
 	{
 	    super(frotect);
+	    requestWindowFeature(Window.FEATURE_NO_TITLE); 
 
 	    this.frotect = frotect;
 	    LayoutInflater inflater = this.getLayoutInflater();
 	    setContentView(inflater.inflate(R.layout.dialog_config, null));	    
-	    setTitle("Config ");
+	    //setTitle("Config ");
 
 	    cost    = new NumberPicker(this, R.id.decCost,       R.id.valueCost,       R.id.incCost,       20, 0, 100, 0.25);
 	    strands = new NumberPicker(this, R.id.decNumStrands, R.id.valueNumStrands, R.id.incNumStrands,  4, 1,   4, 1.00);
@@ -1705,71 +1817,78 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    setTitle("Info ");	    
 	}
 	
-	/*
-	private static final int MENU_ITEM_DISMISS         = Menu.FIRST + 0;
-	private static final int MENU_ITEM_SEND_LOG        = Menu.FIRST + 1;
-	private static final int MENU_ITEM_AUTOSCROLL      = Menu.FIRST + 2;
-	private static final int MENU_ITEM_SCROLL_TO_TOP   = Menu.FIRST + 3;
-	private static final int MENU_ITEM_SCROLL_TO_END   = Menu.FIRST + 4;
-
-
-	@Override
-	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) 
-	{
-	    super.onCreateContextMenu(menu, v, menuInfo);
-	    this.menu = menu;
-	    menu.setHeaderTitle("Info");
-	    int n=0;
-	    menu.add(0, MENU_ITEM_DISMISS,        n++, "Dismiss");
-	    menu.add(0, MENU_ITEM_SEND_LOG,       n++, "Send log");
-	    menu.add(0, MENU_ITEM_AUTOSCROLL,     n++, this.autoscroll ? "Disable autoscroll" : "Enable autoscroll");
-	    menu.add(0, MENU_ITEM_SCROLL_TO_TOP,  n++, "Scroll to top");
-	    menu.add(0, MENU_ITEM_SCROLL_TO_END,  n++, "Scroll to end");
-	}
-
-	private void scrollToTop() 
-	{
-	    tvInfo.scrollTo(0,0);
-	}
-
-	@Override
-	public boolean onContextItemSelected(MenuItem item) 
-	{
-	    switch (item.getItemId()) 
-	    {
-	    case MENU_ITEM_DISMISS:
-		break;
-	    case MENU_ITEM_SEND_LOG:
-		sendLog();
-		break;
-	    case MENU_ITEM_AUTOSCROLL:
-		this.autoscroll = !this.autoscroll;
-		item.setTitle(this.autoscroll ? "Autoscroll enabled" : "Autoscroll disabled");
-		break;
-	    case MENU_ITEM_SCROLL_TO_TOP:
-		scrollToTop();
-		break;
-	    case MENU_ITEM_SCROLL_TO_END:
-		scrollToEnd();
-		break;
-	    }
-	    return super.onContextItemSelected(item);	    
-	}
-	 */
 	private void sendLog()
 	{
-	    Toast.makeText(frotect, "Send info ...", Toast.LENGTH_SHORT).show();
-	    Log.d(TAG, "Sending info text\n");
+	    String toast    = "Sending info ...";
+	    String subject  = "Frotect info";
+	    String body     = "" + tvInfo.getText();
+	    String csv      = null;
+	    String filename = null;
+	    
+	    switch (mType)
+	    {
+	    	case INFO:
+	    	    break;
+	    	case HELP:
+	    	    toast   = "Sending help ... ";
+		    subject = "Frotect command line help";
+	    	    break;
+	    	case STATS:
+	    	    toast    = "Sending power stats ... ";
+		    subject  = "Frotect power stats";
+		    csv      = MessageParser.convertStatsToCsv(body);
+		    filename = "power.csv";
+	    	    break;
+	    	case MINMAX:
+	    	    toast    = "Sending temperature stats ... ";
+		    subject  = "Frotect temperature stats";
+		    csv      = MessageParser.convertHistoryToCsv(body);
+		    filename = "temperatures.csv";
+	    	    break;
+	    	default:
+	    	    toast   = "Sending " + mType;
+	    	    subject = "Frotect " + mType + " info";
+	    }
+	    
+	    Toast.makeText(frotect, toast, Toast.LENGTH_SHORT).show();
+	    Log.d(TAG, toast);
 
 	    Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
-	    String[] recipients = new String[]{"a.pogoda@venista.com", };
-
-	    String body = "" + tvInfo.getText();
-
-	    emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL,   recipients);
-	    emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Frotect " + mType);
-	    emailIntent.putExtra(android.content.Intent.EXTRA_TEXT,    body);
 	    emailIntent.setType("text/plain");
+
+	    String[] recipients = new String[]{"a.pogoda@venista.com", };
+	    emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL,   recipients);
+	    emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, subject);
+	    emailIntent.putExtra(android.content.Intent.EXTRA_TEXT,    body);
+	    
+	    if (null!=csv)
+	    {
+		try
+		{
+		    File root = Environment.getExternalStorageDirectory();
+		    File file = new File(root, filename);
+		    FileWriter fw = new FileWriter(file);
+		    fw.write(csv.toCharArray());
+		    fw.close();
+
+		    if (!file.exists() || !file.canRead()) 
+		    {
+			showToast("Attachment Error");
+			body += "\nFailed to save attachment";
+		    }
+		    else
+		    {
+			Uri uri = Uri.parse("file://" + file);
+			emailIntent.putExtra(Intent.EXTRA_STREAM, uri);
+		    }
+		}
+		catch (Exception e)
+		{
+		    showToast("Attachment: " + e);
+		    body += "\nFailed to attach csv: " + e;
+		}		
+	    }
+	    
 	    startActivity(Intent.createChooser(emailIntent, "Send info"));
 	    //finish();		
 	}
@@ -1838,6 +1957,47 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	}
     }
 
+    private void showToast(String text)
+    {
+	Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+    }
+    
+    //private boolean mBluetoothEnabled = false;
+    
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() 
+    {
+	@Override
+	public void onReceive(Context context, Intent intent) 
+	{
+	    final String action = intent.getAction();
+
+	    if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) 
+	    {
+		final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
+		
+		switch (state) 
+		{
+        		case BluetoothAdapter.STATE_OFF:
+        		    showToast("Bluetooth turned off");
+        		    //mBluetoothEnabled = false;
+        		    break;
+        		case BluetoothAdapter.STATE_TURNING_OFF:
+        		    //showToast("Turning Bluetooth off...");
+        		    //mBluetoothEnabled = false; // preemptive obedience
+        		    break;
+        		case BluetoothAdapter.STATE_ON:
+        		    showToast("Bluetooth turned on");
+        		    //mBluetoothEnabled = true;
+        		    break;
+        		case BluetoothAdapter.STATE_TURNING_ON:
+        		    showToast("Turning Bluetooth on...");
+        		    //mBluetoothEnabled = false; // if turning on, it's not on yet
+        		    break;
+		}
+
+	    }
+	}
+    };
 }
 
 

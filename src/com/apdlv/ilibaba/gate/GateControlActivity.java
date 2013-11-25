@@ -19,19 +19,17 @@ package com.apdlv.ilibaba.gate;
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
-import java.util.Calendar;
 
 import android.app.Activity;
 import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.os.Vibrator;
 import android.text.Layout;
 import android.text.method.ScrollingMovementMethod;
@@ -50,36 +48,29 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.apdlv.ilibaba.R;
+import com.apdlv.ilibaba.bt.SPPConnection;
+import com.apdlv.ilibaba.bt.SPPDataHandler;
 import com.apdlv.ilibaba.bt.SPPService;
-import com.apdlv.ilibaba.shake.Shaker.Callback;
 import com.apdlv.ilibaba.strip.StripControlActivity;
+import com.apdlv.ilibaba.util.U;
 
 /**
  * This is the main Activity that displays the current chat session.
  */
-public class GateControlActivity extends Activity implements Callback, OnClickListener {
+public class GateControlActivity extends Activity implements OnClickListener 
+{
+
     // Debugging
-    private static final String TAG = "GateControlActivity";
+    private static final String TAG = GateControlActivity.class.getSimpleName();
     private static final boolean D = true;
-
-    // Message types sent from the BluetoothChatService Handler
-    public static final int MESSAGE_STATE_CHANGE = 1;
-    public static final int MESSAGE_READ = 2;
-    public static final int MESSAGE_WRITE = 3;
-    public static final int MESSAGE_DEVICE_NAME = 4;
-    public static final int MESSAGE_TOAST = 5;
-    public static final int MESSAGE_DEBUG_MSG = 6;
-
-    // Key names received from the BluetoothChatService Handler
-    public static final String DEVICE_NAME = "device_name";
-    public static final String TOAST = "toast";
 
     // Intent request codes
     private static final int REQUEST_CONNECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
 
     // Layout Views
-    private TextView mTitle;
+    private TextView mMainTitle;
+    private TextView mSubTitle;
     private ImageButton mButtonOpen;
     private ImageButton mButtonBS;
 
@@ -88,7 +79,7 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
     // Local Bluetooth adapter
     private BluetoothAdapter mBluetoothAdapter = null;
     // Member object for the chat services
-    private BluetoothSerialService mChatService = null;
+    //private BluetoothSerialService mChatService = null;
     private TextView mPinArea;
     private TextView mInfoArea;
     private TextView mLogView;
@@ -101,8 +92,23 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
         super.onCreate(savedInstanceState);
         if(D) Log.e(TAG, "+++ ON CREATE +++");
 
-	//requestWindowFeature(Window.FEATURE_NO_TITLE);
-        //getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+	mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+	// If the adapter is null, then Bluetooth is not supported
+	if (mBluetoothAdapter == null) 
+	{
+	    Toast.makeText(this, "WARNING: Bluetooth is not available", Toast.LENGTH_LONG).show();
+	    finish();
+	}
+
+	// Register for broadcasts on BluetoothAdapter state change
+	IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+	registerReceiver(mReceiver, filter);
+	
+	// Enable bluetooth if it's now on already.
+	if (!mBluetoothAdapter.isEnabled()) 
+	{
+	    mBluetoothAdapter.enable();	    
+	} 	
 
         // Set up the window layout
         requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
@@ -110,28 +116,30 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
         getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.custom_title);
 
         // Set up the custom title
-        mTitle = (TextView) findViewById(R.id.title_left_text);
-        if (null!=mTitle) mTitle.setText(R.string.view_name_garage);        
-        mTitle = (TextView) findViewById(R.id.title_right_text);
+        U.setText(mMainTitle = (TextView) findViewById(R.id.title_left_text), R.string.view_name_garage);
+        
+        mSubTitle = (TextView) findViewById(R.id.title_right_text);
 
-        (mPinArea = (TextView) findViewById(R.id.pinText)).setCursorVisible(false);        
-        (mInfoArea = (TextView) findViewById(R.id.infoArea)).setTextColor(Color.RED);
-        mLogView = (TextView) findViewById(R.id.logView);
-        
-        
+        U.setCursorVisible(mPinArea = (TextView) findViewById(R.id.pinText), false);        
+        U.setTextColor(mInfoArea = (TextView) findViewById(R.id.infoArea), Color.RED);
+                
         mInfoArea.setOnClickListener(this);
         
-        mLogView.setMaxLines(1000);
-        mLogView.setMovementMethod(ScrollingMovementMethod.getInstance());
-        Scroller scroller = new Scroller(mLogView.getContext());
-        mLogView.setScroller(scroller);
+        if (null!= (mLogView = (TextView) findViewById(R.id.logView)))
+        {
+            mLogView.setMaxLines(1000);
+            mLogView.setMovementMethod(ScrollingMovementMethod.getInstance());
+            Scroller scroller = new Scroller(mLogView.getContext());
+            mLogView.setScroller(scroller);
+        }
 
         // Get local Bluetooth adapter
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         // If the adapter is null, then Bluetooth is not supported
-        if (mBluetoothAdapter == null) {
-            sendToast("Bluetooth is not available");
+        if (mBluetoothAdapter == null) 
+        {
+            showToast("Bluetooth is not available");
             finish();
             return;
         }
@@ -139,15 +147,13 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
         loadPeerInfo();
         updateSelectedInfo();
         
-	//Shaker shaker = new Shaker(this, 1.25d, 500, this);
-	//Shaker shaker = new Shaker(this, 2*1.25d, 500, this);
-
 	mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-	activityStarted = Calendar.getInstance().getTimeInMillis();
+	
+	Intent intent = new Intent(this, SPPService.class);
+	startService(intent);
     }
-    
-    long activityStarted;
-
+     
+    boolean mBluetoothWasEnabled = false;
     
     @Override
     public void onStart() 
@@ -155,24 +161,30 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
         super.onStart();
         if(D) Log.e(TAG, "++ ON START ++");
 
+//	if (!mBluetoothAdapter.isEnabled()) 
+//	{
+//	    mBluetoothAdapter.eenable();	    
+//	}
+	
         // If BT is not on, request that it be enabled.
         // setupChat() will then be called during onActivityResult
-        if (!mBluetoothAdapter.isEnabled()) {
+        if (!mBluetoothAdapter.isEnabled()) 
+        {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-        // Otherwise, setup the chat session
-        } else {
-            if (mChatService == null) setupChat();
         }
-        //connectInAdvance();
+        
+	Intent intent = new Intent(this, SPPService.class);
+	bindService(intent, mConnection, Context.BIND_AUTO_CREATE);	        
     }
-
     
     @Override
     public synchronized void onPause() 
     {
         super.onPause();
-        if (mChatService != null) mChatService.disconnect();
+        //if (mChatService != null) mChatService.disconnect();        
+        mConnection.disconnect();
+        
         mPinArea.setText("");
         if(D) Log.e(TAG, "- ON PAUSE -");
     }
@@ -183,44 +195,63 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
     {
         super.onResume();
         if(D) Log.e(TAG, "+ ON RESUME +");
-
+        
         // Performing this check in onResume() covers the case in which BT was
         // not enabled during onStart(), so we were paused to enable it...
         // onResume() will be called when ACTION_REQUEST_ENABLE activity returns.
-        if (mChatService != null) {
-            // Only if the state is STATE_NONE, do we know that we haven'temp started already
+        /*
+        if (mChatService != null) 
+        {
+            // Only if the state is STATE_NONE, do we know that we haven't started already
             if (mChatService.getState() == BluetoothSerialService.STATE_NONE) {
               // Start the Bluetooth chat services
               mChatService.start();
             }
         }
+        */
     }
-/*    
-    @Override
-    public void onConfigurationChanged(android.content.res.Configuration newConfig) 
-    {
-	super.onConfigurationChanged(newConfig);
-        if(D) Log.e(TAG, "+ ON CONFIG CHANGE +");
-    };
-*/
     
     @Override
-    public void onStop() {
+    public void onStop() 
+    {
         super.onStop();
-        if (mChatService != null) mChatService.disconnect();
+        
+        //if (mChatService != null) mChatService.disconnect();        
         mPinArea.setText("");
         if(D) Log.e(TAG, "-- ON STOP --");
         //finish();
+
+        mConnection.disconnect();
+	mConnection.unbind(this);
     }
 
     @Override
-    public void onDestroy() {
+    public void onDestroy() 
+    {
         super.onDestroy();
+        
         // Stop the Bluetooth chat services
-        if (mChatService != null) mChatService.stop();
+        //if (mChatService != null) mChatService.stop();
         if(D) Log.e(TAG, "--- ON DESTROY ---");
+
+        mConnection.disconnect();
+	mConnection.unbind(this);
     }
 
+    
+    private GateDataHandler mHandler = new GateDataHandler();
+
+    private SPPConnection mConnection = new SPPConnection(mHandler)
+    {
+	@Override
+	public void disconnect() 
+	{
+	    // connection about to terminate, E0 will make uC indicate this via the status LED (flash it 3x)
+	    sendLine("\nE0"); 
+	    sendLine("\n");
+	    super.disconnect();
+	};
+    };
 
     private void scrollToEnd()  
     {
@@ -246,7 +277,8 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
 	mLogView.append(msg + "\n");
 	scrollToEnd();
     }
-    
+
+    /*
     private class DisconnectThread extends Thread
     {
 	private long ms;
@@ -270,7 +302,8 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
 		   msg.setData(bundle);
 		   mHandler.sendMessage(msg);
 
-		   mChatService.disconnect();
+		   //mChatService.disconnect();
+		   mConnection.disconnect();
 	       }
 	   }
 	   
@@ -279,8 +312,9 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
 	       this.cancelled = true;
 	   }
     }
+    */
     
-    
+    /*
     private void sendToast(String text)
     {
 	   Message msg = mHandler.obtainMessage(GateControlActivity.MESSAGE_TOAST);
@@ -289,27 +323,32 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
 	   msg.setData(bundle);
 	   mHandler.sendMessage(msg);	
     }
+    */
     
-    private DisconnectThread disconnectThread = null;
+    //private DisconnectThread disconnectThread = null;
     
     private void connectInAdvance()
     {
 	synchronized (this)
 	{
+	    /*
 	    if (null!=disconnectThread)
 	    {
 		disconnectThread.cancel();
 		disconnectThread = null;
 	    }
+	    */
 	    
-	    if (null!=mmSelectedAddress && !mConnected)
+	    if (null!=mmSelectedAddress && !mConnection.isConnected())
 	    {
 		BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(mmSelectedAddress);
-		mChatService.connect(device);
+		//mChatService.connect(device);
+		mConnection.connect(device);
 	    }
 	}
     }
     
+    /*
     private void disconnectAfter(final int ms)
     {
 	synchronized (this)
@@ -321,6 +360,7 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
 	    (disconnectThread = new DisconnectThread(ms)).start();		
 	}	
     }    
+    */
 
     
     public void buttonPressed(View v)
@@ -359,11 +399,12 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
     
     private void initOpening()
     {
-	sendBTMessage("tartur\n");
+	sendLine("tartur\n");
 	commandIntension = CMD_OPEN;	
     }
 
-    private void setupChat() {
+    private void setupChat() 
+    {
         Log.d(TAG, "setupChat()");
 
         // Initialize the send value with a listener that for click events
@@ -371,10 +412,11 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
         mButtonOpen = (ImageButton) findViewById(R.id.buttonOpen);
         
         // Initialize the BluetoothChatService to perform bluetooth connections
-        boolean doListen = false;
-        mChatService = new BluetoothSerialService(this, mHandler, doListen);
+        //boolean doListen = false;
+        //mChatService = new BluetoothSerialService(this, mHandler, doListen);
     }
 
+    /*
     private void ensureDiscoverable() {
         if(D) Log.d(TAG, "ensure discoverable");
         if (mBluetoothAdapter.getScanMode() !=
@@ -384,67 +426,79 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
             startActivity(discoverableIntent);
         }
     }
+    */
 
-    /**
-     * Sends a message.
-     * @param message  A string of text to send.
-     */
-    private void sendBTMessage(String message) 
+    private void sendLine(String message) 
     {
         // Check that we're actually connected before trying anything
-        if (mChatService.getState() != BluetoothSerialService.STATE_CONNECTED) {
+	if (mConnection.getState()!=SPPService.STATE_CONNECTED)
+	{
             Toast.makeText(this, R.string.not_connected, Toast.LENGTH_SHORT).show();
             return;
         }
 
         // Check that there's actually something to send
-        if (message.length() > 0) {
+        if (U.notEmpty(message)) 
+        {
+            mConnection.sendLine(message);
             log("SENT: " + message);
-            // Get the message bytes and tell the BluetoothChatService to write
-            byte[] send = message.getBytes();
-            mChatService.write(send);
         }
+    }    
+    
+    public static final char[] hexchars = new char[] 
+    {
+	'0', '1', '2', '3', '4', '5', '6', '7', 
+	'8', '9', 'a', 'b', 'c', 'd', 'e', 'f' 
+    };
+
+    public static String toHex(byte[] buf, int ofs, int len) 
+    {
+	StringBuffer sb = new StringBuffer();
+	int j = ofs + len;
+	for (int i = ofs; i < j; i++) 
+	{
+	    if (i < buf.length) 
+	    {
+		sb.append(hexchars[(buf[i] & 0xF0) >> 4]);
+		sb.append(hexchars[buf[i] & 0x0F]);
+		sb.append(' ');
+	    } 
+	    else 
+	    {
+		sb.append(' ');
+		sb.append(' ');
+		sb.append(' ');
+	    }
+	}
+	return sb.toString();
+    }
+    
+    public static String toAscii(byte[] buf, int ofs, int len) 
+    {
+	StringBuffer sb = new StringBuffer();
+	int j = ofs + len;
+	for (int i = ofs; i < j; i++) {
+	    if (i < buf.length) {
+		if ((20 <= buf[i]) && (126 >= buf[i])) 
+		{
+		    sb.append((char) buf[i]);
+		} 
+		else 
+		{
+		    sb.append('.');
+		}
+	    } 
+	    else 
+	    {
+		sb.append(' ');
+	    }
+	}
+	return sb.toString();
     }
 
-    
-    public static final char[] hexchars = new char[] { '0', '1', '2', '3', '4',
-	      '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
-
-    public static String toHex(byte[] buf, int ofs, int len) {
-	    StringBuffer sb = new StringBuffer();
-	    int j = ofs + len;
-	    for (int i = ofs; i < j; i++) {
-	      if (i < buf.length) {
-	        sb.append(hexchars[(buf[i] & 0xF0) >> 4]);
-	        sb.append(hexchars[buf[i] & 0x0F]);
-	        sb.append(' ');
-	      } else {
-	        sb.append(' ');
-	        sb.append(' ');
-	        sb.append(' ');
-	      }
-	    }
-	    return sb.toString();
-	  }
-    
-    public static String toAscii(byte[] buf, int ofs, int len) {
-	    StringBuffer sb = new StringBuffer();
-	    int j = ofs + len;
-	    for (int i = ofs; i < j; i++) {
-	      if (i < buf.length) {
-	        if ((20 <= buf[i]) && (126 >= buf[i])) {
-	          sb.append((char) buf[i]);
-	        } else {
-	          sb.append('.');
-	        }
-	      } else {
-	        sb.append(' ');
-	      }
-	    }
-	    return sb.toString();
-	  }
-
-    private static String format(byte[] buf, int width) {
+    /*
+    private static String format(byte[] buf, int width) 
+    {
 	    int bs = (width - 8) / 4;
 	    int i = 0;
 	    StringBuffer sb = new StringBuffer();
@@ -461,28 +515,80 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
 	    } while (i < buf.length);
 	    return sb.toString();
 	  }
+    */
     
-    String receivedLine = "";
-    private boolean mConnected;
-    
-    
-    private void setTitleMsg(String msg)
+    private void setSubTitle(String msg)
     {
-	if (null!=mTitle)
+	if (null!=mSubTitle)
 	{
-	    mTitle.setText(msg);
+	    mSubTitle.setText(msg);
 	}
     }
     
-    private void appendTitle(String msg)
+    private void appendSubTitle(String msg)
     {
-	if (null!=mTitle)
+	if (null!=mSubTitle)
 	{
-	    mTitle.append(msg);
+	    mSubTitle.append(msg);
 	}
+    }
+    
+    class GateDataHandler extends SPPDataHandler
+    {
+        @Override
+        protected void onDebugMessage(String msg)
+        {
+            log(msg);
+        }
+        
+        @Override
+        protected void onDeviceConnected()
+        {
+            log("STATE_CONNECTED");
+            setTitle(R.string.title_connected_to);
+            appendSubTitle(mConnectedDeviceName);
+            mInfoArea.setTextColor(Color.GREEN);
+        }
+
+        @Override
+        protected void onDeviceDisconnected()
+        {
+            log("STATE_DISCONNECTED");
+            setSubTitle("disconnected");
+            mInfoArea.setTextColor(Color.RED);
+        }
+        
+        @Override
+        protected void onConnectingDevice()
+        {
+            log("STATE_CONNECTING");
+            setTitle(R.string.title_connecting);
+            mInfoArea.setTextColor(Color.YELLOW);
+        }
+        
+        @Override
+        protected void onTimeout()
+        {
+            log("STATE_CONN_TIMEOUT");
+            setSubTitle("timeout");
+            mInfoArea.setTextColor(Color.RED);
+        }
+        
+        @Override
+        protected void onLineReceived(String receivedLine)
+        {
+            handleCommand(receivedLine);
+        }
+        
+        @Override
+        protected void onToast(String msg)
+        {
+            showToast(msg);
+        }	
     }
     
     // The Handler that gets information back from the BluetoothChatService
+    /*
     private final Handler mHandler = new Handler() {
 
 	@Override
@@ -568,6 +674,7 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
 
     };
 
+*/
     
     static final char CMD_REGISTER = 'r';
     static final char CMD_OPEN     = 'o';
@@ -593,8 +700,9 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
 	    case 'O' : 
 		logSuccess(command.substring(1));
 		//disconnectAfter(2000);
-		showProgress();
-		mChatService.disconnect();
+		showGateOpeningDialog();
+		//mChatService.disconnect();
+		mConnection.disconnect();
 		mPinArea.setText("");
 		break;
 
@@ -612,13 +720,13 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
 		case CMD_OPEN:
 		{
 		    String token = computeToken(command.substring(1), pin);
-		    sendBTMessage(CMD_OPEN + token + "\n");
+		    sendLine(CMD_OPEN + token + "\n");
 		}
 		break;
 		case CMD_PIN:
 		{
 		    String token = computeToken(command.substring(1), pin);
-		    sendBTMessage(CMD_PIN + token + "," + newPin + "\n");
+		    sendLine(CMD_PIN + token + "," + newPin + "\n");
 		}
 		break;
 		case CMD_NONE:
@@ -636,7 +744,7 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
 	{
 	    String msg = e.toString();
 	    msg = msg.replaceAll("[\r\n]", "");
-	    sendBTMessage("E" + msg + "\n");
+	    sendLine("E" + msg + "\n");
 	}
     }
 
@@ -689,7 +797,7 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
         } 
         catch (Exception e)
         {
-            sendToast("Failed to peer info: " + e);
+            showToast("Failed to peer info: " + e);
         } 
     }
 
@@ -707,12 +815,13 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
         } 
         catch (Exception e)
         {
-            sendToast("Failed to load peer info: " + e);
+            showToast("Failed to load peer info: " + e);
         } 
     }
 
     
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) 
+    {
         if(D) Log.d(TAG, "onActivityResult " + resultCode);
         switch (requestCode) {
         case REQUEST_CONNECT_DEVICE:
@@ -730,7 +839,8 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
                 updateSelectedInfo();
                 
                 // Attempt to connect to the device
-                mChatService.connect(device);
+                //mChatService.connect(device);
+                mConnection.connect(device);
             }
             break;
         case REQUEST_ENABLE_BT:
@@ -755,11 +865,11 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
     }
 
         
-    public class CustomizeDialog extends Dialog  
+    public class GateOpeningDialog extends Dialog  
     {
 	private ProgressBar mProgress;
 
-	public CustomizeDialog(Context context)   
+	public GateOpeningDialog(Context context)   
 	{
 	    super(context);
 	    requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -795,9 +905,9 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
 	}
     }
     
-    private void showProgress()
+    private void showGateOpeningDialog()
     {
-	(new CustomizeDialog(this)).show();
+	(new GateOpeningDialog(this)).show();
     }
 
     
@@ -818,7 +928,8 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
             connectInAdvance();
             return true;
         case R.id.disconnect:
-            mChatService.disconnect();
+            //mChatService.disconnect();
+            mConnection.disconnect();
             return true;
         case R.id.select:
             // Launch the PresetsActivity to see devices and do scan
@@ -833,9 +944,6 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
         return false;
     }
 
-    /**
-     * 
-     */
     private void nextActivity()
     {
 	Intent i = new Intent(getApplicationContext(), StripControlActivity.class);
@@ -843,35 +951,48 @@ public class GateControlActivity extends Activity implements Callback, OnClickLi
 	finish();
     }
 
-    public void onClick(DialogInterface dialog, int which)
-    {
-	// TODO Auto-generated method stub
-	
-    }
-
-    public void shakingStarted()
-    {
-	if (Calendar.getInstance().getTimeInMillis()-activityStarted>1000)
-	{
-	    mVibrator.vibrate(200);
-	}
-    }
-
-
-    public void shakingStopped()
-    {
-	if (Calendar.getInstance().getTimeInMillis()-activityStarted>1000)
-	{
-	    nextActivity();
-	}
-    }
-
-
+    
     public void onClick(View view)
     {
 	if (mInfoArea==view)
 	{
-	    showProgress();
+	    showGateOpeningDialog();
 	}
     }
+    
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() 
+    {
+	@Override
+	public void onReceive(Context context, Intent intent) 
+	{
+	    final String action = intent.getAction();
+
+	    if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) 
+	    {
+		final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
+		
+		switch (state) 
+		{
+        		case BluetoothAdapter.STATE_OFF:
+        		    showToast("Bluetooth turned off");
+        		    //mBluetoothEnabled = false;
+        		    break;
+        		case BluetoothAdapter.STATE_TURNING_OFF:
+        		    //showToast("Turning Bluetooth off...");
+        		    //mBluetoothEnabled = false; // preemptive obedience
+        		    break;
+        		case BluetoothAdapter.STATE_ON:
+        		    showToast("Bluetooth turned on");
+        		    //mBluetoothEnabled = true;
+        		    break;
+        		case BluetoothAdapter.STATE_TURNING_ON:
+        		    showToast("Turning Bluetooth on...");
+        		    //mBluetoothEnabled = false; // if turning on, it's not on yet
+        		    break;
+		}
+
+	    }
+	}
+    };
+
 }

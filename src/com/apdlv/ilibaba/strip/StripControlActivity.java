@@ -42,9 +42,7 @@ import com.apdlv.ilibaba.R;
 import com.apdlv.ilibaba.color.HSVColorWheel;
 import com.apdlv.ilibaba.color.OnColorSelectedListener;
 import com.apdlv.ilibaba.frotect.FrotectActivity;
-import com.apdlv.ilibaba.gate.BluetoothSerialService;
 import com.apdlv.ilibaba.gate.DeviceListActivity;
-import com.apdlv.ilibaba.gate.GateControlActivity;
 import com.apdlv.ilibaba.shake.Shaker.Callback;
 
 public class StripControlActivity extends Activity implements OnSeekBarChangeListener, Callback, OnColorSelectedListener, OnItemSelectedListener
@@ -630,26 +628,26 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
 		enableControls(false);
 		switch (msg.arg1) {
-		case BluetoothSerialService.STATE_CONNECTED:
+		case BTStripSerialService.STATE_CONNECTED:
 		    doLog("STATE_CONNECTED");
 		    setTitleMessage("connected to " + mConnectedDeviceName);
 		    setCmd("H"); // send hello commands
 		    enableControls(true);
 		    break;
-		case BluetoothSerialService.STATE_CONNECTING:
+		case BTStripSerialService.STATE_CONNECTING:
 		    doLog("STATE_CONNECTING");
 		    setTitleMessage("connecting");
 		    break;
-		case BluetoothSerialService.STATE_DISCONNECTED:
+		case BTStripSerialService.STATE_DISCONNECTED:
 		    doLog("STATE_DISCONNECTED");
 		    setTitleMessage("disconnected");
 		    break;
-		case BluetoothSerialService.STATE_CONN_TIMEOUT:
+		case BTStripSerialService.STATE_TIMEOUT:
 		    doLog("STATE_CONN_TIMEOUT");
 		    setTitleMessage("timeout");
 		    break;
-		case BluetoothSerialService.STATE_LISTEN:
-		case BluetoothSerialService.STATE_NONE:
+		case BTStripSerialService.STATE_LISTEN:
+		case BTStripSerialService.STATE_NONE:
 		    doLog("STATE_LISTEN/STATE_NONE");
 		    setTitleMessage("not connected");
 		    break;

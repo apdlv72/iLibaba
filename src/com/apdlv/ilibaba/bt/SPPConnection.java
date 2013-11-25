@@ -1,8 +1,5 @@
 package com.apdlv.ilibaba.bt;
 
-import com.apdlv.ilibaba.bt.SPPService.SPPBinder;
-import com.apdlv.ilibaba.frotect.FrotectActivity;
-
 import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
 import android.content.Context;
@@ -11,10 +8,12 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
+import com.apdlv.ilibaba.bt.SPPService.SPPBinder;
+
 
 public class SPPConnection implements ServiceConnection
 {
-    private Handler         mHandler;
+    private Handler    mHandler;
     private SPPService mService = null;
 
     final static String TAG = SPPConnection.class.getSimpleName();
@@ -102,6 +101,16 @@ public class SPPConnection implements ServiceConnection
 	    }
 	}
     }
+
+
+    public int getState()
+    {
+	return mService.getState();
+    }
+ 
     
-    
+    public boolean isConnected()
+    {
+	return mService.isConnected();
+    }
 }

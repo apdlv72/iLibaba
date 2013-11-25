@@ -13,13 +13,17 @@ import android.app.Dialog;
 import android.graphics.Color;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.View;
+import android.view.Window;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.TextView;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.LinearLayout;
 
 import com.apdlv.ilibaba.R;
 import com.apdlv.ilibaba.frotect.FrotectActivity.FrotectBTDataCompleteListener;
+import com.apdlv.ilibaba.util.U;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GraphView.GraphViewData;
 import com.jjoe64.graphview.GraphViewSeries;
@@ -30,40 +34,45 @@ import com.jjoe64.graphview.LineGraphView;
 public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener, OnCheckedChangeListener
 {
     final static String TAG = StatsDialog.class.getSimpleName();
-    
+
     private HashMap<String, GraphViewData[]> statistics;
     private HashMap<String, GraphViewData[]> minmaxHist;
 
     private GraphView mGraphView;
     private FrotectActivity frotect;
 
+    private View checkBoxContainer;
+
     public StatsDialog(FrotectActivity frotect, String style)
     {
 	super(frotect);
-	
+	requestWindowFeature(Window.FEATURE_NO_TITLE); 
+
 	this.frotect = frotect;
 	this.mStyle = style;
+	this.checkBoxContainer = findViewById(R.id.checkBoxContainer);
+
 	LayoutInflater inflater = this.getLayoutInflater();
 	setContentView(inflater.inflate(R.layout.dialog_stats, null));
 
 	if (StatsDialog.POWER.equals(mStyle))
 	{
-	    setTitle("Power consumption");
+	    //setTitle("Power consumption");
 	    initPower();
 	}
 	else if (StatsDialog.TEMP.equals(mStyle))
 	{
-	    setTitle("Temperature history");
+	    //setTitle("Temperature history");
 	    initTemp();
 	}
 	else if (StatsDialog.COST.equals(mStyle))
 	{
-	    setTitle("Cost");
+	    //setTitle("Cost");
 	    initCost();
 	}
 	else if (StatsDialog.DUTY.equals(mStyle))
 	{
-	    setTitle("Duty cycle");
+	    //setTitle("Duty cycle");
 	    initDuty();
 	}
 
@@ -74,31 +83,31 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	}
 
     }
-    
+
 
     @Override
     public void show()
     {
 	super.show();
 
-	statistics = Parser.parseStats(frotect.statsBuffer.toString());
-	minmaxHist = Parser.parseHistories(frotect.minmaxBuffer.toString());
-	
+	statistics = GraphParser.parseStats(frotect.statsBuffer.toString());
+	minmaxHist = GraphParser.parseHistories(frotect.minmaxBuffer.toString());
+
 	refreshData();
     }
 
-    
+
     public void onDataComplete(TYPE type, String data)
     {
 	switch (type)
 	{
 	case STATS: 
-	    statistics = Parser.parseStats(data);
+	    statistics = GraphParser.parseStats(data);
 	    refreshData(); 
 	    break;
-	
+
 	case MINMAX:
-	    minmaxHist  = Parser.parseHistories(data);
+	    minmaxHist  = GraphParser.parseHistories(data);
 	    refreshData(); 
 	    break;
 
@@ -106,57 +115,10 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	    startTimesBuffer = data;
 	    refreshData(); 
 	    break;
-	    
+
 	default:
 	}
     }	
-
-
-    private void refreshData()
-    {
-	if (StatsDialog.POWER.equals(mStyle))
-	{
-	    refreshPower();
-	}
-	if (StatsDialog.TEMP.equals(mStyle))
-	{
-	    refreshTemp();
-	}
-	if (StatsDialog.COST.equals(mStyle))
-	{
-	    refreshCost();
-	}
-	if (StatsDialog.DUTY.equals(mStyle))
-	{
-	    refreshDuty();
-	}	
-    }
-
-    void refreshStartTimes(double min, double max)
-    {
-	if (null==startTimesBuffer) return;
-	StringReader sr = new StringReader(startTimesBuffer);
-	BufferedReader br = new BufferedReader(sr);
-
-	String line = null;
-	do 
-	{
-	    try { line = br.readLine(); } catch (IOException e) {}
-	    if (null!=line)
-	    {
-		Map<String, Double> map = Parser.parseStartTime(line);
-		Double ago = map.get("ago");
-
-		GraphViewData d[] = new GraphViewData[2];
-		d[0] = new GraphViewData(ago-0.001,min);
-		d[1] = new GraphViewData(ago+0.001,max);
-
-		GraphViewSeries series = new GraphViewSeries("|", whStyle, d);
-		mGraphView.addSeries(series);
-	    }
-	}
-	while (null!=line);
-    }
 
 
     void initDuty()
@@ -180,46 +142,19 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	gv.getGraphViewStyle().setNumVerticalLabels(11);
 
 	LinearLayout layout = (LinearLayout) findViewById(R.id.linearLayout);
+	layout.setBackgroundColor(Color.BLACK);
+
 	layout.addView(mGraphView = gv);	
     }
 
-    private void refreshDuty()
-    {
-	if (null==statistics) return;
-
-	mGraphView.removeAllSeries();
-
-	for (String k : statistics.keySet())
-	{
-	    if (!k.startsWith("r")) continue;
-
-	    GraphViewData[] values = statistics.get(k);	    
-	    GraphViewSeriesStyle style = getStyle(k);
-
-	    if (isChecked(k))
-	    {	    
-		GraphViewSeries series = new GraphViewSeries(k, style, values);
-//		for (GraphViewData v : values)
-//		{
-//		    System.out.println("refreshDuty: " + v.valueX + "," + v.valueY);
-//		}
-		mGraphView.addSeries(series);
-	    }
-
-	}
-
-	refreshStartTimes(0,1.0);
-    }
-    
-    
     public GraphViewSeriesStyle getStyle(String key)
     {
 	return getStyle(key, false);
     }
-    
+
     public GraphViewSeriesStyle getStyle(String key, boolean lo)
     {
-	GraphViewSeriesStyle style = grayStyle;
+	GraphViewSeriesStyle style = whStyle;
 	if (lo)
 	{
 	    if (key.endsWith("1")) style = style01Lo;
@@ -230,11 +165,11 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	}
 	else
 	{
-	    	if (key.endsWith("1")) style = style01;
-	    	if (key.endsWith("2")) style = style02;
-	    	if (key.endsWith("3")) style = style03;
-	    	if (key.endsWith("4")) style = style04;
-	    	if (key.endsWith("5")) style = style05;	    
+	    if (key.endsWith("1")) style = style01;
+	    if (key.endsWith("2")) style = style02;
+	    if (key.endsWith("3")) style = style03;
+	    if (key.endsWith("4")) style = style04;
+	    if (key.endsWith("5")) style = style05;	    
 	}
 	return style;
     }
@@ -247,7 +182,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	gv.setDrawingCacheQuality(GraphView.DRAWING_CACHE_QUALITY_HIGH);
 	gv.getGraphViewStyle().setTextSize(10);
 
-	refreshPower();
+	Double mm[] = refreshPower();
 
 	//	graphView.setDrawBackground(true);
 	//	graphView.setShowLegend(true);
@@ -259,30 +194,10 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	gv.getGraphViewStyle().setNumVerticalLabels(11);
 
 	LinearLayout layout = (LinearLayout) findViewById(R.id.linearLayout);
+	layout.setBackgroundColor(Color.BLACK);
+
 	layout.addView(mGraphView = gv);	
     }
-
-    private void refreshPower()
-    {
-	if (null==statistics) return;
-
-	mGraphView.removeAllSeries();
-	for (String k : statistics.keySet())
-	{
-	    if (!k.startsWith("P")) continue;
-
-	    GraphViewData[] values = statistics.get(k);	    
-	    GraphViewSeriesStyle style = getStyle(k);
-	    if (isChecked(k))
-	    {
-		GraphViewSeries series = new GraphViewSeries(k, style, values);
-		mGraphView.addSeries(series);		
-	    }
-	}
-
-	refreshStartTimes(0,100);
-    }
-
 
     void initTemp()
     {       
@@ -311,26 +226,255 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	//	graphView.addSeries(hiSeries); // data
 	//	graphView.addSeries(loSeries); // data
 
-	refreshTemp();
+	Double minMax[] = refreshTemp();
 
 	//	graphView.setShowLegend(true);
 	//	graphView.setLegendAlign(LegendAlign.MIDDLE);  
 	//	graphView.setLegendWidth(100);  
-	//graphView.setManualYAxisBounds(30, -15);
-	graphView.setManualYAxisBounds(35, -15);
+	// graphView.setManualYAxisBounds(30, -15);
+	graphView.setManualYAxisBounds(-10, -10);
+	if (null!=minMax && 2==minMax.length) 
+	{
+	    Double min = minMax[0];
+	    Double max = minMax[1];
+	    if (null==min) min= 0.0;
+	    if (null==max) max=10.0;
 
-	graphView.setViewPort(-4, 4);  
+	    graphView.setManualYAxisBounds(Math.floor(min)-1, Math.ceil(max)+1);
+	}	
+
+	graphView.setViewPort(-14, 14);  // 14 days
 	graphView.setScrollable(true);  
 	graphView.setScalable(true);  
 	graphView.getGraphViewStyle().setNumHorizontalLabels(5);
-	graphView.getGraphViewStyle().setNumVerticalLabels(11);
+	graphView.getGraphViewStyle().setNumVerticalLabels(21);
 
 	LinearLayout layout = (LinearLayout) findViewById(R.id.linearLayout);
-	layout.addView(mGraphView = graphView);	
+	layout.setBackgroundColor(Color.BLACK);
+	layout.addView(mGraphView = graphView);
+
+	TextView xLabel = new TextView(getContext());
+	xLabel.setText("days");
+	layout.addView(xLabel);
     }
-    
+
     int checkboxId[] = { R.id.checkBoxSensor1, R.id.checkBoxSensor2, R.id.checkBoxSensor3, R.id.checkBoxSensor4, R.id.checkBoxSensor5 };     
-    
+
+    private Double[] refreshData()
+    {
+	Double mm[] = null;
+	if (StatsDialog.POWER.equals(mStyle))
+	{
+	    U.setVisible(checkBoxContainer);
+	    mm = refreshPower();
+	}
+	else if (StatsDialog.TEMP.equals(mStyle))
+	{
+	    U.setVisible(checkBoxContainer);
+	    mm = refreshTemp();
+	}
+	else if (StatsDialog.DUTY.equals(mStyle))
+	{
+	    U.setVisible(checkBoxContainer);
+	    mm = refreshDuty();
+	}	
+	else if (StatsDialog.COST.equals(mStyle))
+	{
+	    U.setInvisibile(checkBoxContainer);
+	    mm = refreshCost();
+	}
+
+	refreshAxisSettings(mm);        
+	return mm;
+    }
+
+
+    private void refreshAxisSettings(Double[] mm)
+    {
+	if (null!=mm && null!=mm[0] && null!=mm[1])
+	{
+	    Double minX = mm[0];
+	    Double maxX = mm[1];
+	    Double minY = mm[2];
+	    Double maxY = mm[3];
+	    if (null==minY) minY= 0.0; if (null==minX) minX=0.0;  // today;
+	    if (null==maxY) maxY=10.0; if (null==maxX) maxX=14.0; // 14 days;
+
+	    GraphScaler gc = new GraphScaler(minY, maxY);
+
+	    Log.e(TAG, "Y-Axis: min=" + gc.getMin() + ", max=" + gc.getMax() + ", ticks=" + gc.getTicks());
+	    mGraphView.setManualYAxisBounds(gc.getMax(), gc.getMin());
+	    mGraphView.getGraphViewStyle().setNumVerticalLabels(gc.getTicks());    	 
+	    
+	    int maxDay = (int) Math.ceil(maxX); 
+	    Log.e(TAG, "X-Axis: days=" + maxDay);
+	    mGraphView.getGraphViewStyle().setNumHorizontalLabels(maxDay);	    
+	    mGraphView.setViewPort(-maxDay, maxDay);
+	}
+    }
+
+
+    private Double[] refreshCost()
+    {
+	if (null==statistics) return null;
+
+	Double minX=null, maxX=null, minY=null, maxY=null;
+
+	mGraphView.removeAllSeries();	    
+	for (String k : statistics.keySet())
+	{
+	    if (!k.equals("C")) continue;
+
+	    GraphViewData[] values = statistics.get(k);	    
+	    Double mm[] = findMinMax(values);
+	    if (null==minX || (null!=mm[0] && mm[0]<minX)) minX=mm[0];
+	    if (null==maxX || (null!=mm[1] && mm[1]>maxX)) maxX=mm[1];
+	    if (null==minY || (null!=mm[2] && mm[2]<minY)) minY=mm[2];
+	    if (null==maxY || (null!=mm[3] && mm[3]>maxY)) maxY=mm[3];
+
+	    GraphViewSeriesStyle style = whStyle;
+	    GraphViewSeries series = new GraphViewSeries(k, style, values);
+	    mGraphView.addSeries(series);
+
+
+	}
+	//graphView.setManualYAxisBounds(1.0, 0);
+	refreshStartTimes(0,1);
+
+	Double rv[] = { minX, maxX, minY, maxY };
+	return rv;
+    }
+
+
+    private Double[] refreshDuty()
+    {
+	if (null==statistics) return  null;
+
+	Double minX=null, maxX=null, minY=null, maxY=null;
+
+	mGraphView.removeAllSeries();
+
+	for (String k : statistics.keySet())
+	{
+	    if (!k.startsWith("r")) continue;
+
+	    GraphViewData[] values = statistics.get(k);	    
+	    GraphViewSeriesStyle style = getStyle(k);
+
+	    if (isChecked(k))
+	    {	    
+		Double mm[] = findMinMax(values);
+		if (null==minX || (null!=mm[0] && mm[0]<minX)) minX=mm[0];
+		if (null==maxX || (null!=mm[1] && mm[1]>maxX)) maxX=mm[1];
+		if (null==minY || (null!=mm[2] && mm[2]<minY)) minY=mm[2];
+		if (null==maxY || (null!=mm[3] && mm[3]>maxY)) maxY=mm[3];
+
+		GraphViewSeries series = new GraphViewSeries(k, style, values);
+		mGraphView.addSeries(series);
+	    }    
+	}
+
+	refreshStartTimes(0,1.0);
+
+	Double rv[] = { minX, maxX, minY, maxY };
+	return rv;
+    }
+
+
+    private Double[] refreshPower()
+    {
+	if (null==statistics) return null;
+
+	Double minX=null, maxX=null, minY=null, maxY=null;
+
+	mGraphView.removeAllSeries();
+	for (String k : statistics.keySet())
+	{
+	    if (!k.startsWith("P")) continue;
+
+	    GraphViewData[] values = statistics.get(k);	    
+	    GraphViewSeriesStyle style = getStyle(k);
+	    if (isChecked(k))
+	    {
+		Double mm[] = findMinMax(values);
+		if (null==minX || (null!=mm[0] && mm[0]<minX)) minX=mm[0];
+		if (null==maxX || (null!=mm[1] && mm[1]>maxX)) maxX=mm[1];
+		if (null==minY || (null!=mm[2] && mm[2]<minY)) minY=mm[2];
+		if (null==maxY || (null!=mm[3] && mm[3]>maxY)) maxY=mm[3];
+
+		GraphViewSeries series = new GraphViewSeries(k, style, values);
+		mGraphView.addSeries(series);		
+	    }
+	}
+
+	refreshStartTimes(0,100);
+
+	Double rv[] = { minX, maxX, minY, maxY };
+	return rv;
+    }
+
+
+    private Double[] refreshTemp()
+    {
+	if (null==minmaxHist) return null;
+
+	mGraphView.removeAllSeries();	   
+	Set<String> keySet = minmaxHist.keySet(); 
+	System.out.println("refreshTemp: keys: " + keySet);
+
+	Double minX=null, maxX=null, minY=null, maxY=null;
+
+	for (String key : minmaxHist.keySet())
+	{
+	    GraphViewData[] values = minmaxHist.get(key);
+
+	    GraphViewSeriesStyle style = getStyle(key, key.startsWith("lo"));
+	    if (isChecked(key))
+	    {
+		Double mm[] = findMinMax(values);
+		if (null==minX || (null!=mm[0] && mm[0]<minX)) minX=mm[0];
+		if (null==maxX || (null!=mm[1] && mm[1]>maxX)) maxX=mm[1];
+		if (null==minY || (null!=mm[2] && mm[2]<minY)) minY=mm[2];
+		if (null==maxY || (null!=mm[3] && mm[3]>maxY)) maxY=mm[3];
+
+		GraphViewSeries series = new GraphViewSeries(key, style, values);
+		mGraphView.addSeries(series);
+	    }
+	}
+	refreshStartTimes(-10,30);
+
+	Double rv[] = { minX, maxX, minY, maxY };
+	return rv;
+    }
+
+
+    void refreshStartTimes(double min, double max)
+    {
+	if (null==startTimesBuffer) return;
+	StringReader sr = new StringReader(startTimesBuffer);
+	BufferedReader br = new BufferedReader(sr);
+
+	String line = null;
+	do 
+	{
+	    try { line = br.readLine(); } catch (IOException e) {}
+	    if (null!=line)
+	    {
+		Map<String, Double> map = MessageParser.parseStartTime(line);
+		Double ago = map.get("ago");
+
+		GraphViewData d[] = new GraphViewData[2];
+		d[0] = new GraphViewData(ago-0.001,min);
+		d[1] = new GraphViewData(ago+0.001,max);
+
+		GraphViewSeries series = new GraphViewSeries("|", whStyle, d);
+		mGraphView.addSeries(series);
+	    }
+	}
+	while (null!=line);
+    }
+
+
     private boolean isChecked(String key)
     {
 	try
@@ -346,33 +490,31 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	}
 	return false;
     }
-    
 
-    private void refreshTemp()
+
+    private static Double[] findMinMax(GraphViewData[] values)
     {
-	if (null==minmaxHist) return;
+	Double minY = null, maxY = null;
+	Double minX = null, maxX = null;
 
-	mGraphView.removeAllSeries();	   
-	Set<String> keySet = minmaxHist.keySet(); 
-	System.out.println("refreshTemp: keys: " + keySet);
-		
-	for (String key : minmaxHist.keySet())
+	for (GraphViewData v : values)
 	{
-	    GraphViewData[] values = minmaxHist.get(key);
-
-	    GraphViewSeriesStyle style = getStyle(key, key.startsWith("lo"));
-	    if (isChecked(key))
-	    {
-		GraphViewSeries series = new GraphViewSeries(key, style, values);
-		mGraphView.addSeries(series);
-	    }
+	    double y = v.getY();
+	    double x = v.getX();
+	    if (null==minX || x<minX) minX=x;
+	    if (null==maxX || x>maxX) maxX=x;
+	    if (null==minY || y<minY) minY=y;
+	    if (null==maxY || y>maxY) maxY=y;
 	}
-	refreshStartTimes(-10,30);
+
+	Double rv[] = { minX, maxX, minY, maxY };
+	return rv;
     }
+
 
     void initCost()
     {       
-	// graph with dynamically genereated horizontal and vertical labels
+	// graph with dynamically generated horizontal and vertical labels
 	LineGraphView graphView = new LineGraphView(frotect, "Û/day");
 
 	graphView.setDrawingCacheQuality(GraphView.DRAWING_CACHE_QUALITY_HIGH);
@@ -387,28 +529,11 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	graphView.getGraphViewStyle().setNumVerticalLabels(11);
 
 	LinearLayout layout = (LinearLayout) findViewById(R.id.linearLayout);
+	layout.setBackgroundColor(Color.BLACK);
+
 	layout.addView(mGraphView = graphView);	
 	refreshStartTimes(0,10);
     }
-
-    private void refreshCost()
-    {
-	if (null==statistics) return;
-
-	mGraphView.removeAllSeries();	    
-	for (String k : statistics.keySet())
-	{
-	    if (!k.equals("C")) continue;
-
-	    GraphViewData[] values = statistics.get(k);	    
-	    GraphViewSeriesStyle style = grayStyle;
-	    GraphViewSeries series = new GraphViewSeries(k, style, values);
-	    mGraphView.addSeries(series);
-	}
-	//graphView.setManualYAxisBounds(1.0, 0);
-	refreshStartTimes(0,1);
-    }
-
 
     HashMap<String, GraphViewData[]> toReverseArray(HashMap<String, ArrayList<GraphViewData>> map)
     {
@@ -426,24 +551,21 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
     }
 
 
-    //private SPPConnection mConnection = new SPPConnection(mHandler);
+    private GraphViewSeriesStyle whStyle   = new GraphViewSeriesStyle(Color.WHITE, 3);	
 
-    private GraphViewSeriesStyle whStyle   = new GraphViewSeriesStyle(Color.YELLOW, 5);	
-    private GraphViewSeriesStyle grayStyle = new GraphViewSeriesStyle(Color.GRAY, 5);	
+    private GraphViewSeriesStyle style01   = new GraphViewSeriesStyle(Color.RED,     1);	
+    private GraphViewSeriesStyle style02   = new GraphViewSeriesStyle(Color.GREEN,   1);	
+    private GraphViewSeriesStyle style03   = new GraphViewSeriesStyle(Color.BLUE,    1);	
+    private GraphViewSeriesStyle style04   = new GraphViewSeriesStyle(Color.MAGENTA, 1);
+    private GraphViewSeriesStyle style05   = new GraphViewSeriesStyle(Color.YELLOW,  1);
 
-    private GraphViewSeriesStyle style01   = new GraphViewSeriesStyle(Color.RED, 1);	
-    private GraphViewSeriesStyle style02   = new GraphViewSeriesStyle(Color.GREEN, 1);	
-    private GraphViewSeriesStyle style03   = new GraphViewSeriesStyle(Color.BLUE, 1);	
-    private GraphViewSeriesStyle style04   = new GraphViewSeriesStyle(Color.YELLOW, 1);
-    private GraphViewSeriesStyle style05   = new GraphViewSeriesStyle(Color.MAGENTA, 1);
+    private GraphViewSeriesStyle style01Lo   = new GraphViewSeriesStyle(Color.RED,     2);	
+    private GraphViewSeriesStyle style02Lo   = new GraphViewSeriesStyle(Color.GREEN,   2);	
+    private GraphViewSeriesStyle style03Lo   = new GraphViewSeriesStyle(Color.BLUE,    2);	
+    private GraphViewSeriesStyle style04Lo   = new GraphViewSeriesStyle(Color.MAGENTA, 2);
+    private GraphViewSeriesStyle style05Lo   = new GraphViewSeriesStyle(Color.YELLOW,  2);
 
-    private GraphViewSeriesStyle style01Lo   = new GraphViewSeriesStyle(Color.RED, 2);	
-    private GraphViewSeriesStyle style02Lo   = new GraphViewSeriesStyle(Color.GREEN, 2);	
-    private GraphViewSeriesStyle style03Lo   = new GraphViewSeriesStyle(Color.BLUE, 2);	
-    private GraphViewSeriesStyle style04Lo   = new GraphViewSeriesStyle(Color.YELLOW, 2);
-    private GraphViewSeriesStyle style05Lo   = new GraphViewSeriesStyle(Color.MAGENTA, 2);
 
-    
     private String mStyle;
 
     private String startTimesBuffer = null;

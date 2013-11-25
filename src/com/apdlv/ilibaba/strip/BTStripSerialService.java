@@ -33,8 +33,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
-import com.apdlv.ilibaba.gate.GateControlActivity;
-
 public class BTStripSerialService
 {
 //    @Override
@@ -495,9 +493,9 @@ public class BTStripSerialService
             }
 
             // Start the connected thread
-            Message msg = mHandler.obtainMessage(GateControlActivity.MESSAGE_DEVICE_NAME);
+            Message msg = mHandler.obtainMessage(BTStripSerialService.MESSAGE_DEVICE_NAME);
             Bundle bundle = new Bundle();
-            bundle.putString(GateControlActivity.DEVICE_NAME, mmDevice.getName());
+            bundle.putString(DEVICE_NAME, mmDevice.getName());
             msg.setData(bundle);
             mHandler.sendMessage(msg);
             setState(STATE_CONNECTED);

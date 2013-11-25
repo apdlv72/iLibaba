@@ -11,52 +11,54 @@
     tools:context=".TempActivity" >
 
     <LinearLayout
+        android:id="@+id/checkBoxContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:gravity="center" >
+        android:gravity="center"
+	        android:paddingLeft="20dip"
+         >
 
         <CheckBox
             android:id="@+id/checkBoxSensor1"
-            android:layout_width="fill_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="#80ff00ff"            
+            android:button="@drawable/custom_checkbox_red"            
+	        android:paddingLeft="50dip"
             android:checked="true"
-            android:gravity="center"
             />
 
         <CheckBox
             android:id="@+id/checkBoxSensor2"
-            android:layout_width="fill_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_weight="1"
-            android:background="#80ffff00"
+            android:button="@drawable/custom_checkbox_green"            
+	        android:paddingLeft="50dip"
             android:checked="true" />
 
         <CheckBox
             android:id="@+id/checkBoxSensor3"
-            android:layout_width="fill_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="#800000ff"
+            android:button="@drawable/custom_checkbox_blue"            
+	        android:paddingLeft="50dip"
             android:checked="true" />
 
         <CheckBox
             android:id="@+id/checkBoxSensor4"
-            android:layout_width="fill_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="#8000ff00"
+            android:button="@drawable/custom_checkbox_magenta"            
+	        android:paddingLeft="50dip"
             android:checked="true" />
 
         <CheckBox
             android:id="@+id/checkBoxSensor5"
-            android:layout_width="fill_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="#80ff0000"
+            android:button="@drawable/custom_checkbox_yellow"            
+	        android:paddingLeft="50dip"
             android:checked="true" />
     </LinearLayout>
 

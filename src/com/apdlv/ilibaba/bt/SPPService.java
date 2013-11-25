@@ -110,14 +110,14 @@ public class SPPService  extends Service
     {
 	switch (state)
 	{
-        	case STATE_NONE:         return "NONE";
-        	case STATE_FAILED:       return "FAILED";
-        	case STATE_CONNECTING:   return "CONNECTING";
-        	case STATE_CONNECTED:    return "CONNECTED";
-        	case STATE_DISCONNECTED: return "DISCONNECTED";
-        	case STATE_CONN_TIMEOUT: return "TIMEOUT";	
-        	case STATE_LOST:         return "LOST";	
-        	default:                 return "UNKNOWN";
+	case STATE_NONE:         return "NONE";
+	case STATE_FAILED:       return "FAILED";
+	case STATE_CONNECTING:   return "CONNECTING";
+	case STATE_CONNECTED:    return "CONNECTED";
+	case STATE_DISCONNECTED: return "DISCONNECTED";
+	case STATE_CONN_TIMEOUT: return "TIMEOUT";	
+	case STATE_LOST:         return "LOST";	
+	default:                 return "UNKNOWN";
 	}
     }
 
@@ -125,16 +125,16 @@ public class SPPService  extends Service
     {
 	switch (state)
 	{
-        	case MESSAGE_HELLO:          return "HELLO";
-        	case MESSAGE_BYEBYE:         return "BYEBYE";
-        	case MESSAGE_STATE_CHANGE:   return "STATE_CHANGE";
-        	case MESSAGE_READ:           return "READ";
-        	case MESSAGE_WRITE:          return "WRITE";
-        	case MESSAGE_DEVICE_INFO:    return "DEVICE_INFO";
-        	case MESSAGE_TOAST:          return "TOAST";	
-        	case MESSAGE_READLINE:       return "READLINE";	
-        	case MESSAGE_DEBUG_MSG:      return "DEBUG_MSG";
-        	default:                     return "UNKNOWN";
+	case MESSAGE_HELLO:          return "HELLO";
+	case MESSAGE_BYEBYE:         return "BYEBYE";
+	case MESSAGE_STATE_CHANGE:   return "STATE_CHANGE";
+	case MESSAGE_READ:           return "READ";
+	case MESSAGE_WRITE:          return "WRITE";
+	case MESSAGE_DEVICE_INFO:    return "DEVICE_INFO";
+	case MESSAGE_TOAST:          return "TOAST";	
+	case MESSAGE_READLINE:       return "READLINE";	
+	case MESSAGE_DEBUG_MSG:      return "DEBUG_MSG";
+	default:                     return "UNKNOWN";
 	}
     }
 
@@ -150,7 +150,7 @@ public class SPPService  extends Service
     {
 	super.onStart(intent, startId); Log.d(TAG, "onStart");
     };
-    
+
     @Override
     public void onDestroy() 
     {
@@ -174,7 +174,7 @@ public class SPPService  extends Service
 	    }
 	}
     }
-    
+
     public void removeHandler(Handler handler)
     {
 	synchronized (this)
@@ -287,7 +287,7 @@ public class SPPService  extends Service
 		msg = mHandler.obtainMessage(MESSAGE_DEVICE_INFO, bundle);
 		mHandler.sendMessage(msg);
 	    }
-	    
+
 	    setState(STATE_CONNECTING);
 	}
     }
@@ -331,26 +331,26 @@ public class SPPService  extends Service
 	    }
 	}	
     }
-    
-//	/**
-//	 * Write timeout the ConnectedThread in an unsynchronized manner
-//	 * @param out The bytes timeout write
-//	 * @see ConnectedThread#write(byte[])
-//	 */
-//	public void write(byte[] out) 
-//	{
-//	// Create temporary object
-//	ConnectThread r;
-//
-//	// Synchronize a copy of the ConnectedThread
-//	synchronized (this) 
-//	{
-//	    if (mState != STATE_CONNECTED) return;
-//	    r = mConnectThread;
-//	}
-//	// Perform the write unsynchronized
-//	r.write(out);
-//    	}
+
+    //	/**
+    //	 * Write timeout the ConnectedThread in an unsynchronized manner
+    //	 * @param out The bytes timeout write
+    //	 * @see ConnectedThread#write(byte[])
+    //	 */
+    //	public void write(byte[] out) 
+    //	{
+    //	// Create temporary object
+    //	ConnectThread r;
+    //
+    //	// Synchronize a copy of the ConnectedThread
+    //	synchronized (this) 
+    //	{
+    //	    if (mState != STATE_CONNECTED) return;
+    //	    r = mConnectThread;
+    //	}
+    //	// Perform the write unsynchronized
+    //	r.write(out);
+    //    	}
 
     /**
      * Indicate that the connection attempt failed and notify the UI Activity.
@@ -438,7 +438,6 @@ public class SPPService  extends Service
 	private final String TAG = ConnectThread.class.getSimpleName();
 
 	private BluetoothSocket mmSocket;	
-	private boolean         connected;
 	private OutputStream    mmOutStream;
 	private InputStream     mmInStream;
 	private boolean         mCancelled;
@@ -587,26 +586,21 @@ public class SPPService  extends Service
 	    try {
 		// This is a blocking call and will only return on a
 		// successful connection or an exception
-		this.connected = false;  
 		log("Connecting ...");
 		mmSocket.connect(); 
-		this.connected = true; 
 		log("Connected!");
 	    } 
 	    catch (Exception e) 
 	    {
-		log("Connection failed!");
-		log("ConnectThread::connect: " + e);
-		this.connected = false;
+		log("Connection failed: "+ e);
 		connectionFailed();
 		// Close the socket
-		try 
+		if (null!=mmSocket)
 		{
-		    if (null!=mmSocket) mmSocket.close();
-		} 
-		catch (IOException ioex) {
-		    log("unable timeout close() socket during connection failure: " + ioex);
+		    closeBluetoothSocket(mmSocket);
+		    mmSocket = null;
 		}
+
 		setState(STATE_DISCONNECTED);
 		// Start the service over timeout restart listening mode
 		//SPPService.this.start();
@@ -767,27 +761,27 @@ public class SPPService  extends Service
 	    }
 	}
 
-//	public boolean isConnected()
-//	{
-//	    return connected;
-//	}
-//
-//	public boolean cancelIfNotConnected() 
-//	{
-//	    synchronized (this)
-//	    {
-//		if (connected) return false;
-//		cancel();
-//		setState(STATE_CONN_TIMEOUT);
-//		return true;
-//	    }
-//	}
+	//	public boolean isConnected()
+	//	{
+	//	    return connected;
+	//	}
+	//
+	//	public boolean cancelIfNotConnected() 
+	//	{
+	//	    synchronized (this)
+	//	    {
+	//		if (connected) return false;
+	//		cancel();
+	//		setState(STATE_CONN_TIMEOUT);
+	//		return true;
+	//	    }
+	//	}
     }
 
     private class DisconnectThread extends Thread
     {
-	private final String TAG = DisconnectThread.class.getSimpleName();
-	
+	//private final String TAG = DisconnectThread.class.getSimpleName();
+
 	private BluetoothSocket mmSocket;
 
 	public DisconnectThread(BluetoothSocket socket)
@@ -798,15 +792,35 @@ public class SPPService  extends Service
 	@Override
 	public void run()
 	{
-	    try
-	    {
-		this.mmSocket.close();
-	    } 
-	    catch (IOException e)
-	    {
-		Log.e(TAG, "mmSocket.close(): " + e);
-	    }
+	    closeBluetoothSocket(mmSocket);
+	    mmSocket = null;
 	}
     }
-    
+
+    private void closeBluetoothSocket(BluetoothSocket socket)
+    {
+	try 
+	{
+	    socket.getOutputStream().close();
+	    socket.getInputStream().close();
+	}
+	catch (IOException ioex) 
+	{
+	    log("unable to close streams on BT socket: " + ioex);
+	}
+	try 
+	{
+	    socket.close();
+	}
+	catch (IOException ioex) 
+	{
+	    log("unable to close BT socket: " + ioex);
+	}
+    }
+
+
+    public boolean isConnected()
+    {
+	return STATE_CONNECTED==mState;
+    }    
 }
