@@ -21,7 +21,7 @@ public class U
 
     public static void setVisible(View v)
     {
-        setVisible(v, true);
+        if (null!=v) v.setVisibility(View.VISIBLE);
     }
 
     public static void setVisible(View v, boolean b)
@@ -31,7 +31,7 @@ public class U
 
     public static void setInvisibile(View v)
     {
-        setVisible(v, false);
+        if (null!=v) setVisible(v, false);
     }
 
     public static void setEnabled(View v, boolean e)
@@ -78,14 +78,9 @@ public class U
 	if (null!=view) view.setCursorVisible(visible);
     }
     
-    public static void setText(View view, String text)
+    public static void setText(TextView view, int resId)
     {
-	if (null!=view) setText(view, text);
-    }
-    
-    public static void setText(View view, int resId)
-    {
-	if (null!=view) setText(view, resId);
+	if (null!=view) view.setText(resId);
     }
     
 

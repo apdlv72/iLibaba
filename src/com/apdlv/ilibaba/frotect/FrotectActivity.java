@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.logging.LogManager;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -26,6 +27,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.util.LogWriter;
 import android.text.Layout;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -136,6 +138,8 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	public boolean lit, avail, bound, used, last;
 	public double  lo, hi, power, temp;
 	public String  addr;
+	public int minutesOn;
+	public Object mi;
 	
 	public String toString()
 	{
@@ -232,8 +236,6 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	startService(intent);
     }
 
-    //private boolean mBluetoothWasEnabled = false;
-
 
     @Override
     protected void onStart()
@@ -241,6 +243,12 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	super.onStart();
 
 	this.startupMillis = Calendar.getInstance().getTimeInMillis();
+	
+	// Enable bluetooth if it's now on already.
+	if (!mBluetoothAdapter.isEnabled()) 
+	{
+	    mBluetoothAdapter.enable();	    
+	} 	
 
 	updateControls();
 
@@ -280,11 +288,11 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
     protected void onDestroy() 
     {
 	super.onDestroy();
+	
 	Log.d(TAG, "onDestroy: Disconnection from device");
 	mConnection.disconnect();	
 	Log.d(TAG, "onDestroy: Unbinding from service");
 	mConnection.unbind(this);
-	
 	Log.d(TAG, "onDestroy: Unregistering bluetooth broadcast receiver");
 	unregisterReceiver(mReceiver);
     };
@@ -709,6 +717,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    mConnection.sendLine("\nS\n");  // dump sensor info 
 	    mConnection.sendLine("\nD\n");  // dump all info including strands, min/max and stats
 	    mConnection.sendLine("\nH\n");  // request help commands accepted 
+	    mConnection.sendLine("\nD\n");  // once again
 
 	    FrotectActivity.this.mConnected = true;	    
 	    updateControls();
@@ -740,7 +749,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	private void handleCommand(String c)
 	{
-	    //doLog("LINE: " + c);
+	    doLog("LINE: " + c);
 	    try
 	    {
 		if (c.startsWith("P.")) // ping
@@ -771,10 +780,34 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		}
 		else if (hasPrefix(c, "HB")) // heartbeat
 		{
-		    boolean on = c.contains("0"); // inverse logic (open collector connects LED to GND)
+		    // inverse logic (open collector connects LED to GND)
+		    boolean on = c.contains("l=0"); 
+		    
+		    // condition: 0 - during setup, 1 - ok, 2 - some sensors missing, 3 - no sensors/severe error
+		    boolean ok = c.contains("cnd=1") || c.contains("cnd=0");
+		    if (!ok)
+		    {
+			showToast("Sonsors missing!");
+		    }
 		    //setVisibile(imgHeartBeat, on);
 		    int id = on ? R.drawable.blue_lheart_64 : R.drawable.blue_dheart_64;
 		    if (null!=imgHeartBeat) imgHeartBeat.setImageResource(id);
+		}
+		else if (hasPrefix(c, "CUR")) // current minutes on
+		{
+		    // implement parsing and display of current value
+		    try
+		    {
+			Map<String, Object> map = MessageParser.parseCurrentInfo(c);
+			int n = (Integer) map.get("n");
+			int on = (Integer) map.get("on");
+			logErrorOrWarn(c);
+			updateInfo(n, on);
+		    }
+		    catch (Exception e)
+		    {
+			logErrorOrWarn("parsing CUR info: " + e);
+		    }
 		}
 		else if (hasPrefix(c, "D")) // debug
 		{
@@ -880,6 +913,13 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		doLog("handleCommand: " + e);
 	    }
 	}
+
+	private void updateInfo(int n, int on)
+        {
+	    Sensor sensor = sensors[n-1];
+	    sensor.minutesOn = on;
+	    U.setText(sensor.misc, "on: " + on + "m"); 
+        }
 
 	private void onSensorInfo(String c)
 	{
@@ -1164,6 +1204,10 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    if (err>0)
 	    {
 		U.setText(misc, "errors: " + err);
+	    }
+	    else //if (sensor.minutesOn>0)
+	    {
+		U.setText(misc, "on: " + sensor.minutesOn + "m");
 	    }
 	}
     }
