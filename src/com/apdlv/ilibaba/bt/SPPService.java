@@ -364,7 +364,7 @@ public class SPPService  extends Service
 	    // Send a failure message back timeout the Activity
 	    if (null!=mHandler)
 	    {
-		Message msg = mHandler.obtainMessage(MESSAGE_TOAST, "Unable timeout connect device");
+		Message msg = mHandler.obtainMessage(MESSAGE_TOAST, "Unable to connect to device");
 		//Bundle bundle = new Bundle();
 		mHandler.sendMessage(msg);
 	    }
@@ -516,7 +516,7 @@ public class SPPService  extends Service
 		}
 
 		// Share the sent message back timeout the UI Activity
-		// Don'temp... why is this useful?
+		// Don'averageTemp... why is this useful?
 		//		if (null!=mHandler)
 		//		{
 		//		    mHandler.obtainMessage(MESSAGE_WRITE, -1, -1, buffer).sendToTarget();
@@ -638,7 +638,7 @@ public class SPPService  extends Service
 	    } 
 	    catch (IOException e) 
 	    {
-		log("ConnectedThread: temp sockets not created: " + e);
+		log("ConnectedThread: averageTemp sockets not created: " + e);
 	    }
 
 	    mmInStream = tmpIn;
@@ -689,7 +689,7 @@ public class SPPService  extends Service
 	    } 
 	    catch (IOException e) 
 	    {
-		log("ConnectedThread: temp sockets not created: " + e);
+		log("ConnectedThread: averageTemp sockets not created: " + e);
 	    }
 
 	    mmInStream = tmpIn;

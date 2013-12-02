@@ -5,10 +5,12 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GraphView.GraphViewData;
 
 public class GraphParser extends MessageParser
@@ -46,7 +48,8 @@ public class GraphParser extends MessageParser
 		    int val = Integer.parseInt(sValid);
 		    if (val<1) continue;
 
-		    double days  = parseTimeToDays(sTime);
+		    // make days positive, since GraphView cannot handle negative values nicely
+		    double days  = -1 * parseTimeToDays(sTime);
 		    double mul   = getTimeMultiplierToDays(sTime);		    
 		    double cost  = Double.parseDouble(sCost);
 		    cost = 0.01*cost/mul; // normalize to EUR / day			    
@@ -78,7 +81,7 @@ public class GraphParser extends MessageParser
 			    String rName = "r" + no;
 			    String pName = "P" + no;
 
-			    //System.out.println("temp=" + t + ", n=" + no + ", r=" + r + ", P=" + p);			    
+			    //System.out.println("averageTemp=" + t + ", n=" + no + ", r=" + r + ", P=" + p);			    
 
 			    ArrayList<GraphViewData> rList = map.get(rName);
 			    ArrayList<GraphViewData> pList = map.get(pName);			
@@ -94,7 +97,7 @@ public class GraphParser extends MessageParser
 	}
 	while (null!=line);
 
-	HashMap<String, GraphViewData[]> result = toReverseArray(map);	
+	HashMap<String, GraphViewData[]> result = toSortedArray(map);	
 	return result;
     }
 
@@ -124,7 +127,8 @@ public class GraphParser extends MessageParser
 		    String s1 = tM.group(1);
 		    String s2 = tM.group(2);
 
-		    float t = Float.parseFloat(s1); // hours always
+		    // make time positive, since GraphView cannot handle negative values nicely
+		    float t = -1 * Float.parseFloat(s1); // hours always
 		    t/=24.0; // hours -> days
 
 		    String split[] = s2.split("\\}\\{"); // "{s=01,lo=23.00,hi=29.50}{s=02,lo=23.00,hi=29.50}{s=03,lo=23.00,hi=29.50}{s=04,lo=23.00,hi=29.50}{s=05,lo=23.00,hi=29.50}"
@@ -160,8 +164,54 @@ public class GraphParser extends MessageParser
 	}
 	while (null!=line);
 
-	HashMap<String, GraphViewData[]> result = toReverseArray(map);	
+	HashMap<String, GraphViewData[]> result = toSortedArray(map);	
 	return result;
+    }
+
+    private static Comparator<? super GraphViewData> comparator = new Comparator<GraphViewData>()
+    {
+	public int compare(GraphViewData d1, GraphViewData d2)
+        {
+	    return (int)Math.round(1000*(d1.getX()-d2.getX()));
+        }	
+    };     
+
+
+    private static HashMap<String, GraphViewData[]> toSortedArray(HashMap<String, ArrayList<GraphViewData>> map)
+    {
+	HashMap<String, GraphViewData[]> result = new HashMap<String, GraphView.GraphViewData[]>();
+
+	for (String k : map.keySet())
+	{
+	    ArrayList<GraphViewData> list = map.get(k);
+	    	
+	    //String s1 = dump(list);
+	    Collections.sort(list, comparator);
+	    //Collections.reverse(list);
+	    //String s2 = dump(list);
+	    
+//	    if (!s1.equals(s2))
+//	    {
+//		System.out.println("toSortedArray: order changed");
+//		System.out.println("before: " + s1);
+//		System.out.println("after:  " + s2);
+//	    }
+
+	    GraphViewData[] data = list.toArray(new GraphViewData[0]);
+	    result.put(k, data);
+	}
+	return result;
+    }
+
+
+    private static String dump(ArrayList<GraphViewData> list)
+    {
+	StringBuilder sb = new StringBuilder();
+	for (GraphViewData d : list)
+	{
+	    sb.append(" (" + String.format("%2.1f", d.getX())  + "," + String.format("%2.1f", d.getY()) + ")");
+	}
+	return sb.toString();
     }
 
 

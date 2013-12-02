@@ -69,6 +69,7 @@ public class GateControlActivity extends Activity implements OnClickListener
     private static final int REQUEST_ENABLE_BT = 2;
 
     // Layout Views
+    @SuppressWarnings("unused")
     private TextView mMainTitle;
     private TextView mSubTitle;
     private ImageButton mButtonOpen;
@@ -92,8 +93,8 @@ public class GateControlActivity extends Activity implements OnClickListener
         super.onCreate(savedInstanceState);
         if(D) Log.e(TAG, "+++ ON CREATE +++");
 
-	mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 	// If the adapter is null, then Bluetooth is not supported
+	mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 	if (mBluetoothAdapter == null) 
 	{
 	    Toast.makeText(this, "WARNING: Bluetooth is not available", Toast.LENGTH_LONG).show();
@@ -123,7 +124,7 @@ public class GateControlActivity extends Activity implements OnClickListener
         U.setCursorVisible(mPinArea = (TextView) findViewById(R.id.pinText), false);        
         U.setTextColor(mInfoArea = (TextView) findViewById(R.id.infoArea), Color.RED);
                 
-        mInfoArea.setOnClickListener(this);
+        if (null!=mInfoArea) mInfoArea.setOnClickListener(this);
         
         if (null!= (mLogView = (TextView) findViewById(R.id.logView)))
         {
@@ -161,19 +162,20 @@ public class GateControlActivity extends Activity implements OnClickListener
         super.onStart();
         if(D) Log.e(TAG, "++ ON START ++");
 
-//	if (!mBluetoothAdapter.isEnabled()) 
-//	{
-//	    mBluetoothAdapter.eenable();	    
-//	}
+	if (!mBluetoothAdapter.isEnabled()) 
+	{
+	    mBluetoothAdapter.enable();	    
+	}
 	
         // If BT is not on, request that it be enabled.
         // setupChat() will then be called during onActivityResult
+/*        
         if (!mBluetoothAdapter.isEnabled()) 
         {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
         }
-        
+*/        
 	Intent intent = new Intent(this, SPPService.class);
 	bindService(intent, mConnection, Context.BIND_AUTO_CREATE);	        
     }
@@ -228,14 +230,14 @@ public class GateControlActivity extends Activity implements OnClickListener
     @Override
     public void onDestroy() 
     {
-        super.onDestroy();
-        
-        // Stop the Bluetooth chat services
-        //if (mChatService != null) mChatService.stop();
-        if(D) Log.e(TAG, "--- ON DESTROY ---");
+	super.onDestroy();
 
-        mConnection.disconnect();
-	mConnection.unbind(this);
+	Log.d(TAG, "onDestroy: Disconnection from device");
+	mConnection.disconnect();	
+	Log.d(TAG, "onDestroy: Unbinding from service");
+	mConnection.unbind(this);	
+	Log.d(TAG, "onDestroy: Unregistering bluetooth broadcast receiver");
+	unregisterReceiver(mReceiver);
     }
 
     

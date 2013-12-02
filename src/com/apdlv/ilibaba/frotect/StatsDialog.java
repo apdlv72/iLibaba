@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -14,15 +15,17 @@ import android.graphics.Color;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.TextView;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.apdlv.ilibaba.R;
 import com.apdlv.ilibaba.frotect.FrotectActivity.FrotectBTDataCompleteListener;
+import com.apdlv.ilibaba.util.NiceScale;
 import com.apdlv.ilibaba.util.U;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GraphView.GraphViewData;
@@ -41,7 +44,27 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
     private GraphView mGraphView;
     private FrotectActivity frotect;
 
-    private View checkBoxContainer;
+    private View checkBoxContainer, unboundSensor;
+    
+    boolean isDuty()
+    {
+	return StatsDialog.DUTY.equals(mStyle);
+    }
+
+    boolean isPower()
+    {
+	return StatsDialog.POWER.equals(mStyle);
+    }
+
+    boolean isTemp()
+    {
+	return StatsDialog.TEMP.equals(mStyle);
+    }
+    
+    private boolean isCost()
+    {	
+	return StatsDialog.COST.equals(mStyle);
+    }
 
     public StatsDialog(FrotectActivity frotect, String style)
     {
@@ -50,27 +73,29 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 
 	this.frotect = frotect;
 	this.mStyle = style;
-	this.checkBoxContainer = findViewById(R.id.checkBoxContainer);
 
 	LayoutInflater inflater = this.getLayoutInflater();
 	setContentView(inflater.inflate(R.layout.dialog_stats, null));
 
-	if (StatsDialog.POWER.equals(mStyle))
+	this.checkBoxContainer = findViewById(R.id.checkBoxContainer);
+	this.unboundSensor     = findViewById(R.id.checkBoxSensor5);
+
+	if (isPower())
 	{
 	    //setTitle("Power consumption");
 	    initPower();
 	}
-	else if (StatsDialog.TEMP.equals(mStyle))
+	else if (isTemp())
 	{
 	    //setTitle("Temperature history");
 	    initTemp();
 	}
-	else if (StatsDialog.COST.equals(mStyle))
+	else if (isCost())
 	{
 	    //setTitle("Cost");
 	    initCost();
 	}
-	else if (StatsDialog.DUTY.equals(mStyle))
+	else if (isDuty())
 	{
 	    //setTitle("Duty cycle");
 	    initDuty();
@@ -124,7 +149,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
     void initDuty()
     {       
 	// graph with dynamically genereated horizontal and vertical labels
-	LineGraphView gv = new LineGraphView(frotect, "% on");
+	LineGraphView gv = new LineGraphView(frotect, "y: % on-time,    x: days");
 
 	gv.setDrawingCacheQuality(GraphView.DRAWING_CACHE_QUALITY_HIGH);
 	gv.getGraphViewStyle().setTextSize(10);
@@ -137,7 +162,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 
 	gv.setViewPort(-4, 4);  
 	gv.setScrollable(true);  
-	gv.setScalable(true);  
+	//gv.setScalable(true);  
 	gv.getGraphViewStyle().setNumHorizontalLabels(5);
 	gv.getGraphViewStyle().setNumVerticalLabels(11);
 
@@ -177,19 +202,20 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
     void initPower()
     {       
 	// graph with dynamically genereated horizontal and vertical labels
-	LineGraphView gv = new LineGraphView(frotect, "kWh/day");
+	LineGraphView gv = new LineGraphView(frotect, "y: kWh/day,    x: days");
 
 	gv.setDrawingCacheQuality(GraphView.DRAWING_CACHE_QUALITY_HIGH);
 	gv.getGraphViewStyle().setTextSize(10);
 
-	Double mm[] = refreshPower();
+	@SuppressWarnings("unused")
+        Double mm[] = refreshPower();
 
 	//	graphView.setDrawBackground(true);
 	//	graphView.setShowLegend(true);
 	//	graphView.setManualYAxisBounds(20, 0);	
 	gv.setViewPort(-4, 4);  
 	gv.setScrollable(true);  
-	gv.setScalable(true);  
+	//gv.setScalable(true);  
 	gv.getGraphViewStyle().setNumHorizontalLabels(5);
 	gv.getGraphViewStyle().setNumVerticalLabels(11);
 
@@ -214,7 +240,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	//	loStyle.thickness=10;
 
 	// graph with dynamically genereated horizontal and vertical labels
-	LineGraphView graphView = new LineGraphView(frotect, "¡C");
+	LineGraphView graphView = new LineGraphView(frotect, "y: ¡C,    x: days");
 
 	graphView.setDrawingCacheQuality(GraphView.DRAWING_CACHE_QUALITY_HIGH);
 	graphView.getGraphViewStyle().setTextSize(10);
@@ -245,7 +271,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 
 	graphView.setViewPort(-14, 14);  // 14 days
 	graphView.setScrollable(true);  
-	graphView.setScalable(true);  
+	//graphView.setScalable(true);  
 	graphView.getGraphViewStyle().setNumHorizontalLabels(5);
 	graphView.getGraphViewStyle().setNumVerticalLabels(21);
 
@@ -258,7 +284,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	layout.addView(xLabel);
     }
 
-    int checkboxId[] = { R.id.checkBoxSensor1, R.id.checkBoxSensor2, R.id.checkBoxSensor3, R.id.checkBoxSensor4, R.id.checkBoxSensor5 };     
+    int checkboxId[] = { R.id.checkBoxSensor1, R.id.checkBoxSensor2, R.id.checkBoxSensor3, R.id.checkBoxSensor4, R.id.checkBoxSensor5 };
 
     private Double[] refreshData()
     {
@@ -266,6 +292,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	if (StatsDialog.POWER.equals(mStyle))
 	{
 	    U.setVisible(checkBoxContainer);
+	    U.removeView(unboundSensor);
 	    mm = refreshPower();
 	}
 	else if (StatsDialog.TEMP.equals(mStyle))
@@ -276,18 +303,20 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	else if (StatsDialog.DUTY.equals(mStyle))
 	{
 	    U.setVisible(checkBoxContainer);
+	    U.removeView(unboundSensor);
 	    mm = refreshDuty();
 	}	
 	else if (StatsDialog.COST.equals(mStyle))
 	{
 	    U.setInvisibile(checkBoxContainer);
+	    U.removeView(checkBoxContainer);
+
 	    mm = refreshCost();
 	}
 
 	refreshAxisSettings(mm);        
 	return mm;
     }
-
 
     private void refreshAxisSettings(Double[] mm)
     {
@@ -297,19 +326,54 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	    Double maxX = mm[1];
 	    Double minY = mm[2];
 	    Double maxY = mm[3];
-	    if (null==minY) minY= 0.0; if (null==minX) minX=0.0;  // today;
-	    if (null==maxY) maxY=10.0; if (null==maxX) maxX=14.0; // 14 days;
-
-	    GraphScaler gc = new GraphScaler(minY, maxY);
-
-	    Log.e(TAG, "Y-Axis: min=" + gc.getMin() + ", max=" + gc.getMax() + ", ticks=" + gc.getTicks());
-	    mGraphView.setManualYAxisBounds(gc.getMax(), gc.getMin());
-	    mGraphView.getGraphViewStyle().setNumVerticalLabels(gc.getTicks());    	 
+	    Log.e(TAG, "X: [" + minX + ", " + maxX + "], Y: [" + minY + ", " + maxY + "]");
 	    
-	    int maxDay = (int) Math.ceil(maxX); 
-	    Log.e(TAG, "X-Axis: days=" + maxDay);
-	    mGraphView.getGraphViewStyle().setNumHorizontalLabels(maxDay);	    
-	    mGraphView.setViewPort(-maxDay, maxDay);
+	    if (null==minY) minY= 0.0; 
+	    if (null==maxY) maxY=10.0; 
+
+	    if (null==minX) minX=-14.0; // 14 days;
+	    if (null==maxX) maxX=  0.0; // today
+	    
+	    if (isDuty())
+	    {
+		minY = 0.0; maxY = 1.2; // sometimes slightly largen than 1.0 
+	    }
+	    else if (isPower() || isCost())
+	    {
+		minY = 0.0;
+	    }
+	    
+	    double delta = maxY-minY;
+	    if (delta<0.01)
+	    {
+		maxY = minY+1;
+	    }	    
+	    
+    	    delta = maxX-minX;
+    	    if (delta<0.1) minX=maxX-7; // days
+
+	    NiceScale gcY = new NiceScale(minY, maxY);
+
+	    Log.e(TAG, "Y-Axis: min=" + gcY.getNiceMin() + ", max=" + gcY.getNiceMax() + ", #ticks=" + gcY.getNumberOfTicks());
+	    mGraphView.setManualYAxisBounds(gcY.getNiceMax(), gcY.getNiceMin());
+	    mGraphView.getGraphViewStyle().setNumVerticalLabels(gcY.getNumberOfTicks());    	 
+	    
+	    int maxDay  = (int) Math.ceil(Math.abs(maxX));
+	    int xTicks = maxDay+1; // show one tick pre day plus one extra (for y-axis)
+	    if (maxDay<=4)
+	    {
+		xTicks = 2*maxDay + 1; // show 1 day in 4 intervals (6h each)  
+	    }	    
+	    else if (maxDay>10)
+	    {
+		maxDay = 10;
+		xTicks = 10+1; // show 10 days, user can scroll to see more
+	    }
+	    
+	    Log.e(TAG, "X-Axis: maxDay=" + maxDay);
+	    mGraphView.getGraphViewStyle().setNumHorizontalLabels(xTicks);	    
+	    //mGraphView.setViewPort(-minDay, minDay);
+	    mGraphView.setViewPort(0, maxDay);	    
 	}
     }
 
@@ -336,7 +400,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	    GraphViewSeries series = new GraphViewSeries(k, style, values);
 	    mGraphView.addSeries(series);
 
-
+	    //dump(values);
 	}
 	//graphView.setManualYAxisBounds(1.0, 0);
 	refreshStartTimes(0,1);
@@ -345,6 +409,17 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	return rv;
     }
 
+    
+//    void dump(GraphViewData values[])
+//    {
+//	for (GraphViewData v : values)
+//	{
+//	    double x = v.getX();
+//	    double y = v.getY();
+//	    System.out.println("(" + x + "," + y + ") ");
+//	}
+//    }
+//
 
     private Double[] refreshDuty()
     {
@@ -460,15 +535,20 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	    try { line = br.readLine(); } catch (IOException e) {}
 	    if (null!=line)
 	    {
-		Map<String, Double> map = MessageParser.parseStartTime(line);
-		Double ago = map.get("ago");
+		Map<String, Object> map = MessageParser.parseStartTime(line);
+		if (null!=map) 
+		{		
+		    Double ago = (Double) map.get("ago");
+		    if (null!=ago)
+		    {
+			GraphViewData d[] = new GraphViewData[2];
+			d[0] = new GraphViewData(ago-0.001,min);
+			d[1] = new GraphViewData(ago+0.001,max);
 
-		GraphViewData d[] = new GraphViewData[2];
-		d[0] = new GraphViewData(ago-0.001,min);
-		d[1] = new GraphViewData(ago+0.001,max);
-
-		GraphViewSeries series = new GraphViewSeries("|", whStyle, d);
-		mGraphView.addSeries(series);
+			GraphViewSeries series = new GraphViewSeries("|", whStyle, d);
+			mGraphView.addSeries(series);
+		    }
+		}
 	    }
 	}
 	while (null!=line);
@@ -515,7 +595,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
     void initCost()
     {       
 	// graph with dynamically generated horizontal and vertical labels
-	LineGraphView graphView = new LineGraphView(frotect, "Û/day");
+	LineGraphView graphView = new LineGraphView(frotect, "y: Û/day,    x: days");
 
 	graphView.setDrawingCacheQuality(GraphView.DRAWING_CACHE_QUALITY_HIGH);
 	graphView.getGraphViewStyle().setTextSize(10);
@@ -524,7 +604,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 
 	graphView.setViewPort(-4, 4);  
 	graphView.setScrollable(true);  
-	graphView.setScalable(true);  
+	//graphView.setScalable(true);  
 	graphView.getGraphViewStyle().setNumHorizontalLabels(5);
 	graphView.getGraphViewStyle().setNumVerticalLabels(11);
 
@@ -534,22 +614,6 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	layout.addView(mGraphView = graphView);	
 	refreshStartTimes(0,10);
     }
-
-    HashMap<String, GraphViewData[]> toReverseArray(HashMap<String, ArrayList<GraphViewData>> map)
-    {
-	HashMap<String, GraphViewData[]> result = new HashMap<String, GraphView.GraphViewData[]>();
-
-	for (String k : map.keySet())
-	{
-	    ArrayList<GraphViewData> list = map.get(k);
-	    Collections.reverse(list);
-
-	    GraphViewData[] data = list.toArray(new GraphViewData[0]);
-	    result.put(k, data);
-	}
-	return result;
-    }
-
 
     private GraphViewSeriesStyle whStyle   = new GraphViewSeriesStyle(Color.WHITE, 3);	
 
@@ -572,7 +636,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 
     public static final String POWER = "power";
 
-    public static final String TEMP = "temp";
+    public static final String TEMP = "averageTemp";
 
     public static final String COST = "cost";
 

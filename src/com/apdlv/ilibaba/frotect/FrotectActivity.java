@@ -2,12 +2,13 @@ package com.apdlv.ilibaba.frotect;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.LogManager;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -22,17 +23,19 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.media.MediaPlayer;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v4.util.LogWriter;
 import android.text.Layout;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -44,6 +47,8 @@ import android.view.View.OnTouchListener;
 import android.view.Window;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.RadioGroup;
+import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.Scroller;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -83,24 +88,50 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
     private ImageView imgHeartBeat;    
     private ProgressBar pingProgress = null;
 
-
     private String mmSelectedDeviceAddress = "F0:B4:79:07:AE:EE"; // "BuzBekci1"
     //private String mmSelectedName;
 
     int tableIds[] = { R.id.sensorTable1,  R.id.sensorTable2,  R.id.sensorTable3,  R.id.sensorTable4,  R.id.sensorTable5 };
     int iconId[]   = { R.id.sensorIcon1,   R.id.sensorIcon2,   R.id.sensorIcon3,   R.id.sensorIcon4,   R.id.sensorIcon5  };
     int valueId[]  = { R.id.sensorValue1,  R.id.sensorValue2,  R.id.sensorValue3,  R.id.sensorValue4,  R.id.sensorValue5 };
-    int limitsId[] = { R.id.sensorMisc1,   R.id.sensorMisc2,   R.id.sensorMisc3,   R.id.sensorMisc4,   R.id.sensorMisc5  }; 
-    int miscId[]   = { R.id.sensorLimits1, R.id.sensorLimits2, R.id.sensorLimits3, R.id.sensorLimits4, -1                }; 
+    int miscId[]   = { R.id.sensorMisc1,   R.id.sensorMisc2,   R.id.sensorMisc3,   R.id.sensorMisc4,   R.id.sensorMisc5  }; 
+    int limitsId[] = { R.id.sensorLimits1, R.id.sensorLimits2, R.id.sensorLimits3, R.id.sensorLimits4, -1                }; 
 
+    
     public boolean   mConnected = false;
 
     private BluetoothAdapter mBluetoothAdapter;
-    private Device   mConnectedDevice = null;
-    private long startupMillis;
-
+    private Device           mConnectedDevice = null;
+    
     private final FrotectBTDataHandler mHandler = new FrotectBTDataHandler();
+    
+    private Sensor[] sensors = new Sensor[5];    
+    private TextView mErrorView;
+    
+    private static final int VERB_NORM    = 1;
+    private static final int VERB_VERBOSE = 2;
+    private static final int VERB_DEBUG   = 3;
+    
+    private long startupMillis;
+    private long lastPingLocal;
+    private long lastUpdateLocal, lastUpdateRemote;
 
+    protected ReceiveBuffer helpBuffer    = new ReceiveBuffer();
+    protected ReceiveBuffer infoBuffer    = new ReceiveBuffer();
+    protected ReceiveBuffer statsBuffer   = new ReceiveBuffer();
+    protected ReceiveBuffer minmaxBuffer  = new ReceiveBuffer();
+    protected ReceiveBuffer sensorsBuffer = new ReceiveBuffer();
+    protected ReceiveBuffer strandsBuffer = new ReceiveBuffer();
+    protected ReceiveBuffer starttimesBuffer  = new ReceiveBuffer();
+
+    protected Integer numStrands = null;
+    protected Integer numSensors = null;
+    protected Integer avlStrands = null;
+    protected Double  numCost    = null;
+
+    private int verbosity = VERB_NORM;
+
+    
     protected SPPConnection mConnection = new SPPConnection(mHandler)
     {
 	@Override
@@ -113,21 +144,6 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	};
     };
 
-    private long lastPingLocal;
-    private long lastUpdateLocal;
-
-    protected ReceiveBuffer helpBuffer    = new ReceiveBuffer();
-    protected ReceiveBuffer infoBuffer    = new ReceiveBuffer();
-    protected ReceiveBuffer statsBuffer   = new ReceiveBuffer();
-    protected ReceiveBuffer minmaxBuffer  = new ReceiveBuffer();
-    protected ReceiveBuffer sensorsBuffer = new ReceiveBuffer();
-    protected ReceiveBuffer strandsBuffer = new ReceiveBuffer();
-
-    protected int    numStrands = -1;
-    protected int    numSensors = -1;
-    protected int    avlStrands = -1;
-    protected double numCost    = -1;
-
     public class Sensor
     {
 	// widgets that define and visualize the actual sensors
@@ -136,18 +152,18 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	// recent values read per sensor
 	public boolean lit, avail, bound, used, last;
-	public double  lo, hi, power, temp;
+	public double  lo, hi, power, averageTemp;
 	public String  addr;
 	public int minutesOn;
-	public Object mi;
+	public Double singleTemp;
 	
 	public String toString()
 	{
-	    return "lit=" + lit + ", avail=" + avail + ", used=" + used + ", bound=" + bound + ", last=" + last;
+	    return "lit=" + lit + ", avail=" + avail + ", used=" + used + ", bound=" + bound + ", last=" + last + 
+		   ", avgT=" + averageTemp + ", singleT=" + singleTemp + "minOn=" + minutesOn;
 	}
     }
 
-    private Sensor[] sensors = new Sensor[5];
 
 
     @Override
@@ -194,10 +210,13 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    mLogTextView.setScroller(scroller);	
 	}
 
-	buttonTemp   = findViewById(R.id.buttonTemp); 
-	buttonPower  = findViewById(R.id.buttonPower); 
-	buttonCost   = findViewById(R.id.buttonCost); 
-	buttonDuty   = findViewById(R.id.buttonDuty);
+	U.setInvisibile(mErrorView = (TextView) findViewById(R.id.frotectGeneralError));
+	
+	buttonTemp   = findViewById(R.id.frotectButtonTemp); 
+	buttonPower  = findViewById(R.id.frotectButtonPower); 
+	buttonCost   = findViewById(R.id.frotectButtonCost); 
+	buttonDuty   = findViewById(R.id.frotectButtonDuty);
+	
 	buttonInfo   = findViewById(R.id.frotectButtonInfo);
 	buttonUpdate = findViewById(R.id.frotectButtonUpdate);
 	buttonConfig = findViewById(R.id.frotectButtonConfig);
@@ -229,8 +248,6 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	pingProgress = (ProgressBar) findViewById(R.id.frotectPingProgress);
 	if (null!=pingProgress) pingProgress.setMax(60);
 	customizeProgressbar(pingProgress);
-
-	updateControls();
 
 	Intent intent = new Intent(this, SPPService.class);
 	startService(intent);
@@ -403,7 +420,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	if (!strandsBuffer.isComplete()) //if (!mConnected)
 	{
-	    mHandler.onToast("No sensor info.");
+	    mHandler.onToast("Sensor info incomplete");
 	    return true; // click was consumed
 	}
 
@@ -423,6 +440,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    StrandDialog dialog = new StrandDialog(this, strand);
 	    mHandler.addStatusListener(dialog);
 	    mHandler.addDataCompleteListener(dialog);
+	    mHandler.addDataListener(dialog); // receive STR messagesupdate strand info (temp, on-minutes etc.)
 	    dialog.setOnDismissListener(this);
 	    dialog.show();
 	}
@@ -490,7 +508,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
     private void updateControls()
     {
-	boolean connected = mConnected;
+	boolean connected = mConnection.isConnected();
 
 	setMainTitle("Frotect");
 
@@ -550,7 +568,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	}
     }
 
-    private void doLog(String s)
+    protected void doLog(String s)
     {
 	Log.d(TAG, s);
 	if (null==mLogTextView) return;
@@ -578,25 +596,25 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    }
 	    mConnection.sendLine("\n\nD\n\n"); // dump all
 	    break;
-	case R.id.buttonPower:
+	case R.id.frotectButtonPower:
 	    stDialog = new StatsDialog(this, StatsDialog.POWER);
 	    mHandler.addDataCompleteListener(stDialog);
 	    stDialog.setOnDismissListener(this);
 	    stDialog.show();	    
 	    break;
-	case R.id.buttonTemp:
+	case R.id.frotectButtonTemp:
 	    stDialog = new StatsDialog(this, StatsDialog.TEMP);
 	    mHandler.addDataCompleteListener(stDialog);
 	    stDialog.setOnDismissListener(this);
 	    stDialog.show();	    
 	    break;
-	case R.id.buttonCost:
+	case R.id.frotectButtonCost:
 	    stDialog = new StatsDialog(this, StatsDialog.COST);
 	    mHandler.addDataCompleteListener(stDialog);
 	    stDialog.setOnDismissListener(this);
 	    stDialog.show();	    
 	    break;
-	case R.id.buttonDuty:
+	case R.id.frotectButtonDuty:
 	    stDialog = new StatsDialog(this, StatsDialog.DUTY);
 	    mHandler.addDataCompleteListener(stDialog);
 	    stDialog.setOnDismissListener(this);
@@ -639,7 +657,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
     interface FrotectBTDataCompleteListener
     {
-	enum TYPE { INFO, HELP, STATS, MINMAX, STARTTIMES, STRANDS }; 
+	enum TYPE { INFO, HELP, STATS, MINMAX, STRANDS, STARTTIMES }; 
 
 	void onDataComplete(TYPE type, String data);
     }
@@ -698,7 +716,19 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	}
 
 	@Override
-	protected void onLineReceived(String receivedLine) { handleCommand(receivedLine); }
+	protected void onLineReceived(String receivedLine) 
+	{ 
+	    try
+	    {
+		handleCommand(receivedLine);
+	    }
+	    catch (Exception e)
+	    {
+		Log.e(TAG, "onLineReceived: " + e);
+		U.setText(mErrorView, "EXCPT: " + e, Color.MAGENTA);
+		U.setVisible(mErrorView);
+	    }
+	}
 
 	@Override
 	protected void onIdle() { setTitleMsg("unconnected"); }
@@ -733,7 +763,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	}
 
 	@Override
-	protected void onDebugMessage(String msg) { doLog(msg); }
+	protected void onDebugMessage(String msg) { if (verbosity>=VERB_DEBUG) doLog(msg); }
 
 	@Override
 	protected void onServiceConnected()
@@ -749,69 +779,68 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	private void handleCommand(String c)
 	{
-	    doLog("LINE: " + c);
+	    if (verbosity>=VERB_DEBUG)
+	    {
+		doLog("LINE: " + c);
+	    }
+	    
 	    try
 	    {
 		if (c.startsWith("P.")) // ping
 		{
 		    lastPingLocal = Calendar.getInstance().getTimeInMillis()-startupMillis;
+		    int localProgress  = (int)(((lastPingLocal-lastUpdateLocal)/1000)%62);
+		    
+		    // its already in seconds not ms:
+		    long lastPingRemote = (long)Math.round(MessageParser.parsePing(c));
+		    int  remoteProgress = (int)(lastPingRemote-lastUpdateRemote); 
 
-		    c = c.replaceAll("^P.*s=", "");
-		    //double ms = Double.parseDouble(c);		    		    
-
-		    int progress = (int)(((lastPingLocal-lastUpdateLocal)/1000)%60);
-		    //System.out.println("lastUpdateLocal=" + lastUpdateLocal + ", lastPingLocal=" + lastPingLocal + ", progress=" + progress);
-
-		    U.setText(tvLastPing, String.format(Locale.ENGLISH, "%d", progress));
-
-		    if (null!=pingProgress)
-		    {
-			//			long l   = (long)Math.round(ms);
-			//			long div = pingProgress.getMax();
-			//int progress = (int)(l%div);
-
-
-			pingProgress.setProgress(progress);
-		    }
+		    U.setText(tvLastPing, String.format(Locale.ENGLISH, "%d / %d", localProgress, remoteProgress));
+		    U.setProgress(pingProgress, localProgress); System.out.println("Setting progress to " + localProgress);
 		}
 		else if (hasPrefix(c, "UP"))
 		{
-		    lastUpdateLocal = Calendar.getInstance().getTimeInMillis()-startupMillis;
+		    Map<String, Object> map = MessageParser.parseUpdateInfo(c);
+		    if (null!=map)
+		    {
+			Double t = (Double) map.get("t");
+			if (null!=t) lastUpdateRemote = (long)Math.round(t);
+			lastUpdateLocal = Calendar.getInstance().getTimeInMillis()-startupMillis;
+		    }
 		}
 		else if (hasPrefix(c, "HB")) // heartbeat
 		{
-		    // inverse logic (open collector connects LED to GND)
-		    boolean on = c.contains("l=0"); 
-		    
-		    // condition: 0 - during setup, 1 - ok, 2 - some sensors missing, 3 - no sensors/severe error
-		    boolean ok = c.contains("cnd=1") || c.contains("cnd=0");
-		    if (!ok)
+		    Map<String, Object> map = MessageParser.parseHeartbeatInfo(c);
+		    if (null!=map)
 		    {
-			showToast("Sonsors missing!");
+			// led status 
+			Integer led = (Integer) map.get("l"); 
+		         // condition: 0 - during setup, 1 - ok, 2 - some sensors missing, 3 - no sensors/severe error
+			Integer cnd = (Integer) map.get("cnd");       
+
+			boolean on = null!=led && led<1; // inverse logic (open collector connects LED to GND) 
+			boolean ok = null!=cnd && cnd<2; 
+			if (!ok)
+			{
+			    showToast("Sonsors missing!");
+			}
+			int id = on ? R.drawable.blue_lheart_64 : R.drawable.blue_dheart_64;			
+			U.setImageResource(imgHeartBeat, id);
 		    }
-		    //setVisibile(imgHeartBeat, on);
-		    int id = on ? R.drawable.blue_lheart_64 : R.drawable.blue_dheart_64;
-		    if (null!=imgHeartBeat) imgHeartBeat.setImageResource(id);
 		}
 		else if (hasPrefix(c, "CUR")) // current minutes on
 		{
-		    // implement parsing and display of current value
-		    try
+		    Map<String, Object> map = MessageParser.parseCurrentInfo(c);
+		    if (null!=map && map.containsKey("n") && map.containsKey("on"))
 		    {
-			Map<String, Object> map = MessageParser.parseCurrentInfo(c);
-			int n = (Integer) map.get("n");
+			int n  = (Integer) map.get("n");
 			int on = (Integer) map.get("on");
-			logErrorOrWarn(c);
-			updateInfo(n, on);
-		    }
-		    catch (Exception e)
-		    {
-			logErrorOrWarn("parsing CUR info: " + e);
+			updateInfoFromCurrInfo(n, on);
 		    }
 		}
 		else if (hasPrefix(c, "D")) // debug
 		{
-		    doLog(c);
+		    if (verbosity>=VERB_DEBUG) doLog(c);
 		}
 		else if (hasPrefix(c, "MAGIC"))
 		{		
@@ -826,7 +855,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		    dispatchDataComplete(TYPE.STATS, statsBuffer.finish());
 		    checkDataAvailability();
 		}
-		else if (hasPrefix(c, "SEN")) // min/max temp. history
+		else if (hasPrefix(c, "SEN")) // min/max averageTemp. history
 		{
 		    onSensorInfo(c);
 		}
@@ -835,11 +864,11 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		    dispatchDataComplete(TYPE.STRANDS, sensorsBuffer.finish());
 		    checkDataAvailability();
 		}
-		else if (hasPrefix(c, "MM")) // min/max temp. history
+		else if (hasPrefix(c, "MM")) // min/max averageTemp. history
 		{		
 		    minmaxBuffer.append(c);
 		}
-		else if (c.startsWith("MM!")) // end of min/max temp. history
+		else if (c.startsWith("MM!")) // end of min/max averageTemp. history
 		{		
 		    dispatchDataComplete(TYPE.MINMAX, minmaxBuffer.finish());
 		    checkDataAvailability();
@@ -851,6 +880,8 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		else if (hasPrefix(c, "E")) // error
 		{		
 		    logErrorOrWarn(c);
+		    U.setText(mErrorView, c.replaceAll("^E. ", "ERR: "), Color.RED);
+		    U.setVisible(mErrorView);
 		}
 		else if (hasPrefix(c, "DEACT")) // 
 		{		
@@ -865,13 +896,15 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		    dispatchDataComplete(TYPE.HELP, helpBuffer.finish());
 		    checkDataAvailability();
 		}
-		else if (hasPrefix(c, "WARN")) // warning
+		else if (hasPrefix(c, "W")) // warning
 		{		
 		    logErrorOrWarn(c);
+		    U.setText(mErrorView, c.replaceAll("^W. ", "WARN: "), Color.YELLOW);
+		    U.setVisible(mErrorView);
 		}
 		else if (hasPrefix(c, "CMD")) // help
 		{		
-		    doLog(c);
+		    if (verbosity>=VERB_VERBOSE) doLog(c);
 		}
 		else if (hasPrefix(c, "MEAS")) // MEAS: s=1,now=0.00,old=8.00,avg=8.00
 		{		
@@ -899,22 +932,30 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		    finalizeInfo();		    
 		    checkDataAvailability();
 		} 
-		else if (hasPrefix(c, "I")) // uptime logs
-		{ 
-		    doLog(c); 
-		}  
-		else if (c.startsWith("T!")) // end of uptime logs 
+		else if (hasPrefix(c, "T")) // start times info
+		{		
+		    starttimesBuffer.append(c.replaceAll("^T.", ""));	    
+		}
+		else if (c.startsWith("T!"))
 		{
-		    // ignore
+		    finalizeStarttimes();		    
+		    checkDataAvailability();
 		} 
 	    }
 	    catch (Exception e)
 	    {
-		doLog("handleCommand: " + e);
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		e.printStackTrace(pw);
+		doLog("handleCommand: " + sw.toString());
+		doLog("handleCommand: line: '" + c + "'");
+		
+		U.setText(mErrorView, "EXCPT: " + e, Color.MAGENTA);
+		U.setVisible(mErrorView);
 	    }
 	}
 
-	private void updateInfo(int n, int on)
+	private void updateInfoFromCurrInfo(int n, int on)
         {
 	    Sensor sensor = sensors[n-1];
 	    sensor.minutesOn = on;
@@ -927,76 +968,147 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    if (null!=map)
 	    {
 		int    n      = (Integer) map.get("n");
-		String addr   = (String) map.get("@");
+		String addr   = (String)  map.get("@");
 		boolean used  = (Boolean) map.get("used");
 		boolean avail = (Boolean) map.get("avail");
 		Boolean bound = (Boolean) map.get("bnd");
-
-		updateInfo(n, addr, used, avail, bound);
+		updateInfoFromSensorInfo(n, addr, used, avail, bound);
 	    }
 
 	    // summarize only if this is a continuation line, not e.g. "SEN. "
-	    if (c.startsWith("SEN: "))
-	    {
-		sensorsBuffer.append(c);
-	    }
+	    if (U.startsWith(c, "SEN: ")) sensorsBuffer.append(c);
 	}
 
 	private void onEvent(String c)
 	{
-	    if (c.contains("e=hist.saved"))
+	    if (c.contains("e=hist.sav"))
 	    {
+		if (verbosity>VERB_NORM) showToast("Temp. history was saved.");
+		doLog(c);
+		mConnection.sendLine("");
 		mConnection.sendLine("DM"); // dump min/max
+		mConnection.sendLine("");
 	    }
-	    else if (c.contains("e=stats.saved"))
+	    if (c.contains("e=hist.upd"))
 	    {
-		mConnection.sendLine("DH"); // dump hourly stats
-		mConnection.sendLine("DD"); // dump daily  stats 
-		mConnection.sendLine("DW"); // dump weekly stats
+		String reason = c.replaceAll(".*,reas=","");
+		if (verbosity>VERB_NORM) showToast("Temp. history was updated.\n(" + reason + ")");
 	    }
-	    else if (c.contains("e=power."))
+	    else if (c.contains("e=stats.sav"))
+	    {
+		doLog(c);
+		mConnection.sendLine("");
+		mConnection.sendLine("DH"); // dump hourly stats
+		mConnection.sendLine("");
+		mConnection.sendLine("DD"); // dump daily  stats 
+		mConnection.sendLine("");
+		mConnection.sendLine("DW"); // dump weekly stats
+		mConnection.sendLine("");
+	    }
+	    else if (c.contains("e=pwr.") || c.contains("e=power."))
 	    {
 		try
 		{
 		    String s = c.replaceAll("^.*, *n=", "");
 		    int n = Integer.parseInt(s);
 		    String onOff = c.contains(".on") ? "on" : "off";		    
-		    onToast("Strand " + n +": powered " + onOff);
+		    //onToast("Strand " + n +": powered " + onOff);
+		    doLog("Strand " + n +": powered " + onOff);
+		    
+		    Uri uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION); 
+
+		    //MediaPlayer player = MediaPlayer.create(this, Settings.System.DEFAULT_RINGTONE_URI);
+		    if (verbosity>=VERB_VERBOSE)
+		    {
+			MediaPlayer player = MediaPlayer.create(getApplicationContext(), uri);
+			player.setVolume(0.1f, 0.01f);
+			player.start();
+		    }
 		}
 		catch (Exception x)
 		{
 		    doLog("onEvent: " + x);
 		}		
 	    }
+	    else if (c.contains("e=ontime.upd"))
+	    {
+		String reason = c.replaceAll(".*,reas=","");
+		if (reason.contains("save"))
+		{
+		    if (verbosity>VERB_NORM) showToast("On-times were updated and saved.");
+		}
+		else if (reason.contains("poff"))
+		{
+		    if (verbosity>VERB_NORM) showToast("On-times changed\n(Strand powered off)");
+		}
+		else if (reason.contains("unbnd"))
+		{
+		    showToast("On-times changed.\n(Strand unbound)" + reason);
+		}
+		else
+		{
+		    showToast("On-times changed (Unknown reason: " + reason + ")");
+		}
+		doLog(c);
+	    }
+	    else if (c.contains("e=sens.retry"))
+	    {
+		String retries = c.replaceAll(".*e=sens.retry,r=", "");
+		showToast("Searching for sensors.\nRetries:" + retries);
+		doLog(c);
+	    }	    
+	    else if (c.contains("e=sens.redetect"))
+	    {
+		showToast("Sensors re-detection started.");
+		// do NOT log. might occur numerous times when sensor cable was detached
+	    }
+	    else if (c.contains("e=sens.init"))
+	    {
+		String info = c.replaceAll(".*e=sens.init", "");
+		showToast("Sensors intiialized: " + info);
+		doLog(c);
+	    }
 	}
 
+	
 	private void finalizeInfo()
 	{
 	    synchronized(this)
 	    {
 		String info = infoBuffer.finish();	    
 
-		Map<String, String> map = MessageParser.parseInfo(info);
+		Map<String, String> map = MessageParser.parseInfoMessages(info);
 		String sV = map.get("Frotect");
 		if (!U.isEmpty(sV))
 		{
 		    setMainTitle(sV.replaceAll(", d=", " "));
 		}
 
-		String sM = map.get("NumStrands");
-		String sN = map.get("ExpSensors");
-		String sA = map.get("AvlSensors");
-		String sC = map.get("CostPerkWh");
+		String sM = map.get("#Strnds");
+		String sN = map.get("ExpSens");
+		String sA = map.get("AvlSens");
+		String sC = map.get("Cost");
 
-		numStrands = Integer.parseInt(sM);
-		numSensors = Integer.parseInt(sN);
-		avlStrands = Integer.parseInt(sA);
-		numCost    = Double.parseDouble(sC);
+		numStrands = U.toInt(sM);
+		numSensors = U.toInt(sN);
+		avlStrands = U.toInt(sA);
+		numCost    = U.toDouble(sC);
 
 		dispatchDataComplete(TYPE.INFO, info);
 	    }
 	}
 
+	
+	private void finalizeStarttimes()
+	{
+	    synchronized(this)
+	    {
+		String uptime = starttimesBuffer.finish();	    
+		dispatchDataComplete(TYPE.STARTTIMES, uptime);
+	    }
+	}
+	
+	
 	private void onFlashInfo(String c)
 	{
 	    try
@@ -1018,7 +1130,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	{
 	    try
 	    {
-		// STR: n=1, val=0, lit=0, upd=1, tu=28.50, tl=24.00, temp=?, err=50, last=117965829, ago=0, addr=28:50:81:E1:04:00:00:6E, used=1, avail=1
+		// STR: n=1, val=0, lit=0, upd=1, tu=28.50, tl=24.00, averageTemp=?, err=50, last=117965829, ago=0, addr=28:50:81:E1:04:00:00:6E, used=1, avail=1
 		HashMap<String, Object> map = MessageParser.parseStrandInfo(c);
 
 		if (null==map)
@@ -1044,7 +1156,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		    String  addr  = (String)  map.get("@");
 
 		    Boolean bound = (Boolean) map.get("bnd");
-		    updateInfo(n, avail, used, lit, tu, tl, t, err, last, power, addr, bound);
+		    updateInfoFromStrandInfo(n, avail, used, lit, tu, tl, t, err, last, power, addr, bound);
 		}
 
 		// append only if this is a continuation message,not "STR."
@@ -1052,7 +1164,8 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		{
 		    strandsBuffer.append(c);
 		}
-		doLog(c);
+		
+		if (verbosity>VERB_NORM) doLog(c);
 	    }
 	    catch (Exception e)
 	    {
@@ -1073,7 +1186,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		TextView misc = (TextView) findViewById(miscId[strand-1]);
 		U.setText(misc, String.format(Locale.ENGLISH, "%2.1f", now));
 
-		updateInfo(strand, now, old);
+		updateInfoFromMeasurement(strand, now, old);
 	    }
 	    catch (Exception e)
 	    {
@@ -1091,7 +1204,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    Toast.makeText(getApplicationContext(),c, Toast.LENGTH_SHORT).show();
 	}
 
-	private void updateInfo(int n, String addr, boolean used, boolean avail, Boolean bound)
+	private void updateInfoFromSensorInfo(int n, String addr, boolean used, boolean avail, Boolean bound)
 	{
 	    n=n-1;
 	    Sensor sensor = sensors[n];
@@ -1109,7 +1222,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	}
 
 
-	private void updateInfo(int n, double t, double last)
+	private void updateInfoFromMeasurement(int n, double t, double last)
 	{
 	    try
 	    {
@@ -1117,8 +1230,9 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		String value = String.format(Locale.ENGLISH, "%2.1f¡C", t);
 		U.setText(sensor.value, value);	    
 
-		sensor.value.setTextColor(Math.abs(last-t)<0.1 ? Color.WHITE : Color.CYAN);
-		sensor.temp = t;
+		boolean same = Math.abs(last-t)<0.1;
+		U.setText(sensor.misc, value, same ? Color.WHITE : Color.CYAN);
+		sensor.singleTemp = t;
 		sensor.used = sensor.avail = true; // obviously, otherwise there was no measure
 
 		visualizeSensorStatus(sensor);
@@ -1129,7 +1243,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    }
 	}
 
-	private void updateInfo(int n, boolean avail, boolean used, boolean lit, double tu, double tl, Double t, int err, long last, double power, String addr, Boolean bound2)
+	private void updateInfoFromStrandInfo(int n, boolean avail, boolean used, boolean lit, double tu, double tl, Double t, int err, long last, double power, String addr, Boolean bound2)
 	{
 	    n=n-1;
 	    // wild guess if there is no bound info
@@ -1157,7 +1271,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    sensor.hi    = tu;
 	    sensor.power = power;	    
 	    sensor.addr  = addr;
-	    if (null!=t) sensor.temp = t;
+	    if (null!=t) sensor.averageTemp = t;
 
 	    if (!sensor.used)
 	    {
@@ -1639,6 +1753,9 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	private NumberPicker lo, hi, pwr;
 	private TextView strandAddress;
 	private boolean bound;
+	private TextView minutesOn;
+	private TextView lastTemp;
+	private TextView avgTemp  ;
 
 	protected StrandDialog(FrotectActivity frotect, int strandNo)
 	{
@@ -1651,13 +1768,18 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    setContentView(inflater.inflate(R.layout.dialog_strand, null));
 
 	    this.strandAddress = (TextView) findViewById(R.id.frotectStrandAddr);
+	    
+	    this.minutesOn = (TextView) findViewById(R.id.frotectStrandDialogMinutesOn);
+	    this.avgTemp   = (TextView) findViewById(R.id.frotectStrandDialogAvgTemp);
+	    this.lastTemp  = (TextView) findViewById(R.id.frotectStrandDialogLastTemp);
 	}
 
 	@Override
 	protected void onStart() 
 	{
 	    mHandler.addDataCompleteListener(this);
-	    mHandler.addStatusListener(this);	    
+	    mHandler.addStatusListener(this);	   
+	    mHandler.addDataListener(this);
 	};
 	
 	@Override
@@ -1700,6 +1822,14 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    bound = info.bound;
 	    U.setVisible(findViewById(R.id.layoutStrandBind),  !bound);
 	    U.setVisible(findViewById(R.id.layoutStrandUnbind), bound);
+	    
+	    U.setText(minutesOn, "on: " + info.minutesOn + "m");
+	    
+	    U.setText(avgTemp,   String.format(Locale.ENGLISH, "avg: %2.1f",  info.averageTemp) + "¡C");
+	    if (null!=info.singleTemp)
+	    {
+		U.setText(lastTemp,  String.format(Locale.ENGLISH, "last: %2.1f", info.singleTemp ) + "¡C");
+	    }
 	}
 
 	@Override
@@ -1726,7 +1856,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	public void onLineReceived(String line)
 	{
-	    if (line.startsWith("STR"))	refreshControls();
+	    if (line.startsWith("STR") || line.startsWith("MEAS") || line.startsWith("CUR")) refreshControls();
 	}
 
 	@Override
@@ -1770,10 +1900,12 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	}
     }
 
-    class ConfigDialog extends SPPStatusAwareDialog 
+    class ConfigDialog extends SPPStatusAwareDialog implements OnCheckedChangeListener 
     {
 	private NumberPicker    cost, strands, sensors;
 	private FrotectActivity frotect;
+	private RadioGroup mRadioGroupVerbosity;
+
 
 	protected ConfigDialog(FrotectActivity frotect)
 	{
@@ -1791,13 +1923,18 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	    // register these to be hidden when unconnected:
 	    registerViews(R.id.saveCost, R.id.saveNumStrands, R.id.saveNumSensors);
-	    
+
 	    // only disable however this viewId when unconnected:
 	    registerViews(false, R.id.frotectReboot);
 
 	    frotect.mHandler.addStatusListener(this);
+
+	    mRadioGroupVerbosity = (RadioGroup) findViewById(R.id.frotectRadioGroupVerbosity);
+	    mRadioGroupVerbosity.setOnCheckedChangeListener(this);
+	    
+	    setCheckedState();
 	}
-	
+
 	@Override
 	protected void onStop()
 	{
@@ -1841,6 +1978,40 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int id) { rebootConfirmed(); }});
 	    builder.setNegativeButton("No",  new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int id) {  /* do nothing */  }});	    
 	    builder.create().show();
+	}
+	
+	private void setCheckedState()
+	{
+	    switch (frotect.verbosity)
+	    {
+	    case VERB_NORM: 
+		U.check(mRadioGroupVerbosity, R.id.frotectRadioButtonNormal);
+		break;
+	    case VERB_VERBOSE: 
+		U.check(mRadioGroupVerbosity, R.id.frotectRadioButtonVerbose);
+		break;
+	    case VERB_DEBUG: 
+		U.check(mRadioGroupVerbosity, R.id.frotectRadioButtonDebug);
+		break;
+	    }
+	}
+
+	public void onCheckedChanged(RadioGroup rg, int checkedId)
+	{
+	    if (R.id.frotectRadioButtonNormal==checkedId)
+	    {
+		frotect.setVerbosity(FrotectActivity.VERB_NORM);
+	    }
+	    else if (R.id.frotectRadioButtonVerbose==checkedId)
+	    {
+		frotect.setVerbosity(FrotectActivity.VERB_VERBOSE);
+
+	    }
+	    else if (R.id.frotectRadioButtonDebug==checkedId)
+	    {
+		frotect.setVerbosity(FrotectActivity.VERB_DEBUG);
+
+	    }		
 	}
     }
 
@@ -2008,6 +2179,11 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
     
     //private boolean mBluetoothEnabled = false;
     
+    public void setVerbosity(int verbosity)
+    {
+	this.verbosity = verbosity;
+    }
+
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() 
     {
 	@Override
@@ -2042,6 +2218,32 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    }
 	}
     };
+    
+    
+    public boolean onKeyDown(int keyCode, KeyEvent event) 
+    {
+	//Handle the back button
+	if(/*mSettings.isConfirmQuit() &&*/ keyCode == KeyEvent.KEYCODE_BACK && isTaskRoot()) {
+	    //Ask the user if they want to quit
+	    new AlertDialog.Builder(this)
+	    .setIcon(android.R.drawable.ic_dialog_alert)
+	    .setTitle("Quit")
+	    .setMessage("Do you want to quit?")
+	    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+		public void onClick(DialogInterface dialog, int which) {
+		    //Stop the activity
+		    finish();    
+		}
+	    })
+	    .setNegativeButton("No", null)
+	    .show();
+
+	    return true;
+	}
+	else {
+	    return super.onKeyDown(keyCode, event);
+	}
+    }
 }
 
 

@@ -111,6 +111,6 @@ public class SPPConnection implements ServiceConnection
     
     public boolean isConnected()
     {
-	return mService.isConnected();
+	return null!=mService && mService.isConnected();
     }
 }

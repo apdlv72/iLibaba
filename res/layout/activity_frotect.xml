@@ -1,4 +1,3 @@
-
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -26,16 +25,15 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:layout_marginRight="5dip"
-                android:src="@drawable/blue_lheart_64" 
-                android:visibility="invisible"
                 android:contentDescription="Heart beat"
-                />
+                android:src="@drawable/blue_lheart_64"
+                android:visibility="invisible" />
 
             <RelativeLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="20dip"
-                android:layout_gravity="center" >
+                android:layout_gravity="center"
+                android:layout_marginRight="20dip" >
 
                 <ProgressBar
                     android:id="@+id/frotectPingProgress"
@@ -43,8 +41,6 @@
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-					                    
-
                     android:indeterminate="false"
                     android:max="10" />
 
@@ -73,7 +69,7 @@
                 <TableLayout
                     android:id="@+id/sensorTable1"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content" >
 
                     <TableRow
                         android:id="@+id/TableRow04"
@@ -81,6 +77,7 @@
                         android:layout_height="wrap_content" >
 
                         <ImageView
+                            android:contentDescription="SENSOR 1"
                             android:id="@+id/sensorIcon1"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -140,7 +137,7 @@
                     android:id="@+id/sensorTable2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="5dip">
+                    android:layout_marginLeft="5dip" >
 
                     <TableRow
                         android:id="@+id/TableRow03"
@@ -148,6 +145,7 @@
                         android:layout_height="wrap_content" >
 
                         <ImageView
+                            android:contentDescription="SENSOR 2"
                             android:id="@+id/sensorIcon2"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -214,7 +212,7 @@
                 <TableLayout
                     android:id="@+id/sensorTable3"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content" >
 
                     <TableRow
                         android:id="@+id/TableRow01"
@@ -280,13 +278,13 @@
                 <TableLayout
                     android:id="@+id/sensorTable4"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content" >
 
                     <TableRow
                         android:id="@+id/sensorTable1"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginLeft="5dip">
+                        android:layout_marginLeft="5dip" >
 
                         <ImageView
                             android:id="@+id/sensorIcon4"
@@ -343,7 +341,6 @@
                         </TableLayout>
                     </TableRow>
                 </TableLayout>
-
             </TableRow>
 
             <TableRow
@@ -388,7 +385,6 @@
                                     android:checked="true"
                                     android:enabled="false"
                                     android:text="Sensors" />
-
                             </TableRow>
 
                             <TableRow
@@ -408,8 +404,7 @@
                 <TableLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="5dip" 
-                    >
+                    android:layout_marginLeft="5dip" >
 
                     <TableRow
                         android:id="@+id/TableRow21"
@@ -419,81 +414,88 @@
                         <Button
                             android:id="@+id/frotectButtonInfo"
                             style="?android:attr/buttonStyleSmall"
-                            android:layout_marginLeft="8dip" 
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginLeft="8dip"
                             android:background="@android:drawable/ic_menu_help" />
 
                         <Button
                             android:id="@+id/frotectButtonConfig"
                             style="?android:attr/buttonStyleSmall"
-                            android:layout_marginLeft="8dip" 
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginLeft="8dip"
                             android:background="@android:drawable/ic_menu_preferences" />
 
                         <Button
                             android:id="@+id/frotectButtonUpdate"
                             style="?android:attr/buttonStyleSmall"
-                            android:layout_marginLeft="8dip" 
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginLeft="8dip"
                             android:background="@android:drawable/ic_menu_rotate" />
-
-                        </TableRow>
+                    </TableRow>
                 </TableLayout>
             </TableRow>
         </TableLayout>
 
+        <TextView
+            android:id="@+id/frotectGeneralError"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:text="Error: none"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textColor="#FF0000"
+            android:visibility="visible" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dip" 
-            >
+            android:layout_marginTop="10dip" >
 
             <Button
-                android:id="@+id/buttonPower"
+                android:id="@+id/frotectButtonPower"
                 style="?android:attr/buttonStyleSmall"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@drawable/button"
                 android:layout_marginLeft="5dip"
                 android:layout_marginRight="5dip"
+                android:layout_weight="1"
+                android:background="@drawable/button"
                 android:text="Power" />
 
             <Button
-                android:id="@+id/buttonTemp"
+                android:id="@+id/frotectButtonDuty"
                 style="?android:attr/buttonStyleSmall"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginRight="5dip"
                 android:layout_weight="1"
                 android:background="@drawable/button"
+                android:text="Duty" />
+
+            <Button
+                android:id="@+id/frotectButtonTemp"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginRight="5dip"
+                android:layout_weight="1"
+                android:background="@drawable/button"
                 android:text="Temp" />
 
             <Button
-                android:id="@+id/buttonCost"
+                android:id="@+id/frotectButtonCost"
                 style="?android:attr/buttonStyleSmall"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginRight="5dip"
                 android:layout_weight="1"
                 android:background="@drawable/button"
-                android:layout_marginRight="5dip"
                 android:text="Cost" />
 
-            <Button
-                android:id="@+id/buttonDuty"
-                style="?android:attr/buttonStyleSmall"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@drawable/button"
-                android:layout_marginRight="5dip"
-                android:text="Duty" />
-
         </LinearLayout>
-
     </LinearLayout>
 
     <SlidingDrawer

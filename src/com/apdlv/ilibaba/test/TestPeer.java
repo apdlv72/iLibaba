@@ -37,7 +37,7 @@ public class TestPeer
 		if (!done)
 		{
 		    System.out.println("READ:  " + line);
-		    if (line.startsWith("temp"))
+		    if (line.startsWith("averageTemp"))
 		    {
 			line = String.format("T%x", (long)(0xFFFFFFFFL*Math.random()));
 		    }

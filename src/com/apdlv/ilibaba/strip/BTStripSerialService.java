@@ -522,7 +522,7 @@ public class BTStripSerialService
             } 
             catch (IOException e) 
             {
-                log("ConnectedThread: temp sockets not created: " + e);
+                log("ConnectedThread: averageTemp sockets not created: " + e);
             }
 
             mmInStream = tmpIn;
@@ -563,7 +563,7 @@ public class BTStripSerialService
                 tmpIn  = socket.getInputStream();
                 tmpOut = socket.getOutputStream();
             } catch (IOException e) {
-                log("ConnectedThread: temp sockets not created: " + e);
+                log("ConnectedThread: averageTemp sockets not created: " + e);
             }
 
             mmInStream = tmpIn;
@@ -639,7 +639,7 @@ public class BTStripSerialService
 //                tmpIn  = socket.getInputStream();
 //                tmpOut = socket.getOutputStream();
 //            } catch (IOException e) {
-//                log("ConnectedThread: temp sockets not created: " + e);
+//                log("ConnectedThread: averageTemp sockets not created: " + e);
 //            }
 //
 //            mmInStream = tmpIn;

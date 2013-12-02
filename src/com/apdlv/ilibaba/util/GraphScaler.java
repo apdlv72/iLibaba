@@ -1,20 +1,20 @@
-package com.apdlv.ilibaba.frotect;
+package com.apdlv.ilibaba.util;
 
 public class GraphScaler
 {
-    private double oldMin;
-    private double oldMax;
+    @SuppressWarnings("unused")
+    private double actMin, actMax;
     private int    numTicks;
-    private double newMin;
-    private double newMax;
+    private double niceMin;
+    private double niceMax;
 
 
     public GraphScaler(double min, double max)
     {
-	this.oldMin = min;
-	this.oldMax = max;
-//	System.out.println("oldMin:  " + max);
-//	System.out.println("oldMax:  " + min);
+	this.actMin = min;
+	this.actMax = max;
+//	System.out.println("actMin:  " + max);
+//	System.out.println("actMax:  " + min);
 	
 	double delta = abs(max-min);
 	double expon = Math.floor(Math.log10(delta));
@@ -31,28 +31,28 @@ public class GraphScaler
 //	System.out.println("maxTicks: " + maxTicks);
 	
 	this.numTicks = minTicks+maxTicks+1;
-	this.newMin = sign(min)*minTicks*sub;
-	this.newMax = sign(max)*maxTicks*sub;
+	this.niceMin = sign(min)*minTicks*sub;
+	this.niceMax = sign(max)*maxTicks*sub;
 //	
 //	System.out.println("numTicks: " + numTicks);
-//	System.out.println("newMin: " + newMin);
-//	System.out.println("newMax: " + newMax); 
+//	System.out.println("niceMin: " + niceMin);
+//	System.out.println("niceMax: " + niceMax); 
     }
 
     
-    public int getTicks()
+    public int getNumberOfTicks()
     {
 	return numTicks;
     }
     
-    public double getMin()
+    public double getNiceMin()
     {
-	return newMin;
+	return niceMin;
     }
     
-    public double getMax()
+    public double getNiceMax()
     {
-	return newMax;
+	return niceMax;
     }
     
     private static int sign(double d)
@@ -72,9 +72,9 @@ public class GraphScaler
 	return Math.abs(d);
     }
     
-    public static void main(String[] args)
-    {
-	GraphScaler gs = new GraphScaler(-15, 5.1);		
-    }
+//    public static void main(String[] args)
+//    {
+//	GraphScaler gs = new GraphScaler(-15, 5.1);		
+//    }
     
 }

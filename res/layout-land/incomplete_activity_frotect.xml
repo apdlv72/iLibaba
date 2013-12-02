@@ -438,7 +438,7 @@
             >
 
             <Button
-                android:id="@+id/buttonPower"
+                android:id="@+id/frotectButtonPower"
                 style="?android:attr/buttonStyleSmall"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
@@ -446,7 +446,7 @@
                 android:text="Power" />
 
             <Button
-                android:id="@+id/buttonTemp"
+                android:id="@+id/frotectButtonTemp"
                 style="?android:attr/buttonStyleSmall"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
@@ -454,7 +454,7 @@
                 android:text="Temp" />
 
             <Button
-                android:id="@+id/buttonCost"
+                android:id="@+id/frotectButtonCost"
                 style="?android:attr/buttonStyleSmall"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"

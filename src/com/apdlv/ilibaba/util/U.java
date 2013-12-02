@@ -3,7 +3,11 @@ package com.apdlv.ilibaba.util;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Checkable;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 /** utils */
@@ -54,7 +58,6 @@ public class U
         return !isEmpty(s);
     }
 
-    
     public static void setEnabled(boolean enabled, MenuItem ... items)
     {
 	for (MenuItem i : items)
@@ -82,6 +85,48 @@ public class U
     {
 	if (null!=view) view.setText(resId);
     }
-    
 
+    public static void setProgress(ProgressBar pBar, int progress)
+    {
+	if (null!=pBar) pBar.setProgress(progress);
+    }
+
+    public static void setImageResource(ImageView iv, int id)
+    {
+	if (null!=iv) iv.setImageResource(id);	
+    }
+
+    public static boolean startsWith(String c, String prefix)
+    {
+	return null!=c && null!=prefix && c.startsWith(prefix);
+    }
+
+    public static void setText(TextView tv, String text, int color)
+    {
+	setText(tv, text);
+	setTextColor(tv, color);
+    }
+
+    public static void check(RadioGroup rg, int id)
+    {
+	if (null!=rg && id>-1) rg.check(id);
+    }
+
+    public static Integer toInt(String s)
+    {
+	return isEmpty(s) ? null  : Integer.parseInt(s);
+    }
+
+    public static Double toDouble(String s)
+    {
+	return isEmpty(s) ? null  : Double.parseDouble(s);
+    }
+
+    public static void removeView(View v)
+    {
+	if (null==v) return;
+	ViewGroup parent = (ViewGroup) v.getParent();
+	if (null==parent) return;
+	parent.removeView(v);
+    }
 }

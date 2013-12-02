@@ -17,7 +17,6 @@
 package com.apdlv.ilibaba.strip;
 
 import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -27,7 +26,6 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -42,7 +40,7 @@ import com.apdlv.ilibaba.R;
 public class PresetsActivity extends Activity implements OnItemLongClickListener {
     // Debugging
     private static final String TAG = "PresetsActivity";
-    private static final boolean D = true;
+    //private static final boolean D = true;
 
     public static final int REQUEST_CONNECT_DEVICE = 1;
 
@@ -50,9 +48,9 @@ public class PresetsActivity extends Activity implements OnItemLongClickListener
     public static String EXTRA_PRESET_BUNDLE = "preset_bundle";
 
     // Member fields
-    private BluetoothAdapter mBtAdapter;
+    //private BluetoothAdapter mBtAdapter;
     private ArrayAdapter<String> mPairedDevicesArrayAdapter;
-    private ArrayAdapter<String> mNewDevicesArrayAdapter;
+    //private ArrayAdapter<String> mNewDevicesArrayAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +64,7 @@ public class PresetsActivity extends Activity implements OnItemLongClickListener
 	setResult(Activity.RESULT_CANCELED);
 
 	// Initialize the value to perform device discovery
-	Button scanButton = (Button) findViewById(R.id.button_scan);
+	//Button scanButton = (Button) findViewById(R.id.button_scan);
 	/*
         scanButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
