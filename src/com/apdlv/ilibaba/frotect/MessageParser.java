@@ -174,7 +174,7 @@ public class MessageParser
 	    res.put("upd",   toInt(m.group(4))!=0);
 	    res.put("tl",    0.01*toDouble(m.group(5)));
 	    res.put("tu",    0.01*toDouble(m.group(6)));
-	    res.put("P",     toDouble(m.group(7)));
+	    res.put("P",     toInt(m.group(7)));
 	    String tStr = m.group(8);
 	    // e.g. "STR: n=1,v=0,lit=0,upd=1,tl=3.50,tu=4.50,P=16.00,t=?,err=0,last=0,ago=0,pin=2,@=00;00;00;00;00;00;00;00,used=1,avail=0
 	    try { res.put("t", 0.01*toDouble(tStr)); } catch (Exception e) {}
