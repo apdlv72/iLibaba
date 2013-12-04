@@ -796,7 +796,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		    int  remoteProgress = (int)(lastPingRemote-lastUpdateRemote); 
 
 		    U.setText(tvLastPing, String.format(Locale.ENGLISH, "%d / %d", localProgress, remoteProgress));
-		    U.setProgress(pingProgress, localProgress); System.out.println("Setting progress to " + localProgress);
+		    U.setProgress(pingProgress, localProgress); 
 		}
 		else if (hasPrefix(c, "UP"))
 		{
@@ -814,9 +814,11 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		    if (null!=map)
 		    {
 			// led status 
-			Integer led = (Integer) map.get("l"); 
+			Integer led  = (Integer) map.get("l"); 
 		         // condition: 0 - during setup, 1 - ok, 2 - some sensors missing, 3 - no sensors/severe error
-			Integer cnd = (Integer) map.get("cnd");       
+			Integer cnd  = (Integer) map.get("c");       
+			@SuppressWarnings("unused")
+                        Integer temp = (Integer) map.get("t");       
 
 			boolean on = null!=led && led<1; // inverse logic (open collector connects LED to GND) 
 			boolean ok = null!=cnd && cnd<2; 
@@ -1150,13 +1152,13 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		    Double  t     = (Double)  map.get("t"); // can be null
 		    double  power = (Double)  map.get("P");
 		    int     err   = (Integer) map.get("err");
-		    long    last  = (Long)    map.get("last");
-		    boolean used  = (Boolean) map.get("used");
-		    boolean avail = (Boolean) map.get("avail");
+		    //long    last  = (Long)    map.get("last");
+		    boolean used  = (Boolean) map.get("usd");
+		    boolean avail = (Boolean) map.get("avl");
 		    String  addr  = (String)  map.get("@");
 
 		    Boolean bound = (Boolean) map.get("bnd");
-		    updateInfoFromStrandInfo(n, avail, used, lit, tu, tl, t, err, last, power, addr, bound);
+		    updateInfoFromStrandInfo(n, avail, used, lit, tu, tl, t, err, power, addr, bound);
 		}
 
 		// append only if this is a continuation message,not "STR."
@@ -1243,7 +1245,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    }
 	}
 
-	private void updateInfoFromStrandInfo(int n, boolean avail, boolean used, boolean lit, double tu, double tl, Double t, int err, long last, double power, String addr, Boolean bound2)
+	private void updateInfoFromStrandInfo(int n, boolean avail, boolean used, boolean lit, double tu, double tl, Double t, int err,  double power, String addr, Boolean bound2)
 	{
 	    n=n-1;
 	    // wild guess if there is no bound info

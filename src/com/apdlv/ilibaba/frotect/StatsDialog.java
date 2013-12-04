@@ -3,9 +3,6 @@ package com.apdlv.ilibaba.frotect;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -15,7 +12,6 @@ import android.graphics.Color;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -149,7 +145,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
     void initDuty()
     {       
 	// graph with dynamically genereated horizontal and vertical labels
-	LineGraphView gv = new LineGraphView(frotect, "y: % on-time,    x: days");
+	LineGraphView gv = new LineGraphView(frotect, "y: % on-time,        x: days");
 
 	gv.setDrawingCacheQuality(GraphView.DRAWING_CACHE_QUALITY_HIGH);
 	gv.getGraphViewStyle().setTextSize(10);
@@ -202,7 +198,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
     void initPower()
     {       
 	// graph with dynamically genereated horizontal and vertical labels
-	LineGraphView gv = new LineGraphView(frotect, "y: kWh/day,    x: days");
+	LineGraphView gv = new LineGraphView(frotect, "y: kWh/day,        x: days");
 
 	gv.setDrawingCacheQuality(GraphView.DRAWING_CACHE_QUALITY_HIGH);
 	gv.getGraphViewStyle().setTextSize(10);
@@ -240,7 +236,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	//	loStyle.thickness=10;
 
 	// graph with dynamically genereated horizontal and vertical labels
-	LineGraphView graphView = new LineGraphView(frotect, "y: ¡C,    x: days");
+	LineGraphView graphView = new LineGraphView(frotect, "y: ¡C,        x: days");
 
 	graphView.setDrawingCacheQuality(GraphView.DRAWING_CACHE_QUALITY_HIGH);
 	graphView.getGraphViewStyle().setTextSize(10);
@@ -366,8 +362,8 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	    }	    
 	    else if (maxDay>10)
 	    {
-		maxDay = 10;
-		xTicks = 10+1; // show 10 days, user can scroll to see more
+		maxDay = 2*(maxDay/2+1);
+		xTicks = maxDay+1; // show 10 days, user can scroll to see more
 	    }
 	    
 	    Log.e(TAG, "X-Axis: maxDay=" + maxDay);
@@ -595,7 +591,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
     void initCost()
     {       
 	// graph with dynamically generated horizontal and vertical labels
-	LineGraphView graphView = new LineGraphView(frotect, "y: Û/day,    x: days");
+	LineGraphView graphView = new LineGraphView(frotect, "y: Û/day,        x: days");
 
 	graphView.setDrawingCacheQuality(GraphView.DRAWING_CACHE_QUALITY_HIGH);
 	graphView.getGraphViewStyle().setTextSize(10);
@@ -607,7 +603,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	//graphView.setScalable(true);  
 	graphView.getGraphViewStyle().setNumHorizontalLabels(5);
 	graphView.getGraphViewStyle().setNumVerticalLabels(11);
-
+	
 	LinearLayout layout = (LinearLayout) findViewById(R.id.linearLayout);
 	layout.setBackgroundColor(Color.BLACK);
 
@@ -615,19 +611,19 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	refreshStartTimes(0,10);
     }
 
-    private GraphViewSeriesStyle whStyle   = new GraphViewSeriesStyle(Color.WHITE, 3);	
+    private GraphViewSeriesStyle whStyle   = new GraphViewSeriesStyle(Color.WHITE, 2);	
 
-    private GraphViewSeriesStyle style01   = new GraphViewSeriesStyle(Color.RED,     1);	
-    private GraphViewSeriesStyle style02   = new GraphViewSeriesStyle(Color.GREEN,   1);	
-    private GraphViewSeriesStyle style03   = new GraphViewSeriesStyle(Color.BLUE,    1);	
-    private GraphViewSeriesStyle style04   = new GraphViewSeriesStyle(Color.MAGENTA, 1);
-    private GraphViewSeriesStyle style05   = new GraphViewSeriesStyle(Color.YELLOW,  1);
+    private GraphViewSeriesStyle style01Lo = new GraphViewSeriesStyle(Color.rgb(0xff,    0,    0), 1); // RED,     1);	
+    private GraphViewSeriesStyle style02Lo = new GraphViewSeriesStyle(Color.rgb(   0, 0xff,    0), 1); // GREEN,   1);	
+    private GraphViewSeriesStyle style03Lo = new GraphViewSeriesStyle(Color.rgb(   0,    0, 0xff), 1); // BLUE,    1);	
+    private GraphViewSeriesStyle style04Lo = new GraphViewSeriesStyle(Color.rgb(0xff,    0, 0xff), 1); // MAGENTA, 1);
+    private GraphViewSeriesStyle style05Lo = new GraphViewSeriesStyle(Color.rgb(0xff, 0xff,    0), 1); // YELLOW,  1);
 
-    private GraphViewSeriesStyle style01Lo   = new GraphViewSeriesStyle(Color.RED,     2);	
-    private GraphViewSeriesStyle style02Lo   = new GraphViewSeriesStyle(Color.GREEN,   2);	
-    private GraphViewSeriesStyle style03Lo   = new GraphViewSeriesStyle(Color.BLUE,    2);	
-    private GraphViewSeriesStyle style04Lo   = new GraphViewSeriesStyle(Color.MAGENTA, 2);
-    private GraphViewSeriesStyle style05Lo   = new GraphViewSeriesStyle(Color.YELLOW,  2);
+    private GraphViewSeriesStyle style01   = new GraphViewSeriesStyle(Color.rgb(0x80,    0,    0), 1); // RED,     1);	
+    private GraphViewSeriesStyle style02   = new GraphViewSeriesStyle(Color.rgb(   0, 0x80,    0), 1); // GREEN,   1);	
+    private GraphViewSeriesStyle style03   = new GraphViewSeriesStyle(Color.rgb(   0,    0, 0x80), 1); // BLUE,    1);	
+    private GraphViewSeriesStyle style04   = new GraphViewSeriesStyle(Color.rgb(0x80,    0, 0x80), 1); // MAGENTA, 1);
+    private GraphViewSeriesStyle style05   = new GraphViewSeriesStyle(Color.rgb(0x80, 0x80,    0), 1); // YELLOW,  1);
 
 
     private String mStyle;

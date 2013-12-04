@@ -73,7 +73,7 @@ public class GraphParser extends MessageParser
 			else
 			{			
 			    String no = hlM.group(1); // number of value
-			    double  r = Float.parseFloat(hlM.group(2));
+			    double  r = toDouble(hlM.group(2));
 			    double  p = parsePowerToKWh(hlM.group(3)); // p is in kWh per time unit, i.e. hour, day etc.
 
 			    p /= mul; // normalize to kWh per day			    
@@ -144,8 +144,8 @@ public class GraphParser extends MessageParser
 			else
 			{			
 			    String no = hlM.group(1); // number of value
-			    float  lo = Float.parseFloat(hlM.group(2));
-			    float  hi = Float.parseFloat(hlM.group(3));
+			    double  lo = 0.01*toDouble(hlM.group(2));
+			    double  hi = 0.01*toDouble(hlM.group(3));
 
 			    String loName = "lo" + no;
 			    String hiName = "hi" + no;

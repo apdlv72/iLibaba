@@ -30,8 +30,8 @@ public class MessageParser
     protected static final Pattern P_SENSORINFO = Pattern.compile(
         "n=([0-9]+),.*" +
         "@=([0-9a-zA-Z:;]+),.*" +
-        "used=([0-1]+),.*"  +
-        "avail=([0-1]+),.*" + 
+        "usd=([0-1]+),.*"  +
+        "avl=([0-1]+),.*" + 
         "bnd=([0-1]+)");
     
     protected static final Pattern P_STRANDINFO = Pattern.compile(
@@ -44,12 +44,11 @@ public class MessageParser
         "P=([0-9\\.]+),.*"   +
         "t=([-0-9\\.\\?]+),.*" +
         "err=([0-9]+),.*"   +
-        "last=([0-9]+),.*"  +
         "ago=([-0-9]+),.*"  + 
         "pin=([0-9]+),.*"   +
         "@=([0-9a-fA-F;:]+),.*" +
-        "used=([0-1]+),.*"   +
-        "avail=([0-1]+),.*"  +
+        "usd=([0-1]+),.*"   +
+        "avl=([0-1]+),.*"  +
         "bnd=([0-1]+)"
     );
     
@@ -58,8 +57,8 @@ public class MessageParser
     protected static final Pattern P_ONESTRANDINFO = Pattern.compile("n=([0-9]*),.*on=([0-9]+[mh]),.*r=([0-9\\.]+),.*P=([0-9\\.k]+)");
     protected static final Pattern P_HISTORY       = Pattern.compile("t=([-0-9\\.]+)h,.*,(\\{.*\\})");
     protected static final Pattern P_ONESTRANDHIST = Pattern.compile("s=([0-9]+),lo=([-0-9\\.]+),hi=([-0-9\\.]+)");
-    protected static final Pattern P_UPDATE = Pattern.compile("change=([0-9]),.*t=([-0-9\\.])");
-    protected static final Pattern P_HEARBEAT = Pattern.compile("l=([0-9]),.*cnd=([0-9]+)");
+    protected static final Pattern P_UPDATE        = Pattern.compile("chng=([0-9]),.*t=([-0-9\\.])");
+    protected static final Pattern P_HEARBEAT      = Pattern.compile("l=([0-9]),.*c[nd]*=([0-9]+),.*t=([-0-9]+)");
 
     static public String convertStatsToCsv(String stats)
     {
@@ -98,9 +97,9 @@ public class MessageParser
 
 	    map = new HashMap<String, Object>();
 	    map.put("s",     toInt(m.group(1)));
-	    map.put("now",   toDouble(m.group(2)));
-	    map.put("old",   toDouble(m.group(3)));
-	    map.put("avg",   toDouble(m.group(4)));
+	    map.put("now",   0.01*toDouble(m.group(2)));
+	    map.put("old",   0.01*toDouble(m.group(3)));
+	    map.put("avg",   0.01*toDouble(m.group(4)));
 	}
 	catch (Exception e)
 	{
@@ -173,20 +172,19 @@ public class MessageParser
 	    res.put("v",     toInt(m.group(2))!=0);
 	    res.put("lit",   toInt(m.group(3))!=0);
 	    res.put("upd",   toInt(m.group(4))!=0);
-	    res.put("tl",    toDouble(m.group(5)));
-	    res.put("tu",    toDouble(m.group(6)));
+	    res.put("tl",    0.01*toDouble(m.group(5)));
+	    res.put("tu",    0.01*toDouble(m.group(6)));
 	    res.put("P",     toDouble(m.group(7)));
 	    String tStr = m.group(8);
 	    // e.g. "STR: n=1,v=0,lit=0,upd=1,tl=3.50,tu=4.50,P=16.00,t=?,err=0,last=0,ago=0,pin=2,@=00;00;00;00;00;00;00;00,used=1,avail=0
-	    try { res.put("t", toDouble(tStr)); }catch (Exception e) {}
+	    try { res.put("t", 0.01*toDouble(tStr)); } catch (Exception e) {}
 	    res.put("err",   toInt(m.group(9)));
-	    res.put("last",  toLong(m.group(10)));
-	    res.put("ago",   toLong(m.group(11)));
-	    res.put("pin",   toInt(m.group(12)));
-	    res.put("@",     m.group(13));
-	    res.put("used",  toInt(m.group(14))!=0);
-	    res.put("avail", toInt(m.group(15))!=0);
-	    res.put("bnd", 0<toInt(m.group(16)));
+	    res.put("ago",   toLong(m.group(10)));
+	    res.put("pin",   toInt(m.group(11)));
+	    res.put("@",     m.group(12));
+	    res.put("usd",   toInt(m.group(13))!=0);
+	    res.put("avl",   toInt(m.group(14))!=0);
+	    res.put("bnd",   0<toInt(m.group(15)));
 	}
 	catch (Exception e)
 	{
@@ -306,11 +304,14 @@ public class MessageParser
             if (!m.find()) return null;
     
             map = new HashMap<String, Object>();
-            int l   = toInt(m.group(1));
-            int cnd = toInt(m.group(2));
+            int l = toInt(m.group(1));
+            int c = toInt(m.group(2));
+            int t = toInt(m.group(3));
     
             map.put("l",   l);
-            map.put("cnd", cnd);
+            map.put("c",   c);
+            map.put("cnd", c);
+            map.put("t",   t);
         }
         catch (Exception e)
         {
@@ -348,7 +349,7 @@ public class MessageParser
     {
         double mul = 1.0;
         if (s.endsWith("h")) mul =  1.0/24.0;
-        if (s.endsWith("d")) mul =  1.0;
+        //if (s.endsWith("d")) mul =  1.0;
         if (s.endsWith("w")) mul =  7.0;
         return mul;
     }
@@ -368,7 +369,12 @@ public class MessageParser
         if (null==lines) return null;
         
         StringBuilder sb = new StringBuilder();
-        sb.append("Days,EuroPerDay,MinOnPerHour1,DutyCycle1,kWhPerDay1,MinOnPerHour2,DutyCycle2,kWhPerD2,MinOnPerHour3,DutyCycle3,kWhPerDay3,MinOnPerHour4,DutyCycle4,kWhPerDay4\n");
+        sb.append("TimeRaw,DaysBack,CentsPerUnit,NormDivisor,EuroPerDay");
+        for (int i=1; i<=5; i++)
+        {
+            sb.append(String.format(",MinOnPerHour%d,DutyCycle%d,kWhPerUnit%d,kWhPerDay%d", i, i, i, i));
+        }
+        sb.append("\n");
     
         BufferedReader br = new BufferedReader(new StringReader(lines));
         String line = null;
@@ -382,6 +388,7 @@ public class MessageParser
         	if (!m.find())
         	{
         	    Log.e(TAG, "_convertStatsToCsv: faield to parse '" + line + "'");
+        	    sb.append("error,").append(line).append("\n");
         	}
         	else		    
         	{
@@ -393,14 +400,18 @@ public class MessageParser
         	    int val = Integer.parseInt(sValid);
         	    if (val<1) continue;
     
-        	    double days = parseTimeToDays(sTime);
-        	    double mul  = getTimeMultiplierToDays(sTime); // 1/24 for hours, 1 for days, 7 for weeks		    
-        	    double cost = Double.parseDouble(sCost);
+        	    double days    = parseTimeToDays(sTime);
+        	    double divisor = getTimeMultiplierToDays(sTime); // 1/24 for hours, 1 for days, 7 for weeks		    
+        	    double costRaw = Double.parseDouble(sCost);
+   
+        	    double costNorm = 0.01*costRaw/divisor; // normalize to EUR/day			    
+        	    //Log.e(TAG, "time=" + sTime + ", days=" + days + ", mul=" + divisor + ", costRaw=" + costRaw + ", costNorm=" + costNorm);
     
-        	    cost = 0.01*cost/mul; // normalize to EUR/day			    
-    
-        	    sb.append(format(-days)); // make positive
-        	    sb.append(",").append(format(cost));
+        	    sb.append(sTime);
+        	    sb.append(",").append(format(-days)  ); // make it positive
+        	    sb.append(",").append(format(costRaw));
+        	    sb.append(",").append(format(divisor));
+        	    sb.append(",").append(format(costNorm));
     
         	    String split[] = sStrands.split("\\}\\{"); // "{s=01,lo=23.00,hi=29.50}{s=02,lo=23.00,hi=29.50}{s=03,lo=23.00,hi=29.50}{s=04,lo=23.00,hi=29.50}{s=05,lo=23.00,hi=29.50}"
         	    for (int i=0; i<split.length; i++)
@@ -414,21 +425,22 @@ public class MessageParser
         		else
         		{			
         		    //String no = hlM.group(1); // strand number
-        		    double on = parseDurationToMinutes(hlM.group(2)); // minutes on per time unit,  i.e. hour, day, etc.
-        		    double  r = Float.parseFloat(hlM.group(3));
-        		    double  p = parsePowerToKWh(hlM.group(4));
-    
-        		    p  /= mul;  // normalize to kWh per day
-        		    on /= mul;  // normalize to on-minutes per day
+        		    double on      = parseDurationToMinutes(hlM.group(2)); // minutes on per time unit,  i.e. hour, day, etc.
+        		    double duty    = toDouble(hlM.group(3));
+        		    double kwhRaw  = parsePowerToKWh(hlM.group(4));    
+        		    double kwhNorm = kwhRaw / divisor;
+        		    
+        		    on /= divisor;  // normalize to on-minutes per day
         		    on /= 24.0; // convert per day -> per hour
     
         		    sb.append(",").append(format(on));
-        		    sb.append(",").append(format(r));
-        		    sb.append(",").append(format(p));
+        		    sb.append(",").append(format(duty));
+        		    sb.append(",").append(format(kwhRaw));
+        		    sb.append(",").append(format(kwhNorm));
         		}			
         	    }
+        	    sb.append("\n");
         	}
-        	sb.append("\n");
             }
         }
         while (null!=line);
@@ -455,7 +467,8 @@ public class MessageParser
     
         	if (!m.find())
         	{
-        	    Log.e(TAG, "_convertHistoryToCsv: faield to parse '" + line + "'");
+        	    Log.e(TAG, "_convertHistoryToCsv: failed to parse '" + line + "'");
+        	    sb.append("error,").append(line).append("\n");
         	}
         	else		    
         	{
@@ -466,7 +479,7 @@ public class MessageParser
         	    t/=24.0; // hours (default) -> days
         	    sb.append(format(-t));
     
-        	    String split[] = s2.split("\\}\\{"); // "{s=01,lo=23.00,hi=29.50}{s=02,lo=23.00,hi=29.50}{s=03,lo=23.00,hi=29.50}{s=04,lo=23.00,hi=29.50}{s=05,lo=23.00,hi=29.50}"
+        	    String split[] = s2.split("\\}\\{"); // "{s=01,lo=2300,hi=2950}{s=02,lo=2300,hi=2950}...
         	    for (int i=0; i<split.length; i++)
         	    {
         		String s3 = split[i];
@@ -478,16 +491,15 @@ public class MessageParser
         		else
         		{			
         		    //String no = hlM.group(1); // strand number
-        		    float  lo = Float.parseFloat(m2.group(2));
-        		    float  hi = Float.parseFloat(m2.group(3));
+        		    double lo = 0.01*toDouble(m2.group(2));
+        		    double hi = 0.01*toDouble(m2.group(3));
     
         		    sb.append(",").append(format(lo));
         		    sb.append(",").append(format(hi));
         		}
         	    }
-        	}
-    
-        	sb.append("\n");
+        	    sb.append("\n");
+        	}    
             }            
         }
         while (null!=line);
@@ -502,7 +514,7 @@ public class MessageParser
 	return String.format(Locale.ENGLISH, "%2.2f", d);
     }
 
-    private static Double toDouble(String s)
+    protected static Double toDouble(String s)
     {
 	return null==s ? null : Double.parseDouble(s);
     }
