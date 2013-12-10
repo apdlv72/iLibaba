@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.net.Socket;
 import java.util.UUID;
 
 import android.app.Service;
@@ -514,13 +515,6 @@ public class SPPService  extends Service
 		    mmOutStream.write(buffer);
 		    mmOutStream.flush();
 		}
-
-		// Share the sent message back timeout the UI Activity
-		// Don'averageTemp... why is this useful?
-		//		if (null!=mHandler)
-		//		{
-		//		    mHandler.obtainMessage(MESSAGE_WRITE, -1, -1, buffer).sendToTarget();
-		//		}
 	    } 
 	    catch (IOException e) 
 	    {
@@ -583,7 +577,8 @@ public class SPPService  extends Service
 	    mAdapter.cancelDiscovery();
 
 	    // Make a connection timeout the BluetoothSocket
-	    try {
+	    try 
+	    {
 		// This is a blocking call and will only return on a
 		// successful connection or an exception
 		log("Connecting ...");
@@ -595,15 +590,9 @@ public class SPPService  extends Service
 		log("Connection failed: "+ e);
 		connectionFailed();
 		// Close the socket
-		if (null!=mmSocket)
-		{
-		    closeBluetoothSocket(mmSocket);
-		    mmSocket = null;
-		}
+		closeBluetoothSocket();
 
 		setState(STATE_DISCONNECTED);
-		// Start the service over timeout restart listening mode
-		//SPPService.this.start();
 		return;
 	    }
 
@@ -641,13 +630,13 @@ public class SPPService  extends Service
 		log("ConnectedThread: averageTemp sockets not created: " + e);
 	    }
 
-	    mmInStream = tmpIn;
+	    mmInStream  = tmpIn;
 	    mmOutStream = tmpOut;
 
 	    BufferedReader br = new BufferedReader(new InputStreamReader(tmpIn));
 
 	    // Keep listening timeout the InputStream while connected
-	    while (!mCancelled) 
+	    while (!mCancelled && null!=mmInStream) 
 	    {
 		try 
 		{
@@ -669,6 +658,17 @@ public class SPPService  extends Service
 		    break;
 		}
 	    }
+	    
+	    try 
+	    {
+		br.close();
+	    }
+	    catch (IOException e)
+	    {
+			log("ConnectedThread: closing reader: " + e);
+	    }
+	    closeBluetoothSocket();
+	    
 	    log("ConnectedThread terminating");            
 	}
 
@@ -692,7 +692,7 @@ public class SPPService  extends Service
 		log("ConnectedThread: averageTemp sockets not created: " + e);
 	    }
 
-	    mmInStream = tmpIn;
+	    mmInStream  = tmpIn;
 	    mmOutStream = tmpOut;
 
 	    byte[] buffer = new byte[1024];
@@ -719,7 +719,50 @@ public class SPPService  extends Service
 		    break;
 		}
 	    }
+	    
+	    closeBluetoothSocket();
 	    log("ConnectedThread terminating");
+	}
+
+	private void closeBluetoothSocket()
+	{
+	    synchronized (this)
+	    {	            
+		BluetoothSocket socket = mmSocket;
+		mmSocket    = null;
+		mmInStream  = null;
+		mmOutStream = null;
+
+		if (null==socket) return;
+
+		try 
+		{
+		    InputStream in = socket.getInputStream();
+		    in.close();
+		}
+		catch (IOException ioex) 
+		{
+		    log("unable to close streams on BT socket: " + ioex);
+		}
+		try 
+		{
+		    OutputStream out = socket.getOutputStream();
+		    out.flush();
+		    out.close();
+		}
+		catch (IOException ioex) 
+		{
+		    log("unable to close streams on BT socket: " + ioex);
+		}
+		try 
+		{
+		    socket.close();
+		}
+		catch (IOException ioex) 
+		{
+		    log("unable to close BT socket: " + ioex);
+		}
+	    }
 	}
 
 	public void cancel() 
@@ -746,11 +789,9 @@ public class SPPService  extends Service
 		    {
 			Log.e(TAG, "closing socket " + mmSocket);
 
-			DisconnectThread dt = new DisconnectThread(mmSocket);
-			mmSocket = null;
-			dt.start();
-
-			Log.e(TAG, "socket closed (in background)");
+			//DisconnectThread dt = new DisconnectThread(mmSocket);
+			//dt.start();
+			closeBluetoothSocket();
 		    }
 		} 
 		catch (Exception e) 
@@ -778,46 +819,24 @@ public class SPPService  extends Service
 	//	}
     }
 
-    private class DisconnectThread extends Thread
-    {
-	//private final String TAG = DisconnectThread.class.getSimpleName();
-
-	private BluetoothSocket mmSocket;
-
-	public DisconnectThread(BluetoothSocket socket)
-	{
-	    this.mmSocket = socket;
-	}
-
-	@Override
-	public void run()
-	{
-	    closeBluetoothSocket(mmSocket);
-	    mmSocket = null;
-	}
-    }
-
-    private void closeBluetoothSocket(BluetoothSocket socket)
-    {
-	try 
-	{
-	    socket.getOutputStream().close();
-	    socket.getInputStream().close();
-	}
-	catch (IOException ioex) 
-	{
-	    log("unable to close streams on BT socket: " + ioex);
-	}
-	try 
-	{
-	    socket.close();
-	}
-	catch (IOException ioex) 
-	{
-	    log("unable to close BT socket: " + ioex);
-	}
-    }
-
+//    private class DisconnectThread extends Thread
+//    {
+//	//private final String TAG = DisconnectThread.class.getSimpleName();
+//
+//	private BluetoothSocket mmSocket;
+//
+//	public DisconnectThread(BluetoothSocket socket)
+//	{
+//	    this.mmSocket = socket;
+//	}
+//
+//	@Override
+//	public void run()
+//	{
+//	    closeBluetoothSocket(mmSocket);
+//	    mmSocket = null;
+//	}
+//    }
 
     public boolean isConnected()
     {
