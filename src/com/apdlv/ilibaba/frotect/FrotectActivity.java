@@ -71,6 +71,8 @@ import com.apdlv.ilibaba.util.U;
 
 public class FrotectActivity extends Activity implements OnClickListener, OnLongClickListener, OnDismissListener
 {
+    private static final String ACK_UPDATE = "update";
+
     protected static final String TAG = "FrotectActivity";
 
     private static final int REQUEST_ENABLE_BT = 2;
@@ -130,6 +132,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
     private int verbosity = VERB_NORM;
     private boolean mWithSound;
+    private Vibrator mVibrator;    
 
     
     protected SPPConnection mConnection = new SPPConnection(mHandler)
@@ -143,10 +146,6 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    super.disconnect();
 	};
     };
-
-    private Vibrator mVibrator;
-
-    
 
     public class Sensor
     {
@@ -174,7 +173,6 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
     }
 
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -198,7 +196,8 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    mBluetoothAdapter.enable();	    
 	} 	
 	
-	this.mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+	mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+	//mVibrator.vibrate(100);
 	    
 	// Set up the window layout
 	requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
@@ -607,6 +606,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		return;
 	    }
 	    mConnection.sendLine("\n\nD\n\n"); // dump all
+	    mConnection.sendLine(MessageParser.CMD_ACK + ACK_UPDATE);
 	    break;
 	case R.id.frotectButtonPower:
 	    stDialog = new StatsDialog(this, StatsDialog.POWER);
@@ -669,7 +669,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
     interface FrotectBTDataCompleteListener
     {
-	enum TYPE { INFO, HELP, STATS, MINMAX, STRANDS, STARTTIMES }; 
+	enum TYPE { INFO, HELP, STATS, MINMAX, STRANDS, SENSORS, STARTTIMES }; 
 
 	void onDataComplete(TYPE type, String data);
     }
@@ -756,11 +756,9 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	{ 
 	    setTitleMsg("connected to " + mConnectedDevice.getName());
 	    mConnection.sendLine("\nE1\n"); // connection established
-	    mConnection.sendLine("\nS\n");  // dump sensor info 
-	    mConnection.sendLine("\nS\n");  // dump sensor info 
-	    mConnection.sendLine("\nDS\n"); // dump sensor info 
-	    mConnection.sendLine("\nDS\n"); // dump sensor info 
+	    mConnection.sendLine("\nV1\n"); // set verbosity to "normal" (to see events, heartbeat etc.)
 	    mConnection.sendLine("\nD\n");  // dump all info including strands, min/max and stats
+	    mConnection.sendLine("\nS\n");  // dump sensor info 
 	    mConnection.sendLine("\nH\n");  // request help commands accepted 
 
 	    FrotectActivity.this.mConnected = true;	    
@@ -770,10 +768,12 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	@Override
 	protected void onDeviceDisconnected() 
 	{ 
-	    setTitleMsg("disconnected");
+	    setTitleMsg("unconnected");
 
 	    FrotectActivity.this.mConnected = false;
 	    updateControls();
+	    long pattern[] = { 0, 50, 20, 50, 20, 50 };
+	    mVibrator.vibrate(pattern, -1);
 	}
 
 	@Override
@@ -784,6 +784,8 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	{
 	    //Toast.makeText(getApplicationContext(), "Connected to service", Toast.LENGTH_SHORT).show();
 	    doLog("Connected to service");
+	    long pattern[] = { 0, 50, 20, 50 };
+	    mVibrator.vibrate(pattern, -1);
 	}
 
 	private boolean hasPrefix(String s, String prefix)
@@ -812,16 +814,6 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		    U.setText(tvLastPing, String.format(Locale.ENGLISH, "%d / %d", localProgress, remoteProgress));
 		    U.setProgress(pingProgress, localProgress); 
 		}
-		else if (hasPrefix(c, "UP"))
-		{
-		    Map<String, Object> map = MessageParser.parseUpdateInfo(c);
-		    if (null!=map)
-		    {
-			Double t = (Double) map.get("t");
-			if (null!=t) lastUpdateRemote = (long)Math.round(t);
-			lastUpdateLocal = Calendar.getInstance().getTimeInMillis()-startupMillis;
-		    }
-		}
 		else if (hasPrefix(c, "HB")) // heartbeat
 		{
 		    Map<String, Object> map = MessageParser.parseHeartbeatInfo(c);
@@ -842,6 +834,23 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 			}
 			int id = on ? R.drawable.blue_lheart_64 : R.drawable.blue_dheart_64;			
 			U.setImageResource(imgHeartBeat, id);
+		    }
+		}
+		else if (hasPrefix(c, "UP"))
+		{
+		    Map<String, Object> map = MessageParser.parseUpdateInfo(c);
+		    if (null!=map)
+		    {
+			Double t = (Double) map.get("t");
+			if (null!=t) lastUpdateRemote = (long)Math.round(t);
+			lastUpdateLocal = Calendar.getInstance().getTimeInMillis()-startupMillis;
+		    }
+		}
+		else if (hasPrefix(c, MessageParser.CMD_ACK))
+		{
+		    if (c.contains(ACK_UPDATE))
+		    {
+			mVibrator.vibrate(100);
 		    }
 		}
 		else if (hasPrefix(c, "CUR")) // current minutes on
@@ -871,13 +880,13 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		    dispatchDataComplete(TYPE.STATS, statsBuffer.finish());
 		    checkDataAvailability();
 		}
-		else if (hasPrefix(c, "SEN")) // min/max averageTemp. history
+		else if (hasPrefix(c, "SEN")) // sensor info (basically addresses and status)
 		{
 		    onSensorInfo(c);
 		}
 		else if (c.startsWith("SEN!")) // end of sensors info
 		{		
-		    dispatchDataComplete(TYPE.STRANDS, sensorsBuffer.finish());
+		    dispatchDataComplete(TYPE.SENSORS, sensorsBuffer.finish());
 		    checkDataAvailability();
 		}
 		else if (hasPrefix(c, "MM")) // min/max averageTemp. history
@@ -960,10 +969,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    }
 	    catch (Exception e)
 	    {
-		StringWriter sw = new StringWriter();
-		PrintWriter pw = new PrintWriter(sw);
-		e.printStackTrace(pw);
-		doLog("handleCommand: " + sw.toString());
+		doLog("handleCommand: " + U.toStacktrace(e));
 		doLog("handleCommand: line: '" + c + "'");
 		
 		U.setText(mErrorView, "EXCPT: " + e, Color.MAGENTA);
@@ -1699,7 +1705,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    mConnection.sendLine(""); 
 	    mConnection.sendLine("X"); 
 	    mConnection.sendLine(""); // Rescan sensors command
-	    mConnection.sendLine("K" + ACK_RESCN);
+	    mConnection.sendLine(MessageParser.CMD_ACK + ACK_RESCN);
 	}
 
 	public void confirmRescan()
@@ -1714,9 +1720,13 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	// interface FrotectBTDataCompleteListener	
 	public void onDataComplete(TYPE type, String data)
 	{
-	    if (FrotectBTDataCompleteListener.TYPE.STRANDS==type) 
+	    switch (type)
 	    {
+	    case STRANDS:
+	    case SENSORS:
 		refreshViews();
+		break;
+	    default:
 	    }
 	}
 
@@ -1748,6 +1758,14 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		confirmRescan();  
 		return;  
 	    }
+	    
+	    if (R.id.frotectSensorDialogButtonUpdate==id)
+	    {
+		mConnection.sendLine("");
+		mConnection.sendLine("D");
+		mConnection.sendLine("");
+		return;
+	    }
 
 	    for (int i=0; i<5; i++)
 	    {
@@ -1761,7 +1779,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		    mConnection.sendLine("S"); 
 		    mConnection.sendLine("");
 		    // request ACK_MOVED to give feedback to user (vibrate)
-		    mConnection.sendLine("K" + ACK_MOVED); 
+		    mConnection.sendLine(MessageParser.CMD_ACK + ACK_MOVED); 
 		    mConnection.sendLine("");
 		    break; 
 		}  
@@ -1773,7 +1791,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		    mConnection.sendLine("");
 		    mConnection.sendLine("S"); 
 		    mConnection.sendLine("");
-		    mConnection.sendLine("K" + ACK_MOVED);
+		    mConnection.sendLine(MessageParser.CMD_ACK + ACK_MOVED);
 		    mConnection.sendLine("");
 		    break; 
 		}
@@ -1930,14 +1948,14 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	public void onLineReceived(String line)
 	{
 	    //if (line.startsWith("STR") || line.startsWith("MEAS") || line.startsWith("CUR")) refreshControls();
-	    if (line.contains("ACK_MOVED." + ACK))
+	    if (line.startsWith("ACK.") && line.contains(ACK_SET))
 	    {
 		refreshControls();
 		mVibrator.vibrate(100L);
 	    }
 	}
 	
-	private static final String ACK = "set.LUPRQ";
+	private static final String ACK_SET = "set.LUPRQ";
 
 	@Override
 	public void onClick(int id)
@@ -1945,15 +1963,15 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    switch (id)
 	    {
 	    case R.id.buttonThresSave:
-		String cmd1 = String.format(Locale.ENGLISH, "L%d=%d", strandNo, (int)Math.round(100*npLower.getValue()));
-		String cmd2 = String.format(Locale.ENGLISH, "U%d=%d", strandNo, (int)Math.round(100*npUpper.getValue()));
-		String cmd3 = String.format(Locale.ENGLISH, "P%d=%d", strandNo, (int)Math.round(npPower.getValue()));
-		String cmd4 = String.format(Locale.ENGLISH, "R%d=%d", strandNo, (int)Math.round(100*npRampEnd.getValue()));
-		String cmd5 = String.format(Locale.ENGLISH, "Q%d=%d", strandNo, (int)Math.round(100*npRampDelta.getValue()));
+		String cmd1 = String.format(Locale.ENGLISH, "L%d=%d", MessageParser.CMD_LOWER,      strandNo, (int)Math.round(100*npLower.getValue()));
+		String cmd2 = String.format(Locale.ENGLISH, "U%d=%d", MessageParser.CMD_UPPER,      strandNo, (int)Math.round(100*npUpper.getValue()));
+		String cmd3 = String.format(Locale.ENGLISH, "P%d=%d", MessageParser.CMD_POWER,      strandNo, (int)Math.round(    npPower.getValue()));
+		String cmd4 = String.format(Locale.ENGLISH, "R%d=%d", MessageParser.CMD_RAMP_LIMIT, strandNo, (int)Math.round(100*npRampEnd.getValue()));
+		String cmd5 = String.format(Locale.ENGLISH, "Q%d=%d", MessageParser.CMD_RAMP_DELTA, strandNo, (int)Math.round(100*npRampDelta.getValue()));
 		// Send request for ACK_MOVED to detect when everything was EVERY value was updated.
 		// If we would detect the single strand updates in onLineReceived(), the values show in the dialog
 		// would flicker until finally the last command was accepted.		
-		String cmd6 = "K" + ACK; 
+		String cmd6 = MessageParser.CMD_ACK + ACK_SET; 
 		frotect.mConnection.sendLine("");
 		frotect.mConnection.sendLine(cmd1);
 		frotect.mConnection.sendLine("");
@@ -1992,8 +2010,9 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	}
     }
 
-    class ConfigDialog extends SPPStatusAwareDialog implements OnCheckedChangeListener, android.widget.CompoundButton.OnCheckedChangeListener 
+    class ConfigDialog extends SPPStatusAwareDialog implements OnCheckedChangeListener, SPPDataListener, android.widget.CompoundButton.OnCheckedChangeListener 
     {
+	private static final String ACK_SET = "set.cfg";
 	private NumberPicker    cost, strands, sensors;
 	private FrotectActivity frotect;
 	private RadioGroup mRadioGroupVerbosity;
@@ -2063,14 +2082,17 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    case R.id.saveCost:
 		// C0.2    set cost/kWh to 0.2
 		frotect.mConnection.sendLine("\nC" + (int)Math.round(100*cost.getValue()));
+		frotect.mConnection.sendLine(MessageParser.CMD_ACK + ACK_SET);
 		break;	    	
 	    case R.id.saveNumStrands:
 		// M3      set # of strands to 3
 		frotect.mConnection.sendLine("\nM" + ((int)strands.getValue()));		
+		frotect.mConnection.sendLine(MessageParser.CMD_ACK + ACK_SET);
 		break;
 	    case R.id.saveNumSensors:
 		// N4      set # of sensors to 4
 		frotect.mConnection.sendLine("\nN" + ((int)sensors.getValue()));
+		frotect.mConnection.sendLine(MessageParser.CMD_ACK + ACK_SET);
 		break;	    
 	    case R.id.frotectReboot:
 		confirmReboot();
@@ -2080,7 +2102,8 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	private void rebootConfirmed()
 	{
-	    frotect.mConnection.sendLine("\nB=4711\n");				
+	    frotect.mConnection.sendLine("\nB=4711\n");		
+	    mVibrator.vibrate(500);
 	}
 
 	public void confirmReboot()
@@ -2131,6 +2154,14 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    if (mNotifSound==butt)
 	    {
 		frotect.setSoundNotifications(checked);
+	    }
+        }
+
+	public void onLineReceived(String line)
+        {
+	    if (line.startsWith(MessageParser.MSG_ACK) && line.contains(ACK_SET))
+	    {
+		mVibrator.vibrate(100);
 	    }
         }
     }

@@ -1,10 +1,6 @@
 package com.apdlv.ilibaba.frotect;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 import android.app.Dialog;
@@ -41,6 +37,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
     private FrotectActivity frotect;
 
     private View checkBoxContainer, unboundSensor;
+    private int checkboxId[] = { R.id.checkBoxSensor1, R.id.checkBoxSensor2, R.id.checkBoxSensor3, R.id.checkBoxSensor4, R.id.checkBoxSensor5 };
     
     boolean isDuty()
     {
@@ -113,6 +110,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 
 	statistics = GraphParser.parseStats(frotect.statsBuffer.toString());
 	minmaxHist = GraphParser.parseHistories(frotect.minmaxBuffer.toString());
+	startTimes = GraphParser.parseStartTimes(frotect.starttimesBuffer.toString());
 
 	refreshData();
     }
@@ -133,7 +131,6 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	    break;
 
 	case STARTTIMES:
-	    startTimesBuffer = data;
 	    refreshData(); 
 	    break;
 
@@ -175,7 +172,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 
     public GraphViewSeriesStyle getStyle(String key, boolean lo)
     {
-	GraphViewSeriesStyle style = whStyle;
+	GraphViewSeriesStyle style = styleWhite;
 	if (lo)
 	{
 	    if (key.endsWith("1")) style = style01Lo;
@@ -186,11 +183,11 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	}
 	else
 	{
-	    if (key.endsWith("1")) style = style01;
-	    if (key.endsWith("2")) style = style02;
-	    if (key.endsWith("3")) style = style03;
-	    if (key.endsWith("4")) style = style04;
-	    if (key.endsWith("5")) style = style05;	    
+	    if (key.endsWith("1")) style = style01Hi;
+	    if (key.endsWith("2")) style = style02Hi;
+	    if (key.endsWith("3")) style = style03Hi;
+	    if (key.endsWith("4")) style = style04Hi;
+	    if (key.endsWith("5")) style = style05Hi;	    
 	}
 	return style;
     }
@@ -223,18 +220,6 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 
     void initTemp()
     {       
-	//	GraphViewSeriesStyle loStyle = new GraphViewSeriesStyle();  
-	//	loStyle.setValueDependentColor(new ValueDependentColor()
-	//	{
-	//	  public int get(GraphViewDataInterface data)
-	//	  {  
-	//	      double y = data.getY();
-	//	      //return Color.rgb((int)(150+6*y), 0, (int)(150-6*y));
-	//	      return Color.rgb(255, 0, 0);
-	//	  }  
-	//	});  		
-	//	loStyle.thickness=10;
-
 	// graph with dynamically genereated horizontal and vertical labels
 	LineGraphView graphView = new LineGraphView(frotect, "y: ¡C,        x: days");
 
@@ -242,18 +227,8 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	graphView.getGraphViewStyle().setTextSize(10);
 	//graphView.setDrawBackground(true);
 
-	// custom static labels
-	//graphView.setHorizontalLabels(new String[] {"7", "6", "5", "4", "3", "2", "1", "0"});
-	//graphView.setVerticalLabels(new String[] {"8¡", "6¡", "4¡", "2¡",  "0¡" });
-	//	graphView.addSeries(hiSeries); // data
-	//	graphView.addSeries(loSeries); // data
-
 	Double minMax[] = refreshTemp();
 
-	//	graphView.setShowLegend(true);
-	//	graphView.setLegendAlign(LegendAlign.MIDDLE);  
-	//	graphView.setLegendWidth(100);  
-	// graphView.setManualYAxisBounds(30, -15);
 	graphView.setManualYAxisBounds(-10, -10);
 	if (null!=minMax && 2==minMax.length) 
 	{
@@ -279,8 +254,6 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	xLabel.setText("days");
 	layout.addView(xLabel);
     }
-
-    int checkboxId[] = { R.id.checkBoxSensor1, R.id.checkBoxSensor2, R.id.checkBoxSensor3, R.id.checkBoxSensor4, R.id.checkBoxSensor5 };
 
     private Double[] refreshData()
     {
@@ -370,6 +343,8 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	    mGraphView.getGraphViewStyle().setNumHorizontalLabels(xTicks);	    
 	    //mGraphView.setViewPort(-minDay, minDay);
 	    mGraphView.setViewPort(0, maxDay);	    
+	    
+	    addStartTimes(gcY.getNiceMin(), gcY.getNiceMax());
 	}
     }
 
@@ -392,14 +367,13 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	    if (null==minY || (null!=mm[2] && mm[2]<minY)) minY=mm[2];
 	    if (null==maxY || (null!=mm[3] && mm[3]>maxY)) maxY=mm[3];
 
-	    GraphViewSeriesStyle style = whStyle;
+	    GraphViewSeriesStyle style = styleWhite;
 	    GraphViewSeries series = new GraphViewSeries(k, style, values);
 	    mGraphView.addSeries(series);
 
 	    //dump(values);
 	}
 	//graphView.setManualYAxisBounds(1.0, 0);
-	refreshStartTimes(0,1);
 
 	Double rv[] = { minX, maxX, minY, maxY };
 	return rv;
@@ -445,8 +419,6 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	    }    
 	}
 
-	refreshStartTimes(0,1.0);
-
 	Double rv[] = { minX, maxX, minY, maxY };
 	return rv;
     }
@@ -477,8 +449,6 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 		mGraphView.addSeries(series);		
 	    }
 	}
-
-	refreshStartTimes(0,100);
 
 	Double rv[] = { minX, maxX, minY, maxY };
 	return rv;
@@ -512,42 +482,25 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 		mGraphView.addSeries(series);
 	    }
 	}
-	refreshStartTimes(-10,30);
 
 	Double rv[] = { minX, maxX, minY, maxY };
 	return rv;
     }
 
 
-    void refreshStartTimes(double min, double max)
+    void addStartTimes(double min, double max)
     {
-	if (null==startTimesBuffer) return;
-	StringReader sr = new StringReader(startTimesBuffer);
-	BufferedReader br = new BufferedReader(sr);
-
-	String line = null;
-	do 
+	if (null==startTimes) return;
+	
+	for (double daysAgo : startTimes)
 	{
-	    try { line = br.readLine(); } catch (IOException e) {}
-	    if (null!=line)
-	    {
-		Map<String, Object> map = MessageParser.parseStartTime(line);
-		if (null!=map) 
-		{		
-		    Double ago = (Double) map.get("ago");
-		    if (null!=ago)
-		    {
-			GraphViewData d[] = new GraphViewData[2];
-			d[0] = new GraphViewData(ago-0.001,min);
-			d[1] = new GraphViewData(ago+0.001,max);
-
-			GraphViewSeries series = new GraphViewSeries("|", whStyle, d);
-			mGraphView.addSeries(series);
-		    }
-		}
-	    }
+	    double delta = max-min;
+	    double offs  = 0.1*delta;
+	    // add small ticks on the bottom line that indicate the start times
+	    GraphViewData d[]  = { new GraphViewData(daysAgo, min), new GraphViewData(daysAgo, min+offs) };
+	    GraphViewSeries series = new GraphViewSeries("|", styleDarkGray, d);
+	    mGraphView.addSeries(series);	    
 	}
-	while (null!=line);
     }
 
 
@@ -608,27 +561,27 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	layout.setBackgroundColor(Color.BLACK);
 
 	layout.addView(mGraphView = graphView);	
-	refreshStartTimes(0,10);
     }
 
-    private GraphViewSeriesStyle whStyle   = new GraphViewSeriesStyle(Color.WHITE, 2);	
+    private GraphViewSeriesStyle styleWhite    = new GraphViewSeriesStyle(Color.WHITE, 2);	
+    private GraphViewSeriesStyle styleDarkGray = new GraphViewSeriesStyle(Color.DKGRAY,3);	
 
-    private GraphViewSeriesStyle style01Lo = new GraphViewSeriesStyle(Color.rgb(0xff,    0,    0), 1); // RED,     1);	
-    private GraphViewSeriesStyle style02Lo = new GraphViewSeriesStyle(Color.rgb(   0, 0xff,    0), 1); // GREEN,   1);	
-    private GraphViewSeriesStyle style03Lo = new GraphViewSeriesStyle(Color.rgb(   0,    0, 0xff), 1); // BLUE,    1);	
-    private GraphViewSeriesStyle style04Lo = new GraphViewSeriesStyle(Color.rgb(0xff,    0, 0xff), 1); // MAGENTA, 1);
-    private GraphViewSeriesStyle style05Lo = new GraphViewSeriesStyle(Color.rgb(0xff, 0xff,    0), 1); // YELLOW,  1);
+    private GraphViewSeriesStyle style01Hi = new GraphViewSeriesStyle(Color.rgb(0xff,    0,    0), 1); // RED,     1);	
+    private GraphViewSeriesStyle style02Hi = new GraphViewSeriesStyle(Color.rgb(   0, 0xff,    0), 1); // GREEN,   1);	
+    private GraphViewSeriesStyle style03Hi = new GraphViewSeriesStyle(Color.rgb(   0,    0, 0xff), 1); // BLUE,    1);	
+    private GraphViewSeriesStyle style04Hi = new GraphViewSeriesStyle(Color.rgb(0xff,    0, 0xff), 1); // MAGENTA, 1);
+    private GraphViewSeriesStyle style05Hi = new GraphViewSeriesStyle(Color.rgb(0xff, 0xff,    0), 1); // YELLOW,  1);
 
-    private GraphViewSeriesStyle style01   = new GraphViewSeriesStyle(Color.rgb(0x80,    0,    0), 1); // RED,     1);	
-    private GraphViewSeriesStyle style02   = new GraphViewSeriesStyle(Color.rgb(   0, 0x80,    0), 1); // GREEN,   1);	
-    private GraphViewSeriesStyle style03   = new GraphViewSeriesStyle(Color.rgb(   0,    0, 0x80), 1); // BLUE,    1);	
-    private GraphViewSeriesStyle style04   = new GraphViewSeriesStyle(Color.rgb(0x80,    0, 0x80), 1); // MAGENTA, 1);
-    private GraphViewSeriesStyle style05   = new GraphViewSeriesStyle(Color.rgb(0x80, 0x80,    0), 1); // YELLOW,  1);
+    private GraphViewSeriesStyle style01Lo = new GraphViewSeriesStyle(Color.rgb(0x80,    0,    0), 2); // RED,     1);	
+    private GraphViewSeriesStyle style02Lo = new GraphViewSeriesStyle(Color.rgb(   0, 0x80,    0), 2); // GREEN,   1);	
+    private GraphViewSeriesStyle style03Lo = new GraphViewSeriesStyle(Color.rgb(   0,    0, 0x80), 2); // BLUE,    1);	
+    private GraphViewSeriesStyle style04Lo = new GraphViewSeriesStyle(Color.rgb(0x80,    0, 0x80), 2); // MAGENTA, 1);
+    private GraphViewSeriesStyle style05Lo = new GraphViewSeriesStyle(Color.rgb(0x80, 0x80,    0), 2); // YELLOW,  1);
 
 
     private String mStyle;
 
-    private String startTimesBuffer = null;
+    private Double[] startTimes = null;
 
     public static final String POWER = "power";
 

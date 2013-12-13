@@ -568,4 +568,12 @@ public class MessageParser
 	return null==s ? null : Long.parseLong(s);
     }
 
+    public static final String CMD_ACK = "K";
+    public static final String MSG_ACK = "ACK.";
+
+    public static final String CMD_LOWER      = "L";
+    public static final String CMD_UPPER      = "U";
+    public static final String CMD_POWER      = "P";
+    public static final String CMD_RAMP_LIMIT = "R";
+    public static final String CMD_RAMP_DELTA = "Q";
 }

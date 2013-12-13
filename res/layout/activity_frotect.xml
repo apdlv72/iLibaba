@@ -224,7 +224,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginRight="5dip"
-                            android:src="@drawable/unkn_bulb_64" />
+                            android:src="@drawable/unkn_bulb_64" 
+                            android:contentDescription="Sensor 3"/>
 
                         <TableLayout
                             android:layout_width="wrap_content"
@@ -396,7 +397,7 @@
                                     android:id="@+id/sensorMisc5"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="misc5" />
+                                    android:text="" />
                             </TableRow>
 
                             <TableRow

@@ -7,9 +7,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.apdlv.ilibaba.util.U;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GraphView.GraphViewData;
 
@@ -203,7 +205,7 @@ public class GraphParser extends MessageParser
 	return result;
     }
 
-
+/*
     private static String dump(ArrayList<GraphViewData> list)
     {
 	StringBuilder sb = new StringBuilder();
@@ -213,7 +215,7 @@ public class GraphParser extends MessageParser
 	}
 	return sb.toString();
     }
-
+*/
 
     protected static HashMap<String, GraphViewData[]> toReverseArray(HashMap<String, ArrayList<GraphViewData>> map)
     {
@@ -228,6 +230,53 @@ public class GraphParser extends MessageParser
 	    result.put(k, data);
 	}
 	return result;
+    }
+
+    public static Double[] parseStartTimes(String data) 
+    {
+	if (U.isEmpty(data)) return null;
+
+	StringReader sr = new StringReader(data);
+	BufferedReader br = new BufferedReader(sr);
+	/*
+	T:n=1,i=1,t=36h,ago=78h
+	T:n=2,i=2,t=42h,ago=72h
+	T:n=3,i=3,t=72h,ago=42h
+	T:n=4,i=4,t=84h,ago=30h
+	T:n=5,i=5,t=102h,ago=12h
+	T:n=6,i=6,t=114h,ago=0h
+	T:n=7,t=6840m, ago=0m 
+	 */
+
+	ArrayList<Double> days = new ArrayList<Double>();
+
+	String line = null;
+	try
+	{
+	    while (null!=(line = br.readLine()))
+	    {
+		Map<String, Object> map = parseStartTime(line);
+
+		//	    int    n   = (Integer) map.get("n");
+		//	    int    i   = (Integer) map.get("i");
+		//	    double t   = (Double) map.get("t");
+		Double daysAgo = null==map ? null : (Double) map.get("ago");
+		if (null==daysAgo)
+		{
+		    System.err.println("parseStartTimes: invalid line " + line);
+		}
+		else
+		{
+		    days.add(daysAgo);
+		}
+	    }
+	}
+	catch (IOException e)
+	{
+	}
+
+	Double[] rc = days.toArray(new Double[0]);
+	return rc;
     }
 
 

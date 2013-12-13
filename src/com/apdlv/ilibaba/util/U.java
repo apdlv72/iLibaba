@@ -1,10 +1,15 @@
 package com.apdlv.ilibaba.util;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Checkable;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RadioGroup;
@@ -38,9 +43,9 @@ public class U
         if (null!=v) setVisible(v, false);
     }
 
-    public static void setEnabled(View v, boolean e)
+    public static void setEnabled(View v, Boolean e)
     {
-        if (null!=v) v.setEnabled(e);
+        if (null!=v && null!=e) v.setEnabled(e);
     }
 
     public static void setChecked(Checkable c, boolean b)
@@ -129,4 +134,19 @@ public class U
 	if (null==parent) return;
 	parent.removeView(v);
     }
+
+    public static void setOnCheckedChangeListener(CompoundButton b, OnCheckedChangeListener l)
+    {
+	if (null!=b && null!=l) b.setOnCheckedChangeListener(l);
+    }
+    
+    public static String toStacktrace(Exception e)
+    {
+	    StringWriter sw = new StringWriter();
+	    PrintWriter pw = new PrintWriter(sw);
+	    e.printStackTrace(pw);
+	    String msg = sw.toString();
+	    return msg;
+    }
+
 }

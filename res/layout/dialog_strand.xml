@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:minWidth="300dip"
     android:orientation="vertical"
-    android:padding="10dip" >
+    android:padding="10dip" xmlns:tools="http://schemas.android.com/tools">
 
     <LinearLayout
         android:layout_width="fill_parent"
@@ -16,7 +16,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:orientation="horizontal"
-            android:paddingTop="10dip" >
+            android:paddingTop="5dip" >
 
             <TextView
                 android:id="@+id/frotectStrandDialogMinutesOn"
@@ -41,12 +41,21 @@
                 android:text="single: ?" />
             </LinearLayout>
 
+                    <TextView
+                android:id="@+id/frotectStrandDialogRampingInfo"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="ramping info: ?" />
+        
+        
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:orientation="horizontal"
-            android:paddingBottom="30dip" >
+            android:paddingBottom="10dip" >
 
             <LinearLayout
                 android:id="@+id/layoutStrandBind"
@@ -62,14 +71,14 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/link_64" />
 
-                <TextView
+<!--                 <TextView
                     android:id="@+id/titleBind"
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
                     android:text="bind" />
-            </LinearLayout>
+ -->            </LinearLayout>
 
             <TextView
                 android:id="@+id/frotectStrandAddr"
@@ -78,8 +87,9 @@
                 android:layout_gravity="center_vertical"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="00:00:00:00:00:00:00:00"
-                android:textAppearance="?android:attr/textAppearanceSmall" />
+                android:text=" "
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                />
 
             <LinearLayout
                 android:id="@+id/layoutStrandUnbind"
@@ -95,13 +105,14 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/unlink_64" />
 
-                <TextView
+<!--                 <TextView
                     android:id="@+id/titleUnbind"
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
                     android:text="unbind" />
+ -->                
             </LinearLayout>
         </LinearLayout>
 
@@ -109,7 +120,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:paddingBottom="15dip" >
+            android:paddingBottom="5dip" 
+            >
 
             <TextView
                 android:id="@+id/textView3"
@@ -160,7 +172,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:paddingBottom="15dip" >
+            android:paddingBottom="5dip" >
 
             <TextView
                 android:id="@+id/textView3"
@@ -218,7 +230,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="10dip"
                 android:minWidth="60dip"
-                android:text="Power:" />
+                android:text="Pwr:" />
 
             <Button
                 android:id="@+id/decPower"
@@ -257,11 +269,125 @@
                 android:text="Watt" />
         </LinearLayout>
 
+            <TextView
+                android:id="@+id/tvRamping"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="60dip"
+                android:paddingBottom="5dip"
+                android:paddingTop="10dip"
+                android:text="Temperature ramping:" />
+        
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingBottom="5dip" 
+            android:layout_gravity="center_horizontal" >
+
+            <TextView
+                android:id="@+id/tvRampDelta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dip"
+                android:minWidth="60dip"
+                android:text="Δ" />
+
+            <Button
+                android:id="@+id/decRampDelta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/button"
+                android:minWidth="50dip"
+                android:text="-"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <TextView
+                android:id="@+id/valueRampDelta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="right"
+                android:minWidth="60dip"
+                android:paddingRight="5dip"
+                android:text="96.0"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <Button
+                android:id="@+id/incRampDelta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/button"
+                android:minWidth="50dip"
+                android:text="+"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <TextView
+                android:id="@+id/tvRampDeltaUnit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dip"
+                android:minWidth="40dip"
+                android:text="°C/day" />
+        </LinearLayout>
+
+        
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingBottom="5dip" 
+            android:layout_gravity="center_horizontal" >
+
+            <TextView
+                android:id="@+id/tvRampEnd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dip"
+                android:minWidth="60dip"
+                android:text="MIN:" />
+
+            <Button
+                android:id="@+id/decRampEnd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/button"
+                android:minWidth="50dip"
+                android:text="-"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <TextView
+                android:id="@+id/valueRampEnd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="right"
+                android:minWidth="60dip"
+                android:paddingRight="5dip"
+                android:text="96.0"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <Button
+                android:id="@+id/incRampEnd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/button"
+                android:minWidth="50dip"
+                android:text="+"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <TextView
+                android:id="@+id/tvRampEndUnit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dip"
+                android:minWidth="40dip"
+                android:text="°C" />
+        </LinearLayout>
+
+        
+        
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:paddingTop="30dip" >
+            android:paddingTop="10dip" >
 
             <Button
                 android:id="@+id/buttonStrandFlash"

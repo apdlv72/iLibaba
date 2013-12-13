@@ -7,50 +7,69 @@
     android:padding="10dip" >
 
     <TextView
+        android:id="@+id/tvNotifSound"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:minWidth="50dip"
+        android:paddingTop="10dip"
+        android:text="Notification sounds" />
+
+    <CheckBox
+        android:id="@+id/frotectCheckButtonNotifSound"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dip"
+        android:checked="false"
+        android:text="Enabled"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+    <TextView
         android:id="@+id/TextView01"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:minWidth="50dip"
+        android:paddingTop="10dip"
         android:text="Verbosity" />
-    
+
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:gravity="center"
+        android:gravity="left"
         android:orientation="horizontal"
-        android:paddingBottom="10dip" >
+        android:paddingBottom="30dip" >
 
         <RadioGroup
             android:id="@+id/frotectRadioGroupVerbosity"
-            android:orientation="horizontal"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" >
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dip"
+            android:orientation="horizontal" >
 
             <RadioButton
                 android:id="@+id/frotectRadioButtonNormal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checked="true"
-                android:textAppearance="?android:attr/textAppearanceSmall" 
-                android:text="Normal" />
+                android:text="Normal"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
 
             <RadioButton
                 android:id="@+id/frotectRadioButtonVerbose"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceSmall" 
-                android:text="Verbose" />
+                android:text="Verbose"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
 
             <RadioButton
                 android:id="@+id/frotectRadioButtonDebug"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceSmall" 
-                android:text="Debug" />
+                android:text="Debug"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
         </RadioGroup>
-
     </LinearLayout>
 
     <TableLayout
@@ -91,6 +110,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="right"
                     android:minWidth="50dip"
+                    android:paddingRight="5dip"
                     android:text="20.0"
                     android:textAppearance="?android:attr/textAppearanceLarge" />
 
@@ -146,6 +166,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="right"
                     android:minWidth="50dip"
+                    android:paddingRight="5dip"
                     android:text="4"
                     android:textAppearance="?android:attr/textAppearanceLarge" />
 
@@ -200,6 +221,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="right"
                     android:minWidth="50dip"
+                    android:paddingRight="5dip"
                     android:text="4"
                     android:textAppearance="?android:attr/textAppearanceLarge" />
 
