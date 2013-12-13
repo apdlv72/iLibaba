@@ -45,14 +45,25 @@ public class MessageParser
         "t=([-0-9\\.\\?]+),.*" +
         "err=([0-9]+),.*"   +
         "ago=([-0-9]+),.*"  + 
-        "pin=([0-9]+),.*"   +
+        "pin=([0-9]+)*"
+    );
+    
+    protected static final Pattern P_STRANDINFO_RAMPING = Pattern.compile(
+        "tls=([-0-9\\.]+),.*" +
+        "t[lr][el]=([-0-9\\.]+),.*" + // backwards compat: temp lower end -> temp ramping limit 
+        //"trl=([-0-9\\.]+),.*" + // replace above line by this after updated uC  
+        "rpd=([-0-9\\.]+),.*" +
+        "rsd=([0-9\\.]+)*"
+    );
+
+    protected static final Pattern P_STRANDINFO_STRAND = Pattern.compile(
         "@=([0-9a-fA-F;:]+),.*" +
         "usd=([0-1]+),.*"   +
         "avl=([0-1]+),.*"  +
         "bnd=([0-1]+)"
     );
-    
-    protected static final Pattern P_STARTTIME     = Pattern.compile("n=([0-9]+),.*i=([0-9]+),.*t=([-0-9\\.]+[mhdw]),.*ago=([-0-9\\.]+[mhdw])");
+
+    protected static final Pattern P_STARTTIME     = Pattern.compile("n=([0-9]+),.*i=([-0-9]+),.*t=([-0-9\\.]+[mhdw]),.*ago=([-0-9\\.]+[mhdw])");
     protected static final Pattern P_STATSTOCSV    = Pattern.compile("t=([-0-9\\.]+[hdw]),.*,v=([0-1]+),[^\\{]*(\\{.*\\}),.*C=([0-9\\.]+)");
     protected static final Pattern P_ONESTRANDINFO = Pattern.compile("n=([0-9]*),.*on=([0-9]+[mh]),.*r=([0-9\\.]+),.*P=([0-9\\.k]+)");
     protected static final Pattern P_HISTORY       = Pattern.compile("t=([-0-9\\.]+)h,.*,(\\{.*\\})");
@@ -156,7 +167,8 @@ public class MessageParser
 	return map;
     }
 
-    // STR. n=1,v=1,lit=1,upd=1,tl=2.00,tu=5.00,P=96.50,t=11.00,err=0,last=4294967295,ago=0,pin=2,@=28;50;81;E1;04;00;00;6E,used=1,avail=1,bnd=1
+    // STR.n=1,v=1,lit=1,upd=1,tl=2.00,tu=5.00,P=96.50,t=11.00,err=0,ago=0,pin=2,@=28;50;81;E1;04;00;00;6E,used=1,avail=1,bnd=1
+    // STR.n=3,v=1,lit=1,upd=0,tl=350,tu=500,P=97,t=-1850,err=0,ago=22,pin=5
     static public HashMap<String,Object> parseStrandInfo(String line)
     {
 	if (null==line) return null; 
@@ -164,10 +176,9 @@ public class MessageParser
 	Matcher m = P_STRANDINFO.matcher(line);
 	if (!m.find()) return null;
 
-	HashMap<String,Object> res = null;
+	HashMap<String,Object> res = new HashMap<String, Object>();
 	try
 	{
-	    res = new HashMap<String, Object>();
 	    res.put("n",     toInt(m.group(1)));
 	    res.put("v",     toInt(m.group(2))!=0);
 	    res.put("lit",   toInt(m.group(3))!=0);
@@ -181,15 +192,43 @@ public class MessageParser
 	    res.put("err",   toInt(m.group(9)));
 	    res.put("ago",   toLong(m.group(10)));
 	    res.put("pin",   toInt(m.group(11)));
-	    res.put("@",     m.group(12));
-	    res.put("usd",   toInt(m.group(13))!=0);
-	    res.put("avl",   toInt(m.group(14))!=0);
-	    res.put("bnd",   0<toInt(m.group(15)));
+	    // the following values are in the verbose output as parsed below now
+//	    res.put("@",     m.group(12));
+//	    res.put("usd",   toInt(m.group(13))!=0);
+//	    res.put("avl",   toInt(m.group(14))!=0);
+//	    res.put("bnd",   0<toInt(m.group(15)));
 	}
 	catch (Exception e)
 	{
-	    Log.e(TAG, "parseStrandInfo: '" + line + "': " + e);	    
+	    Log.e(TAG, "parseStrandInfo.A: '" + line + "': " + e);	    
 	}	
+	
+	m = P_STRANDINFO_RAMPING.matcher(line);
+	if (m.find()) try
+	{
+	    res.put("tls",   0.01*toDouble(m.group(1))); // lower temp start value
+	    res.put("tle",   0.01*toDouble(m.group(2))); // lower temp end value
+	    res.put("rpd",   0.01*toDouble(m.group(3))); // ramp per day
+	    res.put("rsd",   toInt(m.group(4))); // ramp start day
+	}
+	catch (Exception e)
+	{
+	    Log.e(TAG, "parseStrandInfo.B: '" + line + "': " + e);	    
+	}
+	
+	m = P_STRANDINFO_STRAND.matcher(line);
+	if (m.find()) try
+	{
+	    res.put("@",             m.group(1));
+	    res.put("usd",   toInt(  m.group(2))!=0);
+	    res.put("avl",   toInt(  m.group(3))!=0);
+	    res.put("bnd",   0<toInt(m.group(4)));
+	}
+	catch (Exception e)
+	{
+	    Log.e(TAG, "parseStrandInfo.C: '" + line + "': " + e);	    
+	}	
+	
 	return res;
     }
 
