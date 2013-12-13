@@ -197,7 +197,6 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	} 	
 	
 	mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-	//mVibrator.vibrate(100);
 	    
 	// Set up the window layout
 	requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
@@ -418,6 +417,16 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	}
     }
 
+    public void vibrate(long l)
+    {
+	mVibrator.vibrate(l);	    
+    }
+
+    public void vibrate(long[] pattern, int repeat)
+    {
+	mVibrator.vibrate(pattern, repeat);	    
+    }
+    
     public void onClick(View view)
     {  
 	onClick(view.getId());
@@ -634,8 +643,8 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    break;
 	case R.id.frotectButtonConfig:
 	    ConfigDialog cDialog = new ConfigDialog(this);
-	    mHandler.addStatusListener(cDialog);
-	    //mHandler.addDataCompleteListener(cDialog);
+	    mHandler.addStatusListener(cDialog);	    
+	    mHandler.addDataListener(cDialog); // receive ACKs
 	    cDialog.setOnDismissListener(this);
 	    cDialog.show();	    
 	    break;
@@ -761,6 +770,9 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    mConnection.sendLine("\nS\n");  // dump sensor info 
 	    mConnection.sendLine("\nH\n");  // request help commands accepted 
 
+	    long pattern[] = { 0, 50, 200, 50 };
+	    vibrate(pattern, -1);
+
 	    FrotectActivity.this.mConnected = true;	    
 	    updateControls();
 	}
@@ -772,9 +784,10 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	    FrotectActivity.this.mConnected = false;
 	    updateControls();
-	    long pattern[] = { 0, 50, 20, 50, 20, 50 };
-	    mVibrator.vibrate(pattern, -1);
+	    long pattern[] = { 0, 50, 200, 50, 200, 50 };
+	    vibrate(pattern, -1);
 	}
+	
 
 	@Override
 	protected void onDebugMessage(String msg) { if (verbosity>=VERB_DEBUG) doLog(msg); }
@@ -784,8 +797,6 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	{
 	    //Toast.makeText(getApplicationContext(), "Connected to service", Toast.LENGTH_SHORT).show();
 	    doLog("Connected to service");
-	    long pattern[] = { 0, 50, 20, 50 };
-	    mVibrator.vibrate(pattern, -1);
 	}
 
 	private boolean hasPrefix(String s, String prefix)
@@ -795,6 +806,8 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	private void handleCommand(String c)
 	{
+	    if (null==c) return;
+	    
 	    if (verbosity>=VERB_DEBUG)
 	    {
 		doLog("LINE: " + c);
@@ -850,7 +863,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		{
 		    if (c.contains(ACK_UPDATE))
 		    {
-			mVibrator.vibrate(100);
+			vibrate(100);
 		    }
 		}
 		else if (hasPrefix(c, "CUR")) // current minutes on
@@ -1336,7 +1349,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	    if (!sensor.avail)
 	    {
-		U.setTextColor(value, used ? Color.RED : Color.GRAY);
+		U.setTextColor(value, (null!=used && used) ? Color.RED : Color.GRAY);
 	    }	    
 
 	    if (!sensor.used)
@@ -1657,7 +1670,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    registerViews(false, sensorAddrIDs);
 	    registerViews(false, sensorUpIDs);
 	    registerViews(false, sensorDownIDs);
-	    registerViews(false, R.id.frotectRescan);
+	    registerViews(false, R.id.frotectRescan, R.id.frotectSensorDialogButtonUpdate);
 
 	    // make sure the views show the appropriate state
 	    setStatus(mConnected);
@@ -1804,14 +1817,15 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    {
 		if (line.contains(ACK_MOVED))
 		{
-		    mVibrator.vibrate(100L);
+		    vibrate(100L);
 		}
 		else if (line.contains(ACK_RESCN))
 		{
-		    mVibrator.vibrate(500L);		
+		    vibrate(500L);		
 		}
 	    }
         }
+
     }
 
     class StrandDialog extends SPPStatusAwareDialog implements FrotectBTDataCompleteListener, SPPDataListener, android.view.View.OnClickListener
@@ -1951,7 +1965,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    if (line.startsWith("ACK.") && line.contains(ACK_SET))
 	    {
 		refreshControls();
-		mVibrator.vibrate(100L);
+		vibrate(100L);
 	    }
 	}
 	
@@ -1963,11 +1977,11 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    switch (id)
 	    {
 	    case R.id.buttonThresSave:
-		String cmd1 = String.format(Locale.ENGLISH, "L%d=%d", MessageParser.CMD_LOWER,      strandNo, (int)Math.round(100*npLower.getValue()));
-		String cmd2 = String.format(Locale.ENGLISH, "U%d=%d", MessageParser.CMD_UPPER,      strandNo, (int)Math.round(100*npUpper.getValue()));
-		String cmd3 = String.format(Locale.ENGLISH, "P%d=%d", MessageParser.CMD_POWER,      strandNo, (int)Math.round(    npPower.getValue()));
-		String cmd4 = String.format(Locale.ENGLISH, "R%d=%d", MessageParser.CMD_RAMP_LIMIT, strandNo, (int)Math.round(100*npRampEnd.getValue()));
-		String cmd5 = String.format(Locale.ENGLISH, "Q%d=%d", MessageParser.CMD_RAMP_DELTA, strandNo, (int)Math.round(100*npRampDelta.getValue()));
+		String cmd1 = String.format(Locale.ENGLISH, "%s%d=%d", MessageParser.CMD_LOWER,      strandNo, (int)Math.round(100*npLower.getValue()));
+		String cmd2 = String.format(Locale.ENGLISH, "%s%d=%d", MessageParser.CMD_UPPER,      strandNo, (int)Math.round(100*npUpper.getValue()));
+		String cmd3 = String.format(Locale.ENGLISH, "%s%d=%d", MessageParser.CMD_POWER,      strandNo, (int)Math.round(    npPower.getValue()));
+		String cmd4 = String.format(Locale.ENGLISH, "%s%d=%d", MessageParser.CMD_RAMP_LIMIT, strandNo, (int)Math.round(100*npRampEnd.getValue()));
+		String cmd5 = String.format(Locale.ENGLISH, "%s%d=%d", MessageParser.CMD_RAMP_DELTA, strandNo, (int)Math.round(100*npRampDelta.getValue()));
 		// Send request for ACK_MOVED to detect when everything was EVERY value was updated.
 		// If we would detect the single strand updates in onLineReceived(), the values show in the dialog
 		// would flicker until finally the last command was accepted.		
@@ -2103,7 +2117,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	private void rebootConfirmed()
 	{
 	    frotect.mConnection.sendLine("\nB=4711\n");		
-	    mVibrator.vibrate(500);
+	    vibrate(500);
 	}
 
 	public void confirmReboot()
@@ -2159,9 +2173,10 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	public void onLineReceived(String line)
         {
+	    //System.err.println("ConfigDialog: got line '" + line + "'");
 	    if (line.startsWith(MessageParser.MSG_ACK) && line.contains(ACK_SET))
 	    {
-		mVibrator.vibrate(100);
+		vibrate(100);
 	    }
         }
     }

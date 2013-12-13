@@ -16,14 +16,15 @@
 package com.apdlv.ilibaba.bt;
 
 import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
-import java.net.Socket;
 import java.util.UUID;
 
+import android.R.integer;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
@@ -149,9 +150,19 @@ public class SPPService  extends Service
     @Override
     public void onStart(Intent intent, int startId) 
     {
-	super.onStart(intent, startId); Log.d(TAG, "onStart");
+	super.onStart(intent, startId); 
+	Log.d(TAG, "onStart");
     };
 
+    @Override
+    public boolean onUnbind(Intent intent) 
+    {
+	boolean rc = super.onUnbind(intent);
+	Log.d(TAG, "onUnbind");
+	disconnect();
+	return rc;
+    };
+    
     @Override
     public void onDestroy() 
     {
@@ -433,7 +444,7 @@ public class SPPService  extends Service
 	    mHandler.obtainMessage(MESSAGE_DEBUG_MSG, msg).sendToTarget();
 	}
     }
-
+    
     private class ConnectThread extends Thread 
     {
 	private final String TAG = ConnectThread.class.getSimpleName();
@@ -442,6 +453,48 @@ public class SPPService  extends Service
 	private OutputStream    mmOutStream;
 	private InputStream     mmInStream;
 	private boolean         mCancelled;
+
+	// a replacement for the "normal" BufferedReader, however this one is aware 
+	// of whether the connect thread was cancelled
+	class MyBufferedReader
+	{
+	    private InputStreamReader reader;
+
+	    MyBufferedReader(InputStreamReader inputStreamReader)
+	    {
+		this.reader = inputStreamReader;
+	    }
+
+	    public String readLine() throws IOException
+	    {
+		StringBuilder sb = new StringBuilder();
+		do
+		{
+		    // TODO: optimize this: read in chunks rather than char by char
+		    int i = reader.read();
+		    if (i<0) return null; // EOF
+
+		    char c = (char)i;
+		    switch (c)
+		    {
+		    case '\r':
+		    case '\n':
+			return sb.toString();
+		    default:
+			sb.append(c);
+		    }		
+		}
+		while (!mCancelled);
+
+		return null;
+	    }
+
+	    public void close() throws IOException
+	    {
+		reader.skip(100000);
+		reader.close();	    
+	    }
+	}
 
 
 	public ConnectThread(BluetoothDevice device) 
@@ -633,7 +686,7 @@ public class SPPService  extends Service
 	    mmInStream  = tmpIn;
 	    mmOutStream = tmpOut;
 
-	    BufferedReader br = new BufferedReader(new InputStreamReader(tmpIn));
+	    MyBufferedReader br = new MyBufferedReader(new InputStreamReader(tmpIn));
 
 	    // Keep listening timeout the InputStream while connected
 	    while (!mCancelled && null!=mmInStream) 
