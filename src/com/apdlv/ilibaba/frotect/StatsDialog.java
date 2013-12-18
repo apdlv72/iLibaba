@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
@@ -61,9 +62,12 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 
     public StatsDialog(FrotectActivity frotect, String style)
     {
-	super(frotect);
-	requestWindowFeature(Window.FEATURE_NO_TITLE); 
-
+	super(frotect, android.R.style.Theme_Light);
+	requestWindowFeature(Window.FEATURE_NO_TITLE);
+	getWindow().setFlags(
+		WindowManager.LayoutParams.FLAG_FULLSCREEN,        
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+	
 	this.frotect = frotect;
 	this.mStyle = style;
 

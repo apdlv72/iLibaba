@@ -131,7 +131,8 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
     protected Double  numCost100    = null;
 
     private int verbosity = VERB_NORM;
-    private boolean mWithSound;
+    private boolean mWithSound=false;
+    private boolean mExitConfirmation=true;;
     private Vibrator mVibrator;    
 
     
@@ -615,6 +616,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		return;
 	    }
 	    mConnection.sendLine("\n\nD\n\n"); // dump all
+	    mConnection.sendLine("\n\nH\n\n"); // request command line help to be sent
 	    mConnection.sendLine(MessageParser.CMD_ACK + ACK_UPDATE);
 	    break;
 	case R.id.frotectButtonPower:
@@ -768,7 +770,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    mConnection.sendLine("\nV1\n"); // set verbosity to "normal" (to see events, heartbeat etc.)
 	    mConnection.sendLine("\nD\n");  // dump all info including strands, min/max and stats
 	    mConnection.sendLine("\nS\n");  // dump sensor info 
-	    mConnection.sendLine("\nH\n");  // request help commands accepted 
+	    mConnection.sendLine("\nH\n");  // request command line help to be sent  
 
 	    long pattern[] = { 0, 50, 200, 50 };
 	    vibrate(pattern, -1);
@@ -2025,7 +2027,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	private NumberPicker    cost, strands, sensors;
 	private FrotectActivity frotect;
 	private RadioGroup mRadioGroupVerbosity;
-	private CheckBox mNotifSound;
+	private CheckBox mNotifSound, mExitConfirmation;
 
 
 	protected ConfigDialog(FrotectActivity frotect)
@@ -2062,6 +2064,13 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		{
 		    U.setOnCheckedChangeListener(mNotifSound, this);
 		    U.setChecked(mNotifSound, frotect.getSoundNotifications());
+		}
+		
+		mExitConfirmation = (CheckBox) findViewById(R.id.frotectCheckButtonConfirmExit);
+		if (null!=mExitConfirmation)
+		{
+		    U.setOnCheckedChangeListener(mExitConfirmation, this);
+		    U.setChecked(mExitConfirmation, frotect.getExitConfirmation());
 		}
 	    } 
 	    catch (Exception e) 
@@ -2163,6 +2172,10 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    if (mNotifSound==butt)
 	    {
 		frotect.setSoundNotifications(checked);
+	    }
+	    else if (mExitConfirmation==butt)
+	    {
+		frotect.setExitConfirmation(checked);
 	    }
         }
 
@@ -2348,6 +2361,16 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
     {
 	return mWithSound;	
     }
+    
+    public void setExitConfirmation(boolean on)
+    {
+	mExitConfirmation=on;
+    }
+
+    public boolean getExitConfirmation()
+    {
+	return mExitConfirmation;
+    }
 
     public void setVerbosity(int verbosity)
     {
@@ -2393,26 +2416,27 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
     public boolean onKeyDown(int keyCode, KeyEvent event) 
     {
 	//Handle the back button
-	if(/*mSettings.isConfirmQuit() &&*/ keyCode == KeyEvent.KEYCODE_BACK && isTaskRoot()) {
-	    //Ask the user if they want to quit
-	    new AlertDialog.Builder(this)
-	    .setIcon(android.R.drawable.ic_dialog_alert)
-	    .setTitle("Quit")
-	    .setMessage("Do you want to quit?")
-	    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-		public void onClick(DialogInterface dialog, int which) {
-		    //Stop the activity
-		    finish();    
-		}
-	    })
-	    .setNegativeButton("No", null)
-	    .show();
+	if (keyCode == KeyEvent.KEYCODE_BACK && isTaskRoot()) {
+	    if (mExitConfirmation)
+	    {
+		//Ask the user if they want to quit
+		new AlertDialog.Builder(this)
+		.setIcon(android.R.drawable.ic_dialog_alert)
+		.setTitle("Quit")
+		.setMessage("Do you want to quit?")
+		.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+		    public void onClick(DialogInterface dialog, int which) {
+			//Stop the activity
+			finish();    
+		    }
+		})
+		.setNegativeButton("No", null)
+		.show();
+		return true;
+	    }
+	}
 
-	    return true;
-	}
-	else {
-	    return super.onKeyDown(keyCode, event);
-	}
+	return super.onKeyDown(keyCode, event);
     }
 }
 
