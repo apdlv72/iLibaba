@@ -20,6 +20,12 @@ public class OneWireAddrTool
     {
 	try
 	{
+	    if ("89.48.C8.0E".equals(addr)) return Color.RED;
+	    if ("29.7F.C8.87".equals(addr)) return Color.GREEN;
+	    if ("7B.2E.D9.28".equals(addr)) return Color.rgb(127, 127, 255);
+	    if (         "00".equals(addr)) return Color.BLACK;
+	    if ("50.81.E1.6E".equals(addr)) return Color.YELLOW;
+	    
 	    addr = shortenAddr(addr);
 	    String split[] = addr.split("[;\\.]");
 	    byte hex[] = new byte[split.length];
@@ -28,11 +34,33 @@ public class OneWireAddrTool
 		hex[i] = (byte)fromHex(split[i]);
 	    }
 
+	    /*
+	    int r = getInt(hex, 0);
+	    int g = getInt(hex, 1);
+	    int b1 = getInt(hex, 3);
+	    int b2 = getInt(hex, 2);
+	    
+	    r = (r*r)/256;
+	    g = (g*g)/256;
+	    int b = b2;
+	    */
+	    
+	    /*
 	    int r = getInt(hex, 0);
 	    int g = getInt(hex, 1);
 	    int b = getInt(hex, 3);
+	    */
+
+	    int r = getInt(hex, 2)-getInt(hex, 0);
+	    int g = getInt(hex, 1)-getInt(hex, 3);
+	    int b = contrast(getInt(hex, 3));
+
 	    
-	    System.out.println("colorFromAddr: r=" + r + ", g=" + g + ", b=" + b);
+//	    r = contrast(r);
+//	    g = contrast(g);
+//	    b = contrast(b);
+
+	    System.out.println("colorFromAddr: " + addr + " -> r=" + r + ", g=" + g + ", b=" + b);
 
 	    return Color.rgb(r,g,b);
 	}
@@ -42,8 +70,9 @@ public class OneWireAddrTool
 	}
 	return Color.RED;
     }
-
-    private static final int MIN = 40; // minimum to avoid it is 0 (black)
+    
+    
+    private static final int MIN = 20; // minimum to avoid it is 0 (black)
 
     private static int getInt(byte[] hex, int i)
     {
@@ -60,6 +89,19 @@ public class OneWireAddrTool
 //	return sum+MIN; 
 //    }
 //
+    
+    public static int contrast(int input)
+    {
+	float f = (1.0f/128)*(input-128);	    
+	double h  = Math.tanh(f);
+	h = (h/0.76);
+	h = Math.signum(h)*h*h;
+	int o = (int) (129+(127.5*h));
+	return o<0 ? 0 : o>255 ? 255 : o;
+    }
+    
+
+    
     public static String encodeAddr(String addr)
     {
 	if (null!=addr)

@@ -61,7 +61,7 @@ public class SPPConnection implements ServiceConnection
 	    if (null!=mService)
 	    {
 		s = s + "\r\n";
-		System.out.println("Sending string '" + s + "'");
+		Log.d(TAG, "Sending string '" + s + "'");
 		mService.write(s.getBytes());
 	    }
 	}

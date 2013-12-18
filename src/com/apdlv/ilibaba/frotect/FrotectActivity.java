@@ -1604,15 +1604,14 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	private int sensorDownIDs[]   = { R.id.sensorDown1,    R.id.sensorDown2,   R.id.sensorDown3,   R.id.sensorDown4,   R.id.sensorDown5 };
 	private int sensorBoundsIDs[] = { R.id.tvSensorBound1, R.id.tvSensorBound2, R.id.tvSensorBound3, R.id.tvSensorBound4, R.id.tvSensorBound5 }; 
 
-	AddrInfo infos[] = { new AddrInfo(), new AddrInfo(), new AddrInfo(), new AddrInfo(), new AddrInfo(), };
+	SensorViews infos[] = { new SensorViews(), new SensorViews(), new SensorViews(), new SensorViews(), new SensorViews(), };
 
 	private FrotectActivity frotect; 
 
-	class AddrInfo 
+	class SensorViews 
 	{
 	    View     up, down, bound;
 	    TextView addr;
-	    boolean  avail;
 
 	    void setFound(int i, boolean avail)
 	    {
@@ -1688,19 +1687,17 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    // if sensor data was already collected, uses this information
 	    synchronized (frotect)
 	    {
-		if (frotect.sensorsBuffer.isComplete())
+		// sensorsBuffer contains info sent upon the "S" command.
+		// strandsBuffer contains info sent upon the "DS" command.
+		// If either one was received completely, sensors addresses and order are known.
+		if (frotect.sensorsBuffer.isComplete() || frotect.strandsBuffer.isComplete())
 		{
 		    refreshViews();
-		    //parseCompleteStrandInfo(frotect.sensorsBuffer.toString());
 		}
 		else
 		{
 		    // request uC to send sensor info
-		    mConnection.sendLine("");
 		    mConnection.sendLine("S"); // dump sensor info
-		    mConnection.sendLine("");
-		    mConnection.sendLine("S"); // dump sensor info		    
-		    mConnection.sendLine("");
 		}
 	    }
 	};
@@ -1715,9 +1712,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	private void rescanConfirmed()
 	{
-	    mConnection.sendLine(""); 
 	    mConnection.sendLine("X"); 
-	    mConnection.sendLine(""); // Rescan sensors command
 	    mConnection.sendLine(MessageParser.CMD_ACK + ACK_RESCN);
 	}
 
@@ -1748,7 +1743,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
             for (int i=0; i<sensors.length; i++) 
             { 
         	Sensor s = sensors[i]; 
-        	AddrInfo info = infos[i];
+        	SensorViews info = infos[i];
         	
         	String addr = s.addr;
         	addr = OneWireAddrTool.shortenAddr(addr);
