@@ -11,12 +11,19 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import android.content.Context;
+
 import com.apdlv.ilibaba.util.U;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GraphView.GraphViewData;
 
 public class GraphParser extends MessageParser
 {
+    public GraphParser(Context context)
+    {
+	super(context);
+    }
+    
     static public HashMap<String, GraphViewData[]> parseStats(String stats)
     {
 	if (null==stats) return null;

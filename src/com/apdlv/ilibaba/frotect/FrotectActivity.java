@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -2189,10 +2190,12 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
         }
     }
 
+
     class InfoDialog extends OnClickAwareDialog implements FrotectBTDataCompleteListener
     {
 	private FrotectActivity frotect;
 	private TextView tvInfo;
+	private Calendar receiveTime;
 	private FrotectBTDataCompleteListener.TYPE mType = TYPE.INFO;
 	//private ContextMenu menu;
 	//private boolean autoscroll;
@@ -2206,6 +2209,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    setTitle("Info ");	    
 	}
 	
+
 	private void sendLog()
 	{
 	    String toast    = "Sending info ...";
@@ -2213,6 +2217,13 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    String body     = "" + tvInfo.getText();
 	    String csv      = null;
 	    String filename = null;
+	    
+	    MessageParser parser = new MessageParser(getContext());
+	    String date = "";
+	    if (null!=receiveTime)
+	    {
+		date = MessageParser.YYYYMMDDHHmmss.format(receiveTime.getTime()).replaceAll("[ :]", "_") + "_";
+	    }
 	    
 	    switch (mType)
 	    {
@@ -2225,14 +2236,14 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    	case STATS:
 	    	    toast    = "Sending power stats ... ";
 		    subject  = "Frotect power stats";
-		    csv      = MessageParser.convertStatsToCsv(body);
-		    filename = "power.csv";
+		    csv      = parser.convertStatsToCsv(body, receiveTime);
+		    filename = date + "power.csv";
 	    	    break;
 	    	case MINMAX:
 	    	    toast    = "Sending temperature stats ... ";
 		    subject  = "Frotect temperature stats";
-		    csv      = MessageParser.convertHistoryToCsv(body);
-		    filename = "temperatures.csv";
+		    csv      = parser.convertHistoryToCsv(body, receiveTime);
+		    filename = date + "temperatures.csv";
 	    	    break;
 	    	default:
 	    	    toast   = "Sending " + mType;
@@ -2325,18 +2336,22 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    {
 	    case R.id.buttonInfoHelp:
 		tvInfo.setText("" + frotect.helpBuffer.toString());
+		receiveTime = frotect.helpBuffer.getReceiveTime();
 		mType = TYPE.HELP;
 		break;
 	    case R.id.buttonInfoGeneral:
 		tvInfo.setText("" + frotect.infoBuffer.toString());
+		receiveTime = frotect.infoBuffer.getReceiveTime();
 		mType = TYPE.INFO;
 		break;
 	    case R.id.buttonInfoMinMax:
 		tvInfo.setText("" + frotect.minmaxBuffer.toString());
+		receiveTime = frotect.minmaxBuffer.getReceiveTime();
 		mType = TYPE.MINMAX;
 		break;
 	    case R.id.buttonInfoStats:
 		tvInfo.setText("" + frotect.statsBuffer.toString());
+		receiveTime = frotect.statsBuffer.getReceiveTime();
 		mType = TYPE.STATS;
 		break;
 	    case R.id.buttonSendInfoText:

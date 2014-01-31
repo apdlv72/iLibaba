@@ -4,13 +4,19 @@ package com.apdlv.ilibaba.frotect;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.apdlv.ilibaba.util.U;
+
+import android.content.Context;
 import android.util.Log;
+import android.widget.Toast;
 
 
 public class MessageParser
@@ -64,24 +70,58 @@ public class MessageParser
     );
 
     protected static final Pattern P_STARTTIME     = Pattern.compile("n=([0-9]+),.*i=([-0-9]+),.*t=([-0-9\\.]+[mhdw]),.*ago=([-0-9\\.]+[mhdw])");
-    protected static final Pattern P_STATSTOCSV    = Pattern.compile("t=([-0-9\\.]+[hdw]),.*,v=([0-1]+),[^\\{]*(\\{.*\\}),.*C=([0-9\\.]+)");
+    protected static final Pattern P_STATSTOCSV    = Pattern.compile("t=([-0-9\\.]+[hdw]?),.*,v=([0-1]+),[^\\{]*(\\{.*\\}),.*C=([0-9\\.]+)");
     protected static final Pattern P_ONESTRANDINFO = Pattern.compile("n=([0-9]*),.*on=([0-9]+[mh]),.*r=([0-9\\.]+),.*P=([0-9\\.k]+)");
     protected static final Pattern P_HISTORY       = Pattern.compile("t=([-0-9\\.]+)h,.*,(\\{.*\\})");
     protected static final Pattern P_ONESTRANDHIST = Pattern.compile("s=([0-9]+),lo=([-0-9\\.]+),hi=([-0-9\\.]+)");
     protected static final Pattern P_UPDATE        = Pattern.compile("chng=([0-9]),.*t=([-0-9\\.])");
     protected static final Pattern P_HEARBEAT      = Pattern.compile("l=([0-9]),.*c[nd]*=([0-9]+),.*t=([-0-9]+)");
 
-    static public String convertStatsToCsv(String stats)
+    public MessageParser(Context context)
     {
-	try { return _convertStatsToCsv(stats); } catch (Exception e) { Log.e(TAG, "convertStatsToCsv: " + e); }
-	return "";
+	this.mContext = context;
     }
     
-    public static String convertHistoryToCsv(String history)
+     public String convertStatsToCsv(String stats, Calendar receivedAt)
     {
-	try { return _convertHistoryToCsv(history); } catch (Exception e) { Log.e(TAG, "convertHistoryToCsv: " + e); }
-	return "";
+	try 
+	{ 
+	    return _convertStatsToCsv(stats, receivedAt); 
+	} 
+	catch (Exception e) 
+	{ 
+	    String trace = U.toStacktrace(e);
+	    showToast("convertStatsToCsv: " + trace);
+	    Log.e(TAG, "convertStatsToCsv: " + trace); 
+	    return "convertStatsToCsv failed: " + trace;
+	}
     }
+    
+    public  String convertHistoryToCsv(String history, Calendar receivedAt)
+    {
+	try 
+	{ 
+	    return _convertHistoryToCsv(history, receivedAt); 
+	} 
+	catch (Exception e) 
+	{
+	    String trace = U.toStacktrace(e);
+	    showToast("convertHistory: " + trace);
+	    Log.e(TAG, "convertHistoryToCsv: " + trace); 
+	    return "convertHistoryToCsv failed: " + trace;
+	}
+    }
+
+    
+    private Context mContext;
+    
+    
+    private void showToast(String text)
+    {
+	Toast.makeText(mContext, text, Toast.LENGTH_SHORT).show();
+    }
+        
+
     
     // F: n=4,lit=1
     public static HashMap<String, Integer> parseFlashInfo(String c) throws NumberFormatException
@@ -403,12 +443,12 @@ public class MessageParser
         return mul;
     }
 
-    static private String _convertStatsToCsv(String lines)
+    static private String _convertStatsToCsv(String lines, Calendar receivedAt)
     {
         if (null==lines) return null;
         
         StringBuilder sb = new StringBuilder();
-        sb.append("TimeRaw,DaysBack,CentsPerUnit,NormDivisor,EuroPerDay");
+        sb.append("TimeRaw,DaysBack,DateTime,CentsPerUnit,NormDivisor,EuroPerDay");
         for (int i=1; i<=5; i++)
         {
             sb.append(String.format(",MinOnPerHour%d,DutyCycle%d,kWhPerUnit%d,kWhPerDay%d", i, i, i, i));
@@ -426,12 +466,12 @@ public class MessageParser
     
         	if (!m.find())
         	{
-        	    Log.e(TAG, "_convertStatsToCsv: faield to parse '" + line + "'");
+        	    Log.e(TAG, "_convertStatsToCsv: failed to parse '" + line + "'");
         	    sb.append("error,").append(line).append("\n");
         	}
         	else		    
         	{
-        	    String sTime    = m.group(1);
+        	    String sTimeRaw = m.group(1);
         	    String sValid   = m.group(2);
         	    String sStrands = m.group(3);
         	    String sCost    = m.group(4);
@@ -439,15 +479,33 @@ public class MessageParser
         	    int val = Integer.parseInt(sValid);
         	    if (val<1) continue;
     
-        	    double days    = parseTimeToDays(sTime);
-        	    double divisor = getTimeMultiplierToDays(sTime); // 1/24 for hours, 1 for days, 7 for weeks		    
+        	    double days    = parseTimeToDays(sTimeRaw);
+        	    double divisor = getTimeMultiplierToDays(sTimeRaw); // 1/24 for hours, 1 for days, 7 for weeks		    
         	    double costRaw = Double.parseDouble(sCost);
    
         	    double costNorm = 0.01*costRaw/divisor; // normalize to EUR/day			    
         	    //Log.e(TAG, "time=" + sTime + ", days=" + days + ", mul=" + divisor + ", costRaw=" + costRaw + ", costNorm=" + costNorm);
     
-        	    sb.append(sTime);
+        	    sb.append(sTimeRaw);
         	    sb.append(",").append(format(-days)  ); // make it positive
+
+        	    if (null!=receivedAt)
+        	    {
+        		try
+        		{
+        		    Calendar cal = (Calendar)receivedAt.clone();
+        		    int seconds = (int)Math.round(days*24*60*60);
+        		    cal.add(Calendar.SECOND, seconds);
+        		    String yymmddhhmmss = YYYYMMDDHHmmss.format(cal.getTime());
+        		    //Log.d(TAG, "Rolling back " + YYYYMMDDHHmmss.format(receivedAt.getTime()) + " by " + seconds + "s -> " + yymmddhhmmss);
+        		    sb.append(",").append(yymmddhhmmss);
+        		}
+        		catch (Exception e)
+        		{
+        		    sb.append(",Exc:").append(""+e);
+        		}
+        	    }
+        	    
         	    sb.append(",").append(format(costRaw));
         	    sb.append(",").append(format(divisor));
         	    sb.append(",").append(format(costNorm));
@@ -487,12 +545,14 @@ public class MessageParser
         return sb.toString();
     }
 
-    private static String _convertHistoryToCsv(String lines) 
+    static final SimpleDateFormat YYYYMMDDHHmmss = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    
+    private static String _convertHistoryToCsv(String lines, Calendar receivedAt) 
     {
         if (null==lines) return null;
 
         StringBuilder sb = new StringBuilder();
-        sb.append("Days,Min1,Max1,Min2,Max2,Min3,Max3,Min4,Max4,Min5,Max5\n");
+        sb.append("TimeRaw,DaysBack,DateTime,Min1,Max1,Min2,Max2,Min3,Max3,Min4,Max4,Min5,Max5\n");
     
         BufferedReader br = new BufferedReader(new StringReader(lines));    
         String line = null;
@@ -511,14 +571,35 @@ public class MessageParser
         	}
         	else		    
         	{
-        	    String s1 = m.group(1);
-        	    String s2 = m.group(2);
+        	    String sTimeRaw  = m.group(1);
+        	    String sBrackets = m.group(2);
     
-        	    float t = Float.parseFloat(s1);
-        	    t/=24.0; // hours (default) -> days
-        	    sb.append(format(-t));
+        	    // unit "h" in included in regexp brackets, therefore adding it here:
+        	    sb.append(sTimeRaw).append("h");
+        	    
+        	    float hours = Float.parseFloat(sTimeRaw);
+        	    // convert hours (default) -> days
+        	    float days  = hours/24.0f; 
+        	    sb.append(",").append(format(-days));
+        	    
+        	    if (null!=receivedAt)
+        	    {
+        		try
+        		{
+        		    Calendar cal = (Calendar)receivedAt.clone();
+        		    int seconds = (int)Math.round(days*24*60*60);
+        		    cal.add(Calendar.SECOND, seconds);
+        		    String yymmddhhmmss = YYYYMMDDHHmmss.format(cal.getTime());
+        		    //Log.d(TAG, "Rolling back " + YYYYMMDDHHmmss.format(receivedAt.getTime()) + " by " + seconds + "s -> " + yymmddhhmmss);
+        		    sb.append(",").append(yymmddhhmmss);
+        		}
+        		catch (Exception e)
+        		{
+        		    sb.append(",Exc:").append(""+e);
+        		}
+        	    }
     
-        	    String split[] = s2.split("\\}\\{"); // "{s=01,lo=2300,hi=2950}{s=02,lo=2300,hi=2950}...
+        	    String split[] = sBrackets.split("\\}\\{"); // "{s=01,lo=2300,hi=2950}{s=02,lo=2300,hi=2950}...
         	    for (int i=0; i<split.length; i++)
         	    {
         		String s3 = split[i];

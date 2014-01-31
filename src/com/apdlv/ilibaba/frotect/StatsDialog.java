@@ -309,7 +309,7 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	    
 	    if (isDuty())
 	    {
-		minY = 0.0; maxY = 1.2; // sometimes slightly largen than 1.0 
+		minY = 0.0; maxY = 1.2; // sometimes slightly larger than 1.0 
 	    }
 	    else if (isPower() || isCost())
 	    {
@@ -337,9 +337,10 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 	    {
 		xTicks = 2*maxDay + 1; // show 1 day in 4 intervals (6h each)  
 	    }	    
-	    else if (maxDay>10)
+	    else if (maxDay>7)
 	    {
-		maxDay = 2*(maxDay/2+1);
+		//maxDay = 2*(maxDay/2+1);
+		maxDay = 7;
 		xTicks = maxDay+1; // show 10 days, user can scroll to see more
 	    }
 	    
@@ -469,19 +470,31 @@ public class StatsDialog extends Dialog implements FrotectBTDataCompleteListener
 
 	Double minX=null, maxX=null, minY=null, maxY=null;
 
-	for (String key : minmaxHist.keySet())
+	String[] keys = minmaxHist.keySet().toArray(new String[0]);
+	
+	// iterate in reverse order such that last series lies bottom most
+	for (int l=keys.length, i=l-1; i>=0; i--)
+	//for (String key : minmaxHist.keySet())
 	{
+	    String key = keys[i];
 	    GraphViewData[] values = minmaxHist.get(key);
 
 	    GraphViewSeriesStyle style = getStyle(key, key.startsWith("lo"));
-	    if (isChecked(key))
+	    
+	    // do not consider if key is checked or not since the y axis will
+	    // become bumpy if unchecking a data series that was the origin of
+	    // min/max value before unchecking.
+	    //if (isChecked(key))
 	    {
 		Double mm[] = findMinMax(values);
 		if (null==minX || (null!=mm[0] && mm[0]<minX)) minX=mm[0];
 		if (null==maxX || (null!=mm[1] && mm[1]>maxX)) maxX=mm[1];
 		if (null==minY || (null!=mm[2] && mm[2]<minY)) minY=mm[2];
 		if (null==maxY || (null!=mm[3] && mm[3]>maxY)) maxY=mm[3];
-
+	    }
+	    // however DO consider checked state when adding these
+	    if (isChecked(key))
+	    {	
 		GraphViewSeries series = new GraphViewSeries(key, style, values);
 		mGraphView.addSeries(series);
 	    }

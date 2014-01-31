@@ -1,5 +1,7 @@
 package com.apdlv.ilibaba.frotect;
 
+import java.util.Calendar;
+
 public class ReceiveBuffer
 {
     public void append(String s)
@@ -25,6 +27,7 @@ public class ReceiveBuffer
     	if (null!=s) append(s);
     	completed = (null==receiving) ? null : receiving.toString();
     	receiving = null;
+    	receiveTime = Calendar.getInstance();
     	return completed;
         }	    
     }
@@ -41,4 +44,10 @@ public class ReceiveBuffer
 
     private StringBuilder receiving = null;
     private String        completed = null;
+    private Calendar receiveTime;
+    
+    public Calendar getReceiveTime()
+    {
+	return this.receiveTime;
+    }
 }
