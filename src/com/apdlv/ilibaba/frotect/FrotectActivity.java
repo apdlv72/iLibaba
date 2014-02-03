@@ -1908,7 +1908,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	    this.npLower     = new NumberPicker(this,    R.id.decLo,    R.id.valueLo,    R.id.incLo,    currLo,   -30,  30); 
 	    this.npUpper     = new NumberPicker(this,    R.id.decHi,    R.id.valueHi,    R.id.incHi,    currHi,   -30,  30); 
-	    this.npPower     = new NumberPickerInt(this, R.id.decPower, R.id.valuePower, R.id.incPower, currPower,  0, 200);	    
+	    this.npPower     = new NumberPickerInt(this, R.id.decPower, R.id.valuePower, R.id.incPower, currPower,  0, 2*255);	    
 	    this.npRampDelta = new NumberPicker(this,    R.id.decRampDelta, R.id.valueRampDelta, R.id.incRampDelta,  currDelta,    -1.2,  1.2, 0.01, 2); 
 	    this.npRampEnd   = new NumberPicker(this,    R.id.decRampEnd,   R.id.valueRampEnd,   R.id.incRampEnd,    currRampEnd,  -30,  30       ); 
 	    	    
