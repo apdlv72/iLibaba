@@ -239,7 +239,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
     public void onProgressChanged(SeekBar s, int progress, boolean fromUser)
     {
-	String hexProgress = String.format("%2x", progress);
+	String hexProgress = String.format("%x", progress);
 	String command = null==s.getTag() ? null : "" + s.getTag() + "=" + hexProgress; //s.getProgress();	
 	if (null!=command)
 	{
