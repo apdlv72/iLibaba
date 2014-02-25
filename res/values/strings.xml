@@ -51,12 +51,7 @@
 
     <!-- modes for an RGB strip -->
     <string-array name="mode_array">
-        <item>WATER</item>
-        <item>WATER2</item>
-        <item>FADE</item>
-        <item>RAINBOW</item>
-        <item>CONST</item>
-        <item>RAINFLOW</item>
+        <item>NONE</item>
     </string-array>
 
     <!-- modes for an Dream LED strip -->

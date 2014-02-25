@@ -33,6 +33,10 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
+/*
+ * Class is deprecated. Strip activity using the new SPPService framework now.
+ */
+@Deprecated 
 public class BTStripSerialService
 {
 //    @Override

@@ -799,7 +799,7 @@ public class GateControlActivity extends Activity implements OnClickListener
         } 
         catch (Exception e)
         {
-            showToast("Failed to peer info: " + e);
+            showToast("Failed to save peer info: " + e);
         } 
     }
 
@@ -817,7 +817,7 @@ public class GateControlActivity extends Activity implements OnClickListener
         } 
         catch (Exception e)
         {
-            showToast("Failed to load peer info: " + e);
+            showToast("Failed to load last device info.");
         } 
     }
 

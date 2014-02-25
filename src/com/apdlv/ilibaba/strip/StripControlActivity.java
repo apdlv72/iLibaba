@@ -8,6 +8,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,8 +19,6 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.os.Vibrator;
 import android.text.Layout;
 import android.text.method.ScrollingMovementMethod;
@@ -39,11 +39,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.apdlv.ilibaba.R;
+import com.apdlv.ilibaba.bt.SPPConnection;
+import com.apdlv.ilibaba.bt.SPPDataHandler;
+import com.apdlv.ilibaba.bt.SPPService;
 import com.apdlv.ilibaba.color.HSVColorWheel;
 import com.apdlv.ilibaba.color.OnColorSelectedListener;
 import com.apdlv.ilibaba.frotect.FrotectActivity;
 import com.apdlv.ilibaba.gate.DeviceListActivity;
 import com.apdlv.ilibaba.shake.Shaker.Callback;
+import com.apdlv.ilibaba.util.U;
 
 public class StripControlActivity extends Activity implements OnSeekBarChangeListener, Callback, OnColorSelectedListener, OnItemSelectedListener
 {
@@ -55,7 +59,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     private static final int REQUEST_PRESET    = 3;
     private static final int REQUEST_CONNECT_DEVICE = 1;
 
-    private BTStripSerialService mmBTConnector;
+    // replaced by SSPConnection now
+    //private BTStripSerialService mmBTConnector;  
     private TextView mLogView;
     private HSVColorWheel mColorWheel;
     private Vibrator mVibrator;
@@ -95,20 +100,23 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
 	setContentView(R.layout.activity_strip);
 
+	mTextCommand = (TextView) findViewById(R.id.textCommand);
+	mColorWheel = (HSVColorWheel) findViewById(R.id.hSVColorWheel);
+	mColorWheel.setListener(this);
+	
 	(mSpinnerMode = ((Spinner)findViewById(R.id.spinnerMode))).setOnItemSelectedListener(this);		
-	{
-	    analyzeHelloLine("HELLO\r\n");
+	{	    
 	    StringBuilder sb = new StringBuilder();
 	    // Version, Kind, Power, Bright, Amplitude, Speed, Fade, Brightness, Random, sTrength, Color
-	    sb.append("H:V=1 K=");
-	    sb.append("ARGB"); // common Anode, RGB
-	    sb.append(" P=0-2 B=0-FF A=0-FF S=0-FFF F=0-FFF R=0-FF T=0-FFF C=0-FFFFFF ");
-
+	    sb.append("H:V=1 K=NONE");
+	    
+	    //sb.append("ARGB"); // common Anode, RGB	    
+	    //sb.append(" P=0-2 B=0-FF A=0-FF S=0-FFF F=0-FFF R=0-FF T=0-FFF C=0-FFFFFF ");
 	    // supported mode numbers and names
-	    sb.append("M=0=WATER\t1=WATER2\t2=FADE\t3=RAINBOW\t4=CONST\t5=RAINFLOW\temp\r\n");
-	    analyzeHelloLine(sb.toString());
+	    //sb.append("M=0=WATER\t1=WATER2\t2=FADE\t3=RAINBOW\t4=CONST\t5=RAINFLOW\temp\r\n");
+	    
+	    analyzeHelloLine(sb.toString());	    
 	}
-
 
 	((SeekBar) findViewById(R.id.seekBright)).setOnSeekBarChangeListener(this);
 	((SeekBar) findViewById(R.id.seekAmplitude)).setOnSeekBarChangeListener(this);
@@ -117,13 +125,9 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	((SeekBar) findViewById(R.id.seekStrength)).setOnSeekBarChangeListener(this);
 	((SeekBar) findViewById(R.id.seekRand)).setOnSeekBarChangeListener(this);
 
-	mTextCommand = (TextView) findViewById(R.id.textCommand);
 
-	mColorWheel = (HSVColorWheel) findViewById(R.id.hSVColorWheel);
-	mColorWheel.setListener(this);
-
-	//enableControls(false);
-	enableControls(true);
+	enableControls(false);
+	//enableControls(true);
 
 	mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -133,9 +137,11 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    finish();
 	    return;
 	}
-
-	mmBTConnector = new BTStripSerialService(getApplicationContext(), mHandler, false /* bytewise */);
-
+	
+	Intent intent = new Intent(this, SPPService.class);
+	bindService(intent, mConnection, Context.BIND_AUTO_CREATE);	        
+	
+	//mmBTConnector = new BTStripSerialService(getApplicationContext(), mHandler, false /* bytewise */);
 	//Shaker shaker = new Shaker(this, 2*1.25d, 500, this);
 
 	mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
@@ -143,7 +149,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
 	loadPeerInfo();
     }
-
+    
 
     @Override
     protected void onStart()
@@ -176,25 +182,37 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    if (null!=mmSelectedAddress)
 	    {
 		BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(mmSelectedAddress);
-		mmBTConnector.connect(device);
+		//mmBTConnector.connect(device);
+		mConnection.connect(device);
 	    }
 	    break;
 	case R.id.menu_water_next:
 	    nextActivity();
 	    return true;
+	    
+	case R.id.menu_water_power:
+	    if (mConnection.isConnected())
+	    {
+		LampListDialog dialog = new LampListDialog(this, lampNames);
+		dialog.show();
+	    }
+	    return true;
+/*	    
 	case R.id.menu_water_on:
 	    setCmd("P=1");
 	    return true;
 	case R.id.menu_water_off:
 	    setCmd("P=0");
 	    return true;
+*/	    
 	case R.id.menu_water_select:
 	    // Launch the PresetsActivity to see devices and do scan
 	    Intent serverIntent = new Intent(this, DeviceListActivity.class);
 	    startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
 	    return true;
 	case R.id.menu_water_disconnect:
-	    mmBTConnector.disconnect();
+	    //mmBTConnector.disconnect();
+	    mConnection.disconnect();
 	    break;
 	case R.id.menu_water_presets:
 	    Intent serverIntent2 = new Intent(this, PresetsActivity.class);
@@ -221,7 +239,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
     public void onProgressChanged(SeekBar s, int progress, boolean fromUser)
     {
-	String command = null==s.getTag() ? null : "" + s.getTag() + "=" + s.getProgress();	
+	String hexProgress = String.format("%2x", progress);
+	String command = null==s.getTag() ? null : "" + s.getTag() + "=" + hexProgress; //s.getProgress();	
 	if (null!=command)
 	{
 	    // use the tag from the respective scale and send as command prefix
@@ -241,14 +260,16 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     protected void onStop() 
     {
 	super.onStop();
-	mmBTConnector.disconnect();
+	//mmBTConnector.disconnect();
+	mConnection.disconnect();
     };
 
     @Override
     protected void onDestroy() 
     {
 	super.onDestroy();
-	mmBTConnector.disconnect();	
+	//mmBTConnector.disconnect();
+	mConnection.disconnect();
     };
 
     @Override
@@ -261,7 +282,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     void setCmd(String s)
     {
 	mTextCommand.setText(s);
-	mmBTConnector.write((s+"\r\n").getBytes());
+	//mmBTConnector.write((s+"\n").getBytes());
+	mConnection.sendLine(s);
 	doLog("SENT: " + s);
     }
 
@@ -333,7 +355,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
 		// Attempt to connect to the device
 		//mChatService.connect(device);
-		mmBTConnector.connect(device);
+		//mmBTConnector.connect(device);
+		mConnection.connect(device);
 	    }
 	    break;
 
@@ -532,37 +555,60 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
     private String receivedLine = "";
 
+    
+    private int visibleIfFeatured(FEATURE f)
+    {
+	return supportedFeatures.contains(f) ? View.VISIBLE : View.INVISIBLE;
+    }
+    
 
     private void enableControls(boolean on)
     {
+	//String features = "" + supportedFeatures;
+	
 	if (on)
 	{
-	    ((SeekBar) findViewById(R.id.seekBright)).setEnabled(true);
-	    ((SeekBar) findViewById(R.id.seekFade)).setEnabled(true);
-
-	    ((SeekBar) findViewById(R.id.seekSpeed)).setVisibility(View.VISIBLE);
-	    ((SeekBar) findViewById(R.id.seekAmplitude)).setVisibility(View.VISIBLE);
-	    ((SeekBar) findViewById(R.id.seekRand)).setVisibility(View.VISIBLE);
-	    ((SeekBar) findViewById(R.id.seekStrength)).setVisibility(View.VISIBLE);
+	    ((SeekBar) findViewById(R.id.seekBright)   ).setVisibility(visibleIfFeatured(FEATURE.BRIGHTNESS));
+	    ((SeekBar) findViewById(R.id.seekFade)     ).setVisibility(visibleIfFeatured(FEATURE.FADING));
+	    ((SeekBar) findViewById(R.id.seekSpeed)    ).setVisibility(visibleIfFeatured(FEATURE.SPEED));
+	    ((SeekBar) findViewById(R.id.seekAmplitude)).setVisibility(visibleIfFeatured(FEATURE.AMPLITUDE));
+	    ((SeekBar) findViewById(R.id.seekRand)     ).setVisibility(visibleIfFeatured(FEATURE.RANDOMNESS));
+	    ((SeekBar) findViewById(R.id.seekStrength) ).setVisibility(visibleIfFeatured(FEATURE.STRENGTH));
 	    mColorWheel.setEnabled(true);
+	    mSpinnerMode.setEnabled(true);
 	}
 	else
 	{
-	    ((SeekBar) findViewById(R.id.seekBright)).setEnabled(false);
-	    ((SeekBar) findViewById(R.id.seekFade)).setEnabled(false);
-
-	    ((SeekBar) findViewById(R.id.seekSpeed)).setVisibility(View.INVISIBLE);
+	    ((SeekBar) findViewById(R.id.seekBright)   ).setVisibility(View.INVISIBLE);	    
+	    ((SeekBar) findViewById(R.id.seekFade)     ).setVisibility(View.INVISIBLE);	    
+	    ((SeekBar) findViewById(R.id.seekSpeed)    ).setVisibility(View.INVISIBLE);
 	    ((SeekBar) findViewById(R.id.seekAmplitude)).setVisibility(View.INVISIBLE);
-	    ((SeekBar) findViewById(R.id.seekRand)).setVisibility(View.INVISIBLE);
-	    ((SeekBar) findViewById(R.id.seekStrength)).setVisibility(View.INVISIBLE);
-	    mColorWheel.setEnabled(false);	    
+	    ((SeekBar) findViewById(R.id.seekRand)     ).setVisibility(View.INVISIBLE);
+	    ((SeekBar) findViewById(R.id.seekStrength) ).setVisibility(View.INVISIBLE);
+	    U.setEnabled(mColorWheel,  false);	    
+	    U.setEnabled(mSpinnerMode, false);
 	}
     }
 
 
+    private void parseStripModes(String modeStr)
+    {
+	//ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item);
+	ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.mode_name);
+	mSpinnerMode.setAdapter(adapter);
+	String[] parts = modeStr.split("[\\t ]+");
+	
+	for (String name : parts)
+	{
+	    name = name.replaceAll("^[0-9]+=", "").replaceAll("_", " ");
+	    adapter.add(name);
+	}
+    }
+    
     private void setStripModes(String ... names)
     {
-	ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item);
+	//ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item);
+	ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.mode_name);
 	mSpinnerMode.setAdapter(adapter);
 	
 	for (String name : names)
@@ -577,25 +623,102 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	doLog("GOT Update LINE: " + line);
     }
     
+    
+    enum FEATURE 
+    { 
+	AMPLITUDE,
+	BRIGHTNESS,
+	COLOR,
+	POWER,
+	SPEED,
+	STRENGTH,
+	FADING,
+	RANDOMNESS
+    };
+    
+    private Set<FEATURE> supportedFeatures = new HashSet<StripControlActivity.FEATURE>();
+    private int numberLamps = 0;
+    private String[] lampNames;
+    
+    void resetFeatures()
+    {
+	supportedFeatures.clear();
+    }
+    
+    void setFeature(FEATURE feature, boolean supported)
+    {	
+	if (supported) supportedFeatures.add(feature); else supportedFeatures.remove(feature);
+    }
+    
+    void setLamps(String ... lamps)
+    {	
+	numberLamps = lamps.length;
+	this.lampNames = lamps;
+    }
 
     private void analyzeHelloLine(String line)
     {
 	doLog("GOT HELLO LINE: " + line);
 	try
 	{
+	    resetFeatures();
+	    
 	    Pattern pKind = Pattern.compile("K=([^ ]*)");
 	    Matcher matcher = pKind.matcher(line);
 	    if (matcher.find())
 	    {
 		String kind = matcher.group(1);
-		if ("ARGB".equalsIgnoreCase(kind))
+		if ("NONE".equalsIgnoreCase(kind))
 		{
-		    setStripModes("WATER",  "WATER2", "FADE", "RAINBOW", "CONST", "RAINFLOW");
+		    enableControls(false);
+		    return;
 		}
+		else if ("ARGB".equalsIgnoreCase(kind))
+		{
+		    // H:V=1 K=ARGB P=0-2 B=0-FF A=0-FF S=0-FFF F=0-FFF R=0-FF T=0-FFF C=0-FFFFFF M=0=Water 1=WaterColored 2=Fading 3=Rainbow 4=Constant 5=RainFlow	
+		    //setStripModes("Water", "WaterColored", "Fading", "Rainbow", "Constant", "RainFlow");
+		    setLamps("one");
+		}		
 		else if ("LPD6803".equalsIgnoreCase(kind))
 		{
-		    setStripModes("WATER1", "WATER2", "RAINBOW1", "RAINBOW2", "RAINBOW3",  "FADING1", "FADING2", "FUNKY");
+		    // H:V=1 K=LPD6803 P=0-2 B=0-FF A=0-FF S=0-FFF F=0-FFF R=0-FF T=0-FFF C=0-FFFFFF M=0=Water	1=WaterColored	2=Fading 3=Rainbow 4=RainbowLong 5=RainbowShort 6=Constant 7=RainFlow 8=RainFlowShort	
+		    //setStripModes("Water1", "Water2", "Rainbow1", "Rainbow2", "Rainbow3",  "Fading1", "Fading2", "Funky");
+		    setLamps("one");
 		}
+		else if ("OTURMA".equals(kind))
+		{
+		    // H:V=1 K=OTURMA L=Up_1,Up_2,Down,Strip_1,Strip_2 P=0-2 B=0-FF C=0-FFFFFF M=0=UP1+2	1=UP1+2/DOWN	2=UP1/DOWN	3=DOWN	4=STRIP1	5=STRIP1+2	6=STRIP2	7=FAKETV
+		    
+		    Pattern p = Pattern.compile(" L=([a-zA-Z_0-9,\\.]+) ");
+		    matcher = p.matcher(line);
+		    if (matcher.find())
+		    {
+			String value = matcher.group(1);
+			String lamps[] = value.split(",");
+			setLamps(lamps);			
+		    }		    
+		    else
+		    {		    
+			setLamps("Up 1", "Up 2", "Down", "Strip 1", "Strip 2");
+		    }
+
+		    //setStripModes("Up+Up", "Up+Up+Down", "Up+Down", "Down", "Strip1", "Strip1+2", "Strip2", "FakeTV");		    
+		}
+		
+		setFeature(FEATURE.AMPLITUDE,  line.contains(" A="));
+		setFeature(FEATURE.BRIGHTNESS, line.contains(" B="));
+		setFeature(FEATURE.COLOR,      line.contains(" C="));
+		setFeature(FEATURE.POWER,      line.contains(" P="));
+		setFeature(FEATURE.SPEED,      line.contains(" S="));
+		setFeature(FEATURE.STRENGTH,   line.contains(" T="));
+		setFeature(FEATURE.FADING,     line.contains(" F="));		    
+		setFeature(FEATURE.RANDOMNESS, line.contains(" R="));
+		
+		String modes = line.replaceAll("^.*M=", "").replaceAll("[\r\n].*", "");
+		parseStripModes(modes);
+		
+		// enable controls here (after we know the features)
+		enableControls(true);
 		return;
 	    }		
 	}
@@ -604,128 +727,126 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    doLog("analyzeHelloLine: " + e);
 	}
 
-	setStripModes("Water1", "Water2", "Rainbow1", "Rainbow2", "Rainbow3",  "Fading1", "Fading2", "Funky");
+	// fallback
+	//setStripModes("Mode 1", "Mode 2", "Mode 3", "Mode 4", "Mode 5",  "Mode 6", "Mode 7", "Mode 8");
     }
 
 
-    private final Handler mHandler = new Handler() {
+    private final SPPDataHandler mDataHandler = new SPPDataHandler()
+    {
+	@Override
+	protected void onLineReceived(String receivedLine) 
+	{
+	    handleCommand(receivedLine);
+	}
+	
+	@Override
+	protected void onDebugMessage(String msg) 
+	{
+	    doLog(msg);
+	}
+	
+	@Override
+	protected void onDeviceConnected() 
+	{
+	    mConnection.sendLine("H"); // "help" (request device features) 
+	    mConnection.sendLine("H"); // "help" (request device features)
+	    setTitleMessage("connected to " + mConnectedDeviceName);
+	}
+	
+	@Override
+	protected void onDeviceInfo(Device device) 
+	{
+	    mConnectedDeviceName = device.getName();
+	};
+	
+	@Override
+	protected void onToast(String msg) 
+	{
+		Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+	    
+	}
+	
+	@Override
+	protected void onConnectingDevice() 
+	{
+	    setTitleMessage("connecting");
 
-	private Object mConnectedDeviceName;
+	};
 
 	@Override
-	public void handleMessage(Message msg) {
-
-	    Log.d(TAG, "Got message "+ msg);
-	    switch (msg.what) {
-
-	    case BTStripSerialService.MESSAGE_DEBUG_MSG:
-		String logLine = (String)msg.obj; Log.d(TAG, logLine);
-		doLog(logLine);
-		break;
-
-	    case BTStripSerialService.MESSAGE_STATE_CHANGE:
-		doLog("MESSAGE_STATE_CHANGE: " + msg.arg1);
-
-		enableControls(false);
-		switch (msg.arg1) {
-		case BTStripSerialService.STATE_CONNECTED:
-		    doLog("STATE_CONNECTED");
-		    setTitleMessage("connected to " + mConnectedDeviceName);
-		    setCmd("H"); // send hello commands
-		    enableControls(true);
-		    break;
-		case BTStripSerialService.STATE_CONNECTING:
-		    doLog("STATE_CONNECTING");
-		    setTitleMessage("connecting");
-		    break;
-		case BTStripSerialService.STATE_DISCONNECTED:
-		    doLog("STATE_DISCONNECTED");
-		    setTitleMessage("disconnected");
-		    break;
-		case BTStripSerialService.STATE_TIMEOUT:
-		    doLog("STATE_CONN_TIMEOUT");
-		    setTitleMessage("timeout");
-		    break;
-		case BTStripSerialService.STATE_LISTEN:
-		case BTStripSerialService.STATE_NONE:
-		    doLog("STATE_LISTEN/STATE_NONE");
-		    setTitleMessage("not connected");
-		    break;
-		}
-		break;
-
-	    case BTStripSerialService.MESSAGE_READ:                
-		Log.d(TAG, "Got MESSAGE_READ "+ msg);
-		byte[] readBuf = (byte[]) msg.obj;
-		//Log.d(TAG, "Got payload "+ format(readBuf, 128));	
-
-		String payload = new String(readBuf, 0, msg.arg1);		
-		doLog("RCVD: " + payload);
-		synchronized (receivedLine)
-		{
-		    receivedLine += payload;
-		    if (receivedLine.endsWith("\r") || receivedLine.endsWith("\n"))
-		    {
-			doLog("COMMAND: " + receivedLine);
-			handleCommand(receivedLine);
-			receivedLine = "";
-		    }
-		}
-
-		break;
-
-	    case BTStripSerialService.MESSAGE_DEVICE_NAME:
-		// save the connected device's name
-		mConnectedDeviceName = msg.getData().getString(BTStripSerialService.DEVICE_NAME);
-		Toast.makeText(getApplicationContext(), "Connected to "
-			+ mConnectedDeviceName, Toast.LENGTH_SHORT).show();
-		break;
-
-		// shared back messages sent to remote. 
-		//              case MESSAGE_WRITE:
-		//          	Log.d(TAG, "Got MESSAGE_WRITE "+ msg);
-		//                  break;
-
-	    case BTStripSerialService.MESSAGE_TOAST:
-		Toast.makeText(getApplicationContext(), msg.getData().getString(BTStripSerialService.TOAST), Toast.LENGTH_SHORT).show();
-		break;
-	    }
-	}
-
-	String mSupportedFeatures = "";
-
-	private void handleCommand(String receivedLine)
+	protected void onDeviceDisconnected() 
 	{
-	    if (null!=mLogView)
-	    {
-		//doLog("RCVD: " + receivedLine);
-	    }
+	    setTitleMessage("disconnected");
+	    enableControls(false);
+	};
 
-	    // old version send just a hello
-	    if (receivedLine.startsWith("HELLO"))
-	    {
-		mSupportedFeatures = receivedLine.substring(5);		
-		analyzeHelloLine(mSupportedFeatures);
-	    }
+	@Override
+	protected void onTimeout() 
+	{
+	    setTitleMessage("timeout");
+	};
+	
+	@Override
+	protected void onIdle() 
+	{
+	    setTitleMessage("idle");	    
+	};
+	
+	@Override
+	protected void onServiceConnected() 
+	{
+	    setTitleMessage("connected service");	    	    
+	};
+    };
 
-	    if (receivedLine.startsWith("H:"))
-	    {
-		mSupportedFeatures = receivedLine.substring(2);		
-		analyzeHelloLine(mSupportedFeatures);		
-		// Ask arduino to send an update line with current values
-		setCmd("G");				
-	    }
+    
+    private SPPConnection mConnection = new SPPConnection(mDataHandler)
+    {
+	@Override
+	public void disconnect() 
+	{
+	    // connection about to terminate, E0 will make uC indicate this via the status LED (flash it 3x)
+	    sendLine("\nE0"); 
+	    sendLine("\n");
+	    super.disconnect();
+	}	
+    };
+    
+    
+    private String mConnectedDeviceName;
 
-	    if (receivedLine.startsWith("G:"))
-	    {
-		String getUpdateLine = receivedLine.substring(2);
-		analyzeUpdateLine(getUpdateLine);
-	    }
-
+    private void handleCommand(String receivedLine)
+    {
+	String mSupportedFeatures = "";
+	
+	if (null!=mLogView)
+	{
+	    //doLog("RCVD: " + receivedLine);
 	}
 
+	// old version sent just a hello
+	if (receivedLine.startsWith("HELLO"))
+	{
+	    mSupportedFeatures = receivedLine.substring(5);		
+	    analyzeHelloLine(mSupportedFeatures);
+	}
 
-    };
+	if (receivedLine.startsWith("H:"))
+	{
+	    mSupportedFeatures = receivedLine.substring(2);		
+	    analyzeHelloLine(mSupportedFeatures);		
+	    // Ask arduino to send an update line with current values
+	    setCmd("G");				
+	}
+
+	if (receivedLine.startsWith("G:"))
+	{
+	    String getUpdateLine = receivedLine.substring(2);
+	    analyzeUpdateLine(getUpdateLine);
+	}
+
+    }
 
 
     private void savePeerInfo()

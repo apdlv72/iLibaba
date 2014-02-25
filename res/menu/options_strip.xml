@@ -4,14 +4,16 @@
     <item android:id="@+id/menu_water_presets"                     android:title="Presets" />
     <item android:id="@+id/menu_water_select"       android:icon="@android:drawable/ic_menu_search"             android:title="@string/select" />
 
-    <item android:id="@+id/menu_water_disconnect"   android:icon="@android:drawable/ic_menu_close_clear_cancel" android:title="@string/disconnect" />
-    
+    <item android:id="@+id/menu_water_disconnect"   android:icon="@android:drawable/ic_menu_close_clear_cancel" android:title="@string/disconnect" />    
+    <item android:id="@+id/menu_water_power"        android:icon="@android:drawable/ic_media_play"              android:title="Power" />
+    <!--  
     <item android:title="Power">
         <menu>
 		    <item android:id="@+id/menu_water_on"           android:icon="@android:drawable/ic_media_play"              android:title="On" />
 	    	<item android:id="@+id/menu_water_off"          android:icon="@android:drawable/ic_lock_power_off"          android:title="Off" />
     	</menu>
     </item>
+    -->
     
     <item android:id="@+id/menu_water_next"         android:icon="@android:drawable/ic_media_ff"                android:title="Frotect Control"/>    
 </menu>
