@@ -60,7 +60,7 @@ public class SPPConnection implements ServiceConnection
 	{
 	    if (null!=mService)
 	    {
-		s = s + "\r\n";
+		s = s + "\n";
 		Log.d(TAG, "Sending string '" + s + "'");
 		mService.write(s.getBytes());
 	    }
