@@ -29,6 +29,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Scroller;
@@ -69,6 +70,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
     private String mmSelectedAddress;
     private String mmSelectedName;
+    private SeekBar mBrightness;
 
 
 
@@ -118,7 +120,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    analyzeHelloLine(sb.toString());	    
 	}
 
-	((SeekBar) findViewById(R.id.seekBright)).setOnSeekBarChangeListener(this);
+	(this.mBrightness = ((SeekBar) findViewById(R.id.seekBright))).setOnSeekBarChangeListener(this);
+	//((SeekBar) findViewById(R.id.seekBright)).setOnSeekBarChangeListener(this);
 	((SeekBar) findViewById(R.id.seekAmplitude)).setOnSeekBarChangeListener(this);
 	((SeekBar) findViewById(R.id.seekSpeed)).setOnSeekBarChangeListener(this);
 	((SeekBar) findViewById(R.id.seekFade)).setOnSeekBarChangeListener(this);
@@ -510,10 +513,17 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
 
     public void onItemSelected(AdapterView<?> av, View v, int arg2, long arg3)
+    //public void onItemClick(AdapterView<?> av, View arg1, int arg2, long arg3)
     {
-	Spinner spinner = (Spinner)av;
+	if (mIgnoreNextItemSelection)
+	{
+	    mIgnoreNextItemSelection=false;
+	    return;
+	}
+	
+	//Spinner spinner = (Spinner)av;
 	//Object item = spinner.getSelectedItem();
-	int idx = spinner.getSelectedItemPosition();
+	int idx = arg2; //spinner.getSelectedItemPosition();
 	setCmd("M=" + idx); // + "," + item);
     }
 
@@ -590,11 +600,30 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	}
     }
 
+//    OnItemSelectedListener dummyOnItemCliItemSelectedListener = new OnItemSelectedListener()
+//    {
+//	public void onItemSelected(AdapterView<?> arg0, View arg1, int arg2, long arg3)
+//        {
+//	    Log.d(TAG, "ignored: onItemSelected");
+//        }
+//
+//	public void onNothingSelected(AdapterView<?> arg0)
+//        {
+//	    Log.d(TAG, "ignored: onNothingSelected");
+//        }	
+//    };
 
+    boolean mIgnoreNextItemSelection = false;
+    
     private void parseStripModes(String modeStr)
     {
 	//ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item);
 	ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.mode_name);
+	
+	// does not work (event do come asynchroneously)
+	//mSpinnerMode.setOnItemSelectedListener(dummyOnItemCliItemSelectedListener);
+	mIgnoreNextItemSelection = true;
+	
 	mSpinnerMode.setAdapter(adapter);
 	String[] parts = modeStr.split("[\\t ]+");
 	
@@ -603,8 +632,11 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    name = name.replaceAll("^[0-9]+=", "").replaceAll("_", " ");
 	    adapter.add(name);
 	}
+	
+	//mSpinnerMode.setOnItemSelectedListener(this);
     }
     
+    /*
     private void setStripModes(String ... names)
     {
 	//ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item);
@@ -616,11 +648,23 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    adapter.add(name);
 	};
     }
-
+    */
 
     private void analyzeUpdateLine(String line)
     {
 	doLog("GOT Update LINE: " + line);
+	
+	String modeStr  = line.replaceAll("^.*M=", "").replaceAll("[ ,].*",""); 
+	String colorStr = line.replaceAll("^.*C=", "").replaceAll("[ ,].*",""); 
+	String briteStr = line.replaceAll("^.*B=", "").replaceAll("[ ,].*","");
+	
+	int mode  = Integer.parseInt(modeStr);
+	int color = Integer.parseInt(colorStr, 16);
+	int brite = Integer.parseInt(briteStr, 16);
+	
+	mSpinnerMode.setSelection(mode);
+	mColorWheel.setColor(color);
+	mBrightness.setProgress(brite);
     }
     
     
@@ -749,8 +793,12 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	@Override
 	protected void onDeviceConnected() 
 	{
+	    mConnection.sendLine("E1");
+	    mConnection.sendLine("");
 	    mConnection.sendLine("H"); // "help" (request device features) 
-	    mConnection.sendLine("H"); // "help" (request device features)
+	    mConnection.sendLine("");
+	    mConnection.sendLine("H"); // "help" (request device features) 
+	    mConnection.sendLine("");
 	    setTitleMessage("connected to " + mConnectedDeviceName);
 	}
 	
@@ -807,7 +855,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	public void disconnect() 
 	{
 	    // connection about to terminate, E0 will make uC indicate this via the status LED (flash it 3x)
-	    sendLine("\nE0"); 
+	    sendLine("\n");
+	    sendLine("E0"); 
 	    sendLine("\n");
 	    super.disconnect();
 	}	
@@ -825,6 +874,11 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    //doLog("RCVD: " + receivedLine);
 	}
 
+	if (null==receivedLine)
+	{
+	    return;
+	}
+	
 	// old version sent just a hello
 	if (receivedLine.startsWith("HELLO"))
 	{
@@ -837,6 +891,9 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    mSupportedFeatures = receivedLine.substring(2);		
 	    analyzeHelloLine(mSupportedFeatures);		
 	    // Ask arduino to send an update line with current values
+	    setCmd("");				
+	    setCmd("G");				
+	    setCmd("");				
 	    setCmd("G");				
 	}
 
@@ -886,7 +943,6 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    Toast.makeText(getApplicationContext(), "Failed to load peer info: " + e, Toast.LENGTH_LONG).show();
 	} 
     }
-
 
 
 }

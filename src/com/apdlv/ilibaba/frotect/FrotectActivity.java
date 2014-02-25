@@ -143,7 +143,8 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	public void disconnect() 
 	{
 	    // connection about to terminate, E0 will make uC indicate this via the status LED (flash it 3x)
-	    sendLine("\nE0"); 
+	    sendLine("\n");
+	    sendLine("E0"); 
 	    sendLine("\n");
 	    super.disconnect();
 	};
