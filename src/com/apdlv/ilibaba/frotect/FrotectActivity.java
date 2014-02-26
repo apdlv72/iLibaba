@@ -64,6 +64,8 @@ import com.apdlv.ilibaba.bt.SPPStatusAwareDialog;
 import com.apdlv.ilibaba.bt.SPPStatusListener;
 import com.apdlv.ilibaba.frotect.FrotectActivity.FrotectBTDataCompleteListener.TYPE;
 import com.apdlv.ilibaba.gate.GateControlActivity;
+import com.apdlv.ilibaba.strip.StripControlActivity;
+import com.apdlv.ilibaba.util.LastStatusHelper;
 import com.apdlv.ilibaba.util.OnClickAwareDialog;
 import com.apdlv.ilibaba.util.OnClickHelper;
 import com.apdlv.ilibaba.util.U;
@@ -174,13 +176,20 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	}
     }
 
+    final static boolean D = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
 	super.onCreate(savedInstanceState);
+        if (D) Log.d(TAG, "+++ ON CREATE +++");
 
-	mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (LastStatusHelper.startLastActivity(this))
+        {
+            return; // a different activity is about to be started
+        }
+
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 	// If the adapter is null, then Bluetooth is not supported
 	if (mBluetoothAdapter == null) 
 	{
@@ -191,6 +200,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	// Register for broadcasts on BluetoothAdapter state change
 	IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
 	registerReceiver(mReceiver, filter);
+	mReceiverRegistered = true;
 	
 	// Enable bluetooth if it's now on already.
 	if (!mBluetoothAdapter.isEnabled()) 
@@ -284,24 +294,6 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	bindService(intent, mConnection, Context.BIND_AUTO_CREATE);	
     }
 
-//    @Override
-//    protected void onPause() 
-//    {
-//	super.onPause();
-//	Log.d(TAG, "onPause: Unbinding from service");
-//	mConnection.unbind(this);
-//    };
-//
-//    @Override
-//    protected void onResume() 
-//    {
-//	super.onResume();
-//	Log.d(TAG, "onResume: Binding to service");
-//	Intent intent = new Intent(this, SPPService.class);
-//	bindService(intent, mConnection, Context.BIND_AUTO_CREATE);	
-//    };
-
-
     @Override
     protected void onStop() 
     {
@@ -321,8 +313,11 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	mConnection.disconnect();	
 	Log.d(TAG, "onDestroy: Unbinding from service");
 	mConnection.unbind(this);
-	Log.d(TAG, "onDestroy: Unregistering bluetooth broadcast receiver");
-	unregisterReceiver(mReceiver);
+	if (mReceiverRegistered)
+	{
+	    Log.d(TAG, "onDestroy: Unregistering bluetooth broadcast receiver");
+	    unregisterReceiver(mReceiver);
+	}
     };
 
     @Override
@@ -568,9 +563,10 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
     private void nextActivity()
     {
-	Intent i = new Intent(getApplicationContext(), GateControlActivity.class);
-	startActivity(i);            
-	finish();	
+	LastStatusHelper.startActivity(this, GateControlActivity.class);
+//	Intent i = new Intent(getApplicationContext(), GateControlActivity.class);
+//	startActivity(i);            
+//	finish();	
     }
 
     private void scrollToEnd()  
@@ -2391,7 +2387,9 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
     {
 	this.verbosity = verbosity;
     }
-
+    
+    private boolean mReceiverRegistered = false;
+    
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() 
     {
 	@Override
@@ -2443,6 +2441,7 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
 		    public void onClick(DialogInterface dialog, int which) {
 			//Stop the activity
+			LastStatusHelper.saveCurrActivity(FrotectActivity.this);
 			finish();    
 		    }
 		})

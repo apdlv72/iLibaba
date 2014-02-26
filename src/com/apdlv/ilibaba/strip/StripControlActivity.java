@@ -49,7 +49,9 @@ import com.apdlv.ilibaba.bt.SPPService;
 import com.apdlv.ilibaba.color.HSVColorWheel;
 import com.apdlv.ilibaba.color.OnColorSelectedListener;
 import com.apdlv.ilibaba.frotect.FrotectActivity;
+import com.apdlv.ilibaba.gate.GateControlActivity;
 import com.apdlv.ilibaba.shake.Shaker.Callback;
+import com.apdlv.ilibaba.util.LastStatusHelper;
 import com.apdlv.ilibaba.util.U;
 
 public class StripControlActivity extends Activity implements OnSeekBarChangeListener, Callback, OnColorSelectedListener, /*OnItemSelectedListener,*/ OnClickListener
@@ -73,11 +75,19 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     private String mmSelectedAddress;
     private String mmSelectedName;
 
+    final static boolean D = true;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
 	super.onCreate(savedInstanceState);	
+        if (D) Log.d(TAG, "+++ ON CREATE +++");
 
+        if (LastStatusHelper.startLastActivity(this))
+        {
+            return; // a different activity is about to be started
+        }
+        
 	// Set up the window layout
 	requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
 	setContentView(R.layout.activity_strip);
@@ -189,10 +199,10 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
     private void nextActivity()
     {
-	//Intent i = new Intent(getApplicationContext(), GateControlActivity.class);
-	Intent i = new Intent(getApplicationContext(), FrotectActivity.class);
-	startActivity(i);            
-	finish();	
+	LastStatusHelper.startActivity(this, FrotectActivity.class);
+//	Intent i = new Intent(getApplicationContext(), FrotectActivity.class);
+//	startActivity(i);            
+//	finish();	
     }
 
 
@@ -223,6 +233,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     {
 	super.onStop();
 	mConnection.disconnect();
+	mConnection.unbind(this);
     };
 
     @Override
@@ -978,6 +989,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 		.setMessage("Do you want to quit?")
 		.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
 		    public void onClick(DialogInterface dialog, int which) {
+			LastStatusHelper.saveCurrActivity(StripControlActivity.this);
 			//Stop the activity
 			finish();    
 		    }

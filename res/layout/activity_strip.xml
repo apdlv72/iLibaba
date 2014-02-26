@@ -18,7 +18,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal" >
 
-s            <Button
+            <Button
                 android:id="@+id/button_modes"
                 style="?android:attr/buttonStyleSmall"
                 android:layout_weight="1"
@@ -97,7 +97,7 @@ s            <Button
                 <com.apdlv.ilibaba.views.MutableVerticalSeekBar
                     android:id="@+id/seekSpeed"
                     android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
+                    android:layout_height="0dp"
                     android:layout_gravity="center_horizontal"
                     android:layout_weight="1"
                     android:max="100"
@@ -179,7 +179,7 @@ s            <Button
                 <com.apdlv.ilibaba.views.MutableVerticalSeekBar
                     android:id="@+id/seekFade"
                     android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
+                    android:layout_height="0dp"
                     android:layout_gravity="center_horizontal"
                     android:layout_weight="1"
                     android:max="100"
@@ -197,7 +197,7 @@ s            <Button
         <TextView
             android:id="@+id/textCommand"
             android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
+            android:layout_height="0dp"
             android:layout_weight="3"
             android:gravity="center_horizontal"
             android:text="command" />
@@ -225,7 +225,6 @@ s            <Button
             android:scrollHorizontally="false"
             android:scrollbarAlwaysDrawVerticalTrack="false"
             android:src="@android:drawable/arrow_up_float"
-            android:text="Logfile"
             android:textColor="@android:color/white"
             android:textSize="14sp" />
 

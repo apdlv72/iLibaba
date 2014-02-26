@@ -56,6 +56,7 @@ import com.apdlv.ilibaba.bt.SPPConnection;
 import com.apdlv.ilibaba.bt.SPPDataHandler;
 import com.apdlv.ilibaba.bt.SPPService;
 import com.apdlv.ilibaba.strip.StripControlActivity;
+import com.apdlv.ilibaba.util.LastStatusHelper;
 import com.apdlv.ilibaba.util.U;
 
 /**
@@ -95,7 +96,12 @@ public class GateControlActivity extends Activity implements OnClickListener
     public void onCreate(Bundle savedInstanceState) 
     {
         super.onCreate(savedInstanceState);
-        if(D) Log.e(TAG, "+++ ON CREATE +++");
+        if(D) Log.d(TAG, "+++ ON CREATE +++");
+        
+        if (LastStatusHelper.startLastActivity(this))
+        {
+            return; // a different activity is about to be started
+        }
 
 	// If the adapter is null, then Bluetooth is not supported
 	mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -108,6 +114,7 @@ public class GateControlActivity extends Activity implements OnClickListener
 	// Register for broadcasts on BluetoothAdapter state change
 	IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
 	registerReceiver(mReceiver, filter);
+	mReceiverRegistered = true;
 	
 	// Enable bluetooth if it's now on already.
 	if (!mBluetoothAdapter.isEnabled()) 
@@ -240,8 +247,11 @@ public class GateControlActivity extends Activity implements OnClickListener
 	mConnection.disconnect();	
 	Log.d(TAG, "onDestroy: Unbinding from service");
 	mConnection.unbind(this);	
-	Log.d(TAG, "onDestroy: Unregistering bluetooth broadcast receiver");
-	unregisterReceiver(mReceiver);
+	if (mReceiverRegistered)
+	{
+	    Log.d(TAG, "onDestroy: Unregistering bluetooth broadcast receiver");
+	    unregisterReceiver(mReceiver);
+	}
     }
 
     
@@ -952,9 +962,10 @@ public class GateControlActivity extends Activity implements OnClickListener
 
     private void nextActivity()
     {
-	Intent i = new Intent(getApplicationContext(), StripControlActivity.class);
-	startActivity(i);
-	finish();
+	LastStatusHelper.startActivity(this, StripControlActivity.class);
+//	Intent i = new Intent(getApplicationContext(), StripControlActivity.class);
+//	startActivity(i);
+//	finish();
     }
 
     
@@ -965,6 +976,8 @@ public class GateControlActivity extends Activity implements OnClickListener
 	    showGateOpeningDialog();
 	}
     }
+    
+    private boolean mReceiverRegistered = false;
     
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() 
     {
@@ -1018,6 +1031,7 @@ public class GateControlActivity extends Activity implements OnClickListener
 		.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
 		    public void onClick(DialogInterface dialog, int which) {
 			//Stop the activity
+			LastStatusHelper.saveCurrActivity(GateControlActivity.this);
 			finish();    
 		    }
 		})

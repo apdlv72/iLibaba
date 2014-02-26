@@ -40,5 +40,14 @@ public class ModeListDialog extends OptionListDialog
     }
     
 
+    @Override 
+    public boolean onItemLongClick(AdapterView<?> av, View v, int selectedIndex, long l) 
+    {
+	onItemClick(av, v, selectedIndex, l);
+	this.dismiss();
+	return true;           
+    }
+
+    
     private String[] modes;
 }

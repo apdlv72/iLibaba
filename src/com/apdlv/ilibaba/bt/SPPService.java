@@ -15,8 +15,6 @@
 
 package com.apdlv.ilibaba.bt;
 
-import java.io.BufferedReader;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -24,10 +22,10 @@ import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.UUID;
 
-import android.R.integer;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
+import android.bluetooth.BluetoothClass.Device;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
@@ -142,8 +140,8 @@ public class SPPService  extends Service
 
     @Override
     public void onCreate() 
-    {
-	super.onCreate(); Log.d(TAG, "onCreate");
+    {    super.onCreate();
+	 Log.d(TAG, "onCreate");
     };
 
 
@@ -265,7 +263,7 @@ public class SPPService  extends Service
     {
 	synchronized (this)
 	{
-	    log("connect(" + device + ")");
+	    log("SPPService.connect(" + device + ")");
 
 	    // Cancel any thread attempting timeout making or maintaining a connection
 	    //if (mState == STATE_CONNECTING) 
@@ -281,28 +279,31 @@ public class SPPService  extends Service
 	    //if (mConnectedThread != null) {mConnectedThread.cancel(); mConnectedThread = null;}
 
 	    // Start the thread timeout connect with the given device
-	    mConnectThread = new ConnectThread(device);
+	    mConnectThread = new ConnectThread(device, this);
 	    mConnectThread.start();
-
-	    //CancelThread cancelThread = new CancelThread(5000);
-	    //cancelThread.start();
-
-	    if (null!=mHandler)
-	    {
-		String name = device.getName();
-		String addr = device.getAddress();
-		Message msg;
-
-		Bundle bundle = new Bundle();
-		bundle.putString(KEY_DEVICE_ADDR, addr);
-		bundle.putString(KEY_DEVICE_NAME, name);
-		msg = mHandler.obtainMessage(MESSAGE_DEVICE_INFO, bundle);
-		mHandler.sendMessage(msg);
-	    }
-
+	    
+	    sendDevicenfo(device);
 	    setState(STATE_CONNECTING);
 	}
     }
+
+    
+    public void sendDevicenfo(BluetoothDevice device)
+    {
+	if (null!=mHandler)
+	{
+	    String name = device.getName();
+	    String addr = device.getAddress();
+	    Message msg;
+
+	    Bundle bundle = new Bundle();
+	    bundle.putString(KEY_DEVICE_ADDR, addr);
+	    bundle.putString(KEY_DEVICE_NAME, name);
+	    msg = mHandler.obtainMessage(MESSAGE_DEVICE_INFO, bundle);
+	    mHandler.sendMessage(msg);
+	}
+    }
+    
 
     /**
      * Stop all threads
@@ -367,7 +368,7 @@ public class SPPService  extends Service
     /**
      * Indicate that the connection attempt failed and notify the UI Activity.
      */
-    private void connectionFailed() 
+    private void connectionFailed(String reason) 
     {
 	synchronized (this)
 	{
@@ -376,7 +377,7 @@ public class SPPService  extends Service
 	    // Send a failure message back timeout the Activity
 	    if (null!=mHandler)
 	    {
-		Message msg = mHandler.obtainMessage(MESSAGE_TOAST, "Unable to connect to device");
+		Message msg = mHandler.obtainMessage(MESSAGE_TOAST, reason);
 		//Bundle bundle = new Bundle();
 		mHandler.sendMessage(msg);
 	    }
@@ -454,6 +455,10 @@ public class SPPService  extends Service
 	private InputStream     mmInStream;
 	private boolean         mCancelled;
 
+	private SPPService sppService;
+
+	private BluetoothDevice device;
+
 	// a replacement for the "normal" BufferedReader, however this one is aware 
 	// of whether the connect thread was cancelled
 	class MyBufferedReader
@@ -497,14 +502,21 @@ public class SPPService  extends Service
 	}
 
 
-	public ConnectThread(BluetoothDevice device) 
+	public ConnectThread(BluetoothDevice device, SPPService sppService) 
 	{
 	    //mmDevice = device;
-	    BluetoothSocket tmp = null;	
 	    logDeviceServices(device);
 
 	    mCancelled = false;
+	    this.sppService = sppService;
+	    this.device = device;
+	}
+	
 
+	void createSocket()
+	{	    
+	    BluetoothSocket tmp = null;	
+	    
 	    // Try timeout connect with HC-05 device
 	    if (BTMagics.isHC05(device) || BTMagics.isUncategorized(device))
 	    {
@@ -514,7 +526,8 @@ public class SPPService  extends Service
 		    int port = 1;
 		    tmp = (BluetoothSocket) m.invoke(device, port);
 		} 
-		catch (Exception e) {
+		catch (Exception e) 
+		{
 		    log ("createRfcommSocket: Exception: " + e);
 		} 
 		if (null==tmp)
@@ -549,13 +562,12 @@ public class SPPService  extends Service
 	{
 	    synchronized (this)
 	    {
+		Log.d(TAG, msg);
 		if (null==mHandler) 
 		{
-		    Log.d(TAG, msg);
 		    return;
 		}
 		mHandler.obtainMessage(MESSAGE_DEBUG_MSG, msg).sendToTarget();
-		//Log.d(TAG, msg);
 	    }
 	}
 
@@ -625,43 +637,68 @@ public class SPPService  extends Service
 	{
 	    log("BEGIN mConnectThread");
 	    setName("ConnectThread");
-
+	    
 	    // Always cancel discovery because it will slow down a connection
 	    mAdapter.cancelDiscovery();
+
+	    try
+	    {
+		log("Creating bluetooth socket ...");
+		createSocket();
+	    }
+	    catch (Exception e)
+	    {
+		log("Exception: "+ e);
+	    }
+	    
+	    if (null==mmSocket) // connect was not successful
+	    {
+		log("Socket creation failed");
+		connectionFailed("Socket creation failed");		
+		return;		
+	    }
 
 	    // Make a connection timeout the BluetoothSocket
 	    try 
 	    {
 		// This is a blocking call and will only return on a
 		// successful connection or an exception
-		log("Connecting ...");
+		log("Connecting socket ...");
 		mmSocket.connect(); 
-		log("Connected!");
+		log("Socket connected!");
 	    } 
-	    catch (Exception e) 
+	    catch (IOException ioe)
 	    {
-		log("Connection failed: "+ e);
-		connectionFailed();
+		String msg = ioe.getMessage();
+		log("Connection failed: "+ msg);
+		connectionFailed(msg);
 		// Close the socket
 		closeBluetoothSocket();
 
-		setState(STATE_DISCONNECTED);
+		setState(STATE_FAILED);
+		return;
+	    }
+	    catch (Exception e) 
+	    {
+		log("Connection failed: "+ e);
+		connectionFailed("" + e);
+		// Close the socket
+		closeBluetoothSocket();
+
+		setState(STATE_FAILED);
 		return;
 	    }
 
-	    // no need timeout announce device here. already done in connect()
-	    //	    if (null!=mHandler)
-	    //	    {
-	    //		String name = mmDevice.getName();
-	    //		Message msg = mHandler.obtainMessage(MESSAGE_DEVICE_NAME, name);
-	    //		mHandler.sendMessage(msg);
-	    //	    }
 	    setState(STATE_CONNECTED);
 
 	    if (mLinewise)
+	    {
 		communicateLinewise();
+	    }
 	    else
+	    {
 		communicateBytewise();
+	    }
 	}
 
 	public void communicateLinewise() 

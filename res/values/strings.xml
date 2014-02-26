@@ -19,7 +19,7 @@
 
     <string name="app_name">iLibaba</string>
     <string name="view_name_garage">Garage Door Opener</string>
-    <string name="view_name_water">Water Strip Control</string>
+    <string name="view_name_water">Strip Control</string>
 
     <!-- BluetoothChat -->
     <string name="sendMenos">-</string>

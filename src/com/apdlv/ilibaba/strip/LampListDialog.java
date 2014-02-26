@@ -41,9 +41,18 @@ public class LampListDialog extends OptionListDialog
 
     
     @Override // implements abstract method from superclass
-    public void onItemClick(AdapterView<?> av, View v, int selectedIndex, long arg3) 
+    public void onItemClick(AdapterView<?> av, View v, int selectedIndex, long l) 
     {
 	((StripControlActivity)getActivity()).setCmd(createCommand(selectedIndex));            
+    }
+
+    
+    @Override 
+    public boolean onItemLongClick(AdapterView<?> av, View v, int selectedIndex, long l) 
+    {
+	onItemClick(av, v, selectedIndex, l);
+	this.dismiss();
+	return true;           
     }
 
     
