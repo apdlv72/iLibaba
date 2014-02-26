@@ -36,7 +36,6 @@ public class ModeListDialog extends OptionListDialog
     @Override // implements abstract method from superclass
     public void onItemClick(AdapterView<?> av, View v, int selectedIndex,  long arg3)
     {
-	((StripControlActivity)getActivity()).setCmd("M=" + selectedIndex);
 	((StripControlActivity)getActivity()).setSelectedMode(selectedIndex, modes[selectedIndex]);
     }
     

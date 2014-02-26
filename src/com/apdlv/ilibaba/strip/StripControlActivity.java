@@ -72,7 +72,6 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
     private String mmSelectedAddress;
     private String mmSelectedName;
-    private SeekBar mBrightness;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -107,13 +106,12 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	(mButtonLamps   = (Button) findViewById(R.id.button_lamps)  ).setOnClickListener(this);
 	(mButtonPresets = (Button) findViewById(R.id.button_presets)).setOnClickListener(this);
 	
-	(this.mBrightness = ((SeekBar) findViewById(R.id.seekBright))).setOnSeekBarChangeListener(this);
-	//((SeekBar) findViewById(R.id.seekBright)).setOnSeekBarChangeListener(this);
+	((SeekBar) findViewById(R.id.seekBright)   ).setOnSeekBarChangeListener(this);
 	((SeekBar) findViewById(R.id.seekAmplitude)).setOnSeekBarChangeListener(this);
-	((SeekBar) findViewById(R.id.seekSpeed)).setOnSeekBarChangeListener(this);
-	((SeekBar) findViewById(R.id.seekFade)).setOnSeekBarChangeListener(this);
-	((SeekBar) findViewById(R.id.seekStrength)).setOnSeekBarChangeListener(this);
-	((SeekBar) findViewById(R.id.seekRand)).setOnSeekBarChangeListener(this);
+	((SeekBar) findViewById(R.id.seekSpeed)    ).setOnSeekBarChangeListener(this);
+	((SeekBar) findViewById(R.id.seekFade)     ).setOnSeekBarChangeListener(this);
+	((SeekBar) findViewById(R.id.seekStrength) ).setOnSeekBarChangeListener(this);
+	((SeekBar) findViewById(R.id.seekRand)     ).setOnSeekBarChangeListener(this);
 
 	enableControls(false);
 
@@ -204,8 +202,11 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	String command = null==s.getTag() ? null : "" + s.getTag() + "=" + hexProgress; //s.getProgress();	
 	if (null!=command)
 	{
-	    // use the tag from the respective scale and send as command prefix
-	    setCmd(command);
+	    if (fromUser)
+	    {
+		// use the tag from the respective scale and send as command prefix
+		setCmd(command);
+	    }
 	}
     }
 
@@ -469,10 +470,26 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	}
     }
 
+    private Integer mLastSelectedColor = null;
+    
     // interface OnColorSelectedListener
     public void colorSelected(Integer color)
     {
-	setCmd(String.format("C=%06x", color & 0xFFFFFF));
+	// need to cast if comparing Integers not ints.
+	if (null==mLastSelectedColor)
+	{
+	    setCmd(String.format("C=%06x", color & 0xFFFFFF));
+	}
+	else
+	{
+	    int a = mLastSelectedColor;
+	    int b = color;
+	    if (a!=b)
+	    {
+		setCmd(String.format("C=%06x", color & 0xFFFFFF));
+	    }
+	}
+	mLastSelectedColor = color;
     }
 
     
@@ -485,11 +502,11 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	mTitle.setText(s);
     }
 
-    public void onBTDataReceived(byte[] data, int len)
-    {
-	String s = new String(data, 0, len);
-	Log.d(TAG, "onBTDataReceived: '" + s + "'");
-    }
+//    public void onBTDataReceived(byte[] data, int len)
+//    {
+//	String s = new String(data, 0, len);
+//	Log.d(TAG, "onBTDataReceived: '" + s + "'");
+//    }
 
     private static final String TAG = "WaterStrip";
 
@@ -551,19 +568,52 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     {
 	doLog("GOT Update LINE: " + line);
 	
-	String modeStr  = line.replaceAll("^.*M=", "").replaceAll("[ ,].*",""); 
-	String colorStr = line.replaceAll("^.*C=", "").replaceAll("[ ,].*",""); 
-	String briteStr = line.replaceAll("^.*B=", "").replaceAll("[ ,].*","");
+	Integer ampli  = extractUpdateValue(line, "A");
+	Integer brite  = extractUpdateValue(line, "B");
+	Integer color  = extractUpdateValue(line, "C"); 
+	Integer fade   = extractUpdateValue(line, "F");
+	Integer mode   = extractUpdateValue(line, "M"); 
+	Integer random = extractUpdateValue(line, "R");
+	Integer speed  = extractUpdateValue(line, "S");
+	Integer stren  = extractUpdateValue(line, "T");
 	
-	int mode  = Integer.parseInt(modeStr);
-	int color = Integer.parseInt(colorStr, 16);
-	int brite = Integer.parseInt(briteStr, 16);
-	
-	//mSpinnerMode.setSelection(mode);
-	
-	mSelectedModeIndex = mode;	
-	mColorWheel.setColor(color);
-	mBrightness.setProgress(brite);
+	if (null!=mode)  mSelectedModeIndex = mode;	
+	if (null!=color) mColorWheel.setColor(color);
+
+	setSeekBar(R.id.seekBright,    brite);
+	setSeekBar(R.id.seekAmplitude, ampli);
+	setSeekBar(R.id.seekRand,      random);
+	setSeekBar(R.id.seekSpeed,     speed);
+	setSeekBar(R.id.seekStrength,  stren);
+	setSeekBar(R.id.seekFade,      fade);
+    }
+
+    
+    private void setSeekBar(int resID, Integer value)
+    {
+	if (null==value) return;
+	SeekBar sb = (SeekBar) findViewById(resID);
+	if (null==sb) return;
+	sb.setProgress(value);
+    }
+    
+    private static Integer parseInt(String s, int radix)
+    {
+	try
+	{
+	    return Integer.parseInt(s, radix);
+	}
+	catch (Exception e)
+	{
+	    return null;
+	}
+    }
+
+    private static Integer extractUpdateValue(String line, String key)
+    {
+	String value  = line.replaceAll("^.*" + key + "=", "").replaceAll("[ ,].*","");
+	if (value.equals(line)) return null;
+	return parseInt(value, 16);
     }
     
     
@@ -653,7 +703,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 		    }
 
 		    // TODO: Parse also the presets from the devices capability line.
-		    setPresets("Bright", "Dim", "Eat", "Party", "TV", "Fake presence");
+		    setPresets("Bright", "Dim", "Eat", "Party", "TV", "Absent");
 		    //setStripModes("Up+Up", "Up+Up+Down", "Up+Down", "Down", "Strip1", "Strip1+2", "Strip2", "FakeTV");		    
 		}
 		
@@ -708,6 +758,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    mConnection.sendLine("H"); // "help" (request device features) 
 	    mConnection.sendLine("");
 	    setTitleMessage("connected to " + mConnectedDeviceName);
+	    mLastSelectedColor = null;
 	}
 	
 	@Override
@@ -735,6 +786,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	{
 	    setTitleMessage("disconnected");
 	    enableControls(false);
+	    mLastSelectedColor = null;
 	};
 
 	@Override
@@ -778,7 +830,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     private String[] mAvailableLamps   = { "Default" };
     private String[] mAvailablePresets = { "Preset 1", "Preset 2", "Preset 3", "Preset 4", "Preset 5", "Preset 6" };
 
-    private void handleCommand(String receivedLine)
+    private void handleCommand(String line)
     {
 	String mSupportedFeatures = "";
 	
@@ -787,21 +839,21 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    //doLog("RCVD: " + receivedLine);
 	}
 
-	if (null==receivedLine)
+	if (null==line)
 	{
 	    return;
 	}
 	
 	// old version sent just a hello
-	if (receivedLine.startsWith("HELLO"))
+	if (line.startsWith("HELLO"))
 	{
-	    mSupportedFeatures = receivedLine.substring(5);		
+	    mSupportedFeatures = line.substring(5);		
 	    analyzeHelloLine(mSupportedFeatures);
 	}
 
-	if (receivedLine.startsWith("H:"))
+	if (line.startsWith("H:"))
 	{
-	    mSupportedFeatures = receivedLine.substring(2);		
+	    mSupportedFeatures = line.substring(2);		
 	    analyzeHelloLine(mSupportedFeatures);		
 	    // Ask arduino to send an update line with current values
 	    setCmd("");				
@@ -810,12 +862,35 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    setCmd("G");				
 	}
 
-	if (receivedLine.startsWith("G:"))
+	if (line.startsWith("G:"))
 	{
-	    String getUpdateLine = receivedLine.substring(2);
+	    String getUpdateLine = line.substring(2);
 	    analyzeUpdateLine(getUpdateLine);
 	}
-
+	
+	if (line.startsWith("D"))
+	{	    
+	    if (line.startsWith("D:LINE:''"))
+	    {
+		// ignore echoed by the uC		
+	    }
+	    else if (line.startsWith("D:LINE:"))
+	    {
+		doLog(line.replace("D:LINE:", "CMD: "));
+	    }
+	    else if (line.contains("CHG_SCHED"))
+	    {
+		//showToast("Saving scheduled");
+	    }
+	    else if (line.contains("CHG_SAV"))
+	    {
+		showToast("Changes saved");
+	    }
+	    else
+	    {
+		doLog(line);
+	    }
+	}
     }
 
 
@@ -880,7 +955,10 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
     public void setSelectedMode(int selectedIndex, String name)
     {
-	this.mSelectedModeIndex = selectedIndex;
+	mSelectedModeIndex = selectedIndex;
+	// don't modify the button's text ... it may be very long an break the layout
+	//mButtonModes.setText(name);	
+	setCmd("M=" + selectedIndex);
     }
 
 

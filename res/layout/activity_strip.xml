@@ -18,12 +18,13 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal" >
 
-            <Button
+s            <Button
                 android:id="@+id/button_modes"
                 style="?android:attr/buttonStyleSmall"
                 android:layout_weight="1"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/button"
                 android:text="Modes" />
 
             <Button
@@ -32,6 +33,7 @@
                 android:layout_weight="1"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/button"
                 android:text="Power" />
 
             <Button
@@ -40,6 +42,7 @@
                 android:layout_weight="1"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/button"
                 android:text="Presets" />
             
         </LinearLayout>
