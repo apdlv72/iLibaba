@@ -14,43 +14,45 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.text.Layout;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.AdapterView.OnItemSelectedListener;
-import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.Scroller;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.apdlv.ilibaba.R;
+import com.apdlv.ilibaba.activities.DeviceListActivity;
 import com.apdlv.ilibaba.bt.SPPConnection;
 import com.apdlv.ilibaba.bt.SPPDataHandler;
 import com.apdlv.ilibaba.bt.SPPService;
 import com.apdlv.ilibaba.color.HSVColorWheel;
 import com.apdlv.ilibaba.color.OnColorSelectedListener;
 import com.apdlv.ilibaba.frotect.FrotectActivity;
-import com.apdlv.ilibaba.gate.DeviceListActivity;
 import com.apdlv.ilibaba.shake.Shaker.Callback;
 import com.apdlv.ilibaba.util.U;
 
-public class StripControlActivity extends Activity implements OnSeekBarChangeListener, Callback, OnColorSelectedListener, OnItemSelectedListener
+public class StripControlActivity extends Activity implements OnSeekBarChangeListener, Callback, OnColorSelectedListener, /*OnItemSelectedListener,*/ OnClickListener
 {
     private TextView mTextCommand;
     private BluetoothAdapter mBluetoothAdapter;
@@ -60,27 +62,22 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     private static final int REQUEST_PRESET    = 3;
     private static final int REQUEST_CONNECT_DEVICE = 1;
 
-    // replaced by SSPConnection now
-    //private BTStripSerialService mmBTConnector;  
     private TextView mLogView;
     private HSVColorWheel mColorWheel;
     private Vibrator mVibrator;
     private long activityStarted;
-    private Spinner mSpinnerMode;
+    private Button mButtonModes;
+    private Button mButtonLamps;
+    private Button mButtonPresets;
 
     private String mmSelectedAddress;
     private String mmSelectedName;
     private SeekBar mBrightness;
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
 	super.onCreate(savedInstanceState);	
-
-	//requestWindowFeature(Window.FEATURE_NO_TITLE);
-	//getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
 	// Set up the window layout
 	requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
@@ -106,20 +103,10 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	mColorWheel = (HSVColorWheel) findViewById(R.id.hSVColorWheel);
 	mColorWheel.setListener(this);
 	
-	(mSpinnerMode = ((Spinner)findViewById(R.id.spinnerMode))).setOnItemSelectedListener(this);		
-	{	    
-	    StringBuilder sb = new StringBuilder();
-	    // Version, Kind, Power, Bright, Amplitude, Speed, Fade, Brightness, Random, sTrength, Color
-	    sb.append("H:V=1 K=NONE");
-	    
-	    //sb.append("ARGB"); // common Anode, RGB	    
-	    //sb.append(" P=0-2 B=0-FF A=0-FF S=0-FFF F=0-FFF R=0-FF T=0-FFF C=0-FFFFFF ");
-	    // supported mode numbers and names
-	    //sb.append("M=0=WATER\t1=WATER2\t2=FADE\t3=RAINBOW\t4=CONST\t5=RAINFLOW\temp\r\n");
-	    
-	    analyzeHelloLine(sb.toString());	    
-	}
-
+	(mButtonModes   = (Button) findViewById(R.id.button_modes)  ).setOnClickListener(this);
+	(mButtonLamps   = (Button) findViewById(R.id.button_lamps)  ).setOnClickListener(this);
+	(mButtonPresets = (Button) findViewById(R.id.button_presets)).setOnClickListener(this);
+	
 	(this.mBrightness = ((SeekBar) findViewById(R.id.seekBright))).setOnSeekBarChangeListener(this);
 	//((SeekBar) findViewById(R.id.seekBright)).setOnSeekBarChangeListener(this);
 	((SeekBar) findViewById(R.id.seekAmplitude)).setOnSeekBarChangeListener(this);
@@ -128,9 +115,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	((SeekBar) findViewById(R.id.seekStrength)).setOnSeekBarChangeListener(this);
 	((SeekBar) findViewById(R.id.seekRand)).setOnSeekBarChangeListener(this);
 
-
 	enableControls(false);
-	//enableControls(true);
 
 	mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -144,9 +129,6 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	Intent intent = new Intent(this, SPPService.class);
 	bindService(intent, mConnection, Context.BIND_AUTO_CREATE);	        
 	
-	//mmBTConnector = new BTStripSerialService(getApplicationContext(), mHandler, false /* bytewise */);
-	//Shaker shaker = new Shaker(this, 2*1.25d, 500, this);
-
 	mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 	activityStarted = Calendar.getInstance().getTimeInMillis();
 
@@ -185,7 +167,6 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    if (null!=mmSelectedAddress)
 	    {
 		BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(mmSelectedAddress);
-		//mmBTConnector.connect(device);
 		mConnection.connect(device);
 	    }
 	    break;
@@ -193,37 +174,14 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    nextActivity();
 	    return true;
 	    
-	case R.id.menu_water_power:
-	    if (mConnection.isConnected())
-	    {
-		LampListDialog dialog = new LampListDialog(this, lampNames);
-		dialog.show();
-	    }
-	    return true;
-/*	    
-	case R.id.menu_water_on:
-	    setCmd("P=1");
-	    return true;
-	case R.id.menu_water_off:
-	    setCmd("P=0");
-	    return true;
-*/	    
 	case R.id.menu_water_select:
 	    // Launch the PresetsActivity to see devices and do scan
 	    Intent serverIntent = new Intent(this, DeviceListActivity.class);
 	    startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
 	    return true;
 	case R.id.menu_water_disconnect:
-	    //mmBTConnector.disconnect();
 	    mConnection.disconnect();
 	    break;
-	case R.id.menu_water_presets:
-	    Intent serverIntent2 = new Intent(this, PresetsActivity.class);
-	    startActivityForResult(serverIntent2, REQUEST_PRESET);
-	    break;
-	    //	case R.id.discoverable: // Ensure this device is discoverable by others
-	    //          ensureDiscoverable();
-	    //          return true;
 	default:
 	    Toast.makeText(getApplicationContext(), "Unknown option " + item.getItemId(), Toast.LENGTH_SHORT).show();
 	}
@@ -263,7 +221,6 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     protected void onStop() 
     {
 	super.onStop();
-	//mmBTConnector.disconnect();
 	mConnection.disconnect();
     };
 
@@ -271,7 +228,6 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     protected void onDestroy() 
     {
 	super.onDestroy();
-	//mmBTConnector.disconnect();
 	mConnection.disconnect();
     };
 
@@ -279,13 +235,11 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     protected void onPause() 
     {
 	super.onPause();
-	//mmBTConnector.disconnect();	
     };
 
     void setCmd(String s)
     {
 	mTextCommand.setText(s);
-	//mmBTConnector.write((s+"\n").getBytes());
 	mConnection.sendLine(s);
 	doLog("SENT: " + s);
     }
@@ -356,13 +310,22 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 		savePeerInfo();
 		updateSelectedInfo();
 
-		// Attempt to connect to the device
-		//mChatService.connect(device);
-		//mmBTConnector.connect(device);
 		mConnection.connect(device);
 	    }
 	    break;
 
+	}
+    }
+    
+    private String getCurrentModeName()    
+    {
+	try
+	{
+	    return mAvailableModes[mSelectedModeIndex];
+	}
+	catch (Exception e)
+	{
+	    return "Mode " + mSelectedModeIndex;
 	}
     }
 
@@ -383,7 +346,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    if (null!=mode)
 	    {
 		setCmd(String.format("M=%x", mode));
-		mSpinnerMode.setSelection(mode);
+		//mSpinnerMode.setSelection(mode);
+		mButtonModes.setText(getCurrentModeName());
 	    }
 	    Integer color = b.get("C");
 	    if (null!=color)
@@ -418,8 +382,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 		    }		    
 		}		
 	    }
-	    //mMo
-	    int mode  = mSpinnerMode.getSelectedItemPosition();
+
+	    int mode  = mSelectedModeIndex; //  mSpinnerMode.getSelectedItemPosition();
 	    int color = mColorWheel.getSelectedColor();
 	    b.put("M", mode);
 	    b.put("C", color);
@@ -511,23 +475,7 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	setCmd(String.format("C=%06x", color & 0xFFFFFF));
     }
 
-
-    public void onItemSelected(AdapterView<?> av, View v, int arg2, long arg3)
-    //public void onItemClick(AdapterView<?> av, View arg1, int arg2, long arg3)
-    {
-	if (mIgnoreNextItemSelection)
-	{
-	    mIgnoreNextItemSelection=false;
-	    return;
-	}
-	
-	//Spinner spinner = (Spinner)av;
-	//Object item = spinner.getSelectedItem();
-	int idx = arg2; //spinner.getSelectedItemPosition();
-	setCmd("M=" + idx); // + "," + item);
-    }
-
-
+    
     public void onNothingSelected(AdapterView<?> arg0)
     {
     }
@@ -536,23 +484,6 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     {
 	mTitle.setText(s);
     }
-
-    /*
-    public void onBTStateChanged(int state, String msg)
-    {
-	Log.d(TAG, "onBTStateChanged: " + state + ", " + msg);
-	switch (state)
-	{
-	case BTStripSerialService.STATE_NONE: 		setTitleMessage("none"); break;
-	case BTStripSerialService.STATE_LISTEN:		setTitleMessage("listen"); break;	
-	case BTStripSerialService.STATE_CONNECTING:	setTitleMessage("connecting"); break;
-	case BTStripSerialService.STATE_CONNECTED:	setTitleMessage("connected"); break;
-	case BTStripSerialService.STATE_DISCONNECTED:	setTitleMessage("disconnected"); break;
-	case BTStripSerialService.STATE_TIMEOUT:		setTitleMessage("timeout"); break;
-	default: setTitleMessage("unknown(" + state + ")");
-	}
-    }
-     */
 
     public void onBTDataReceived(byte[] data, int len)
     {
@@ -563,9 +494,6 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     private static final String TAG = "WaterStrip";
 
 
-    private String receivedLine = "";
-
-    
     private int visibleIfFeatured(FEATURE f)
     {
 	return supportedFeatures.contains(f) ? View.VISIBLE : View.INVISIBLE;
@@ -574,8 +502,6 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
     private void enableControls(boolean on)
     {
-	//String features = "" + supportedFeatures;
-	
 	if (on)
 	{
 	    ((SeekBar) findViewById(R.id.seekBright)   ).setVisibility(visibleIfFeatured(FEATURE.BRIGHTNESS));
@@ -585,7 +511,10 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    ((SeekBar) findViewById(R.id.seekRand)     ).setVisibility(visibleIfFeatured(FEATURE.RANDOMNESS));
 	    ((SeekBar) findViewById(R.id.seekStrength) ).setVisibility(visibleIfFeatured(FEATURE.STRENGTH));
 	    mColorWheel.setEnabled(true);
-	    mSpinnerMode.setEnabled(true);
+	    //mSpinnerMode.setEnabled(true);
+	    U.setEnabled(mButtonModes,   true); 
+	    U.setEnabled(mButtonLamps,   true);
+	    U.setEnabled(mButtonPresets, true);
 	}
 	else
 	{
@@ -596,60 +525,28 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	    ((SeekBar) findViewById(R.id.seekRand)     ).setVisibility(View.INVISIBLE);
 	    ((SeekBar) findViewById(R.id.seekStrength) ).setVisibility(View.INVISIBLE);
 	    U.setEnabled(mColorWheel,  false);	    
-	    U.setEnabled(mSpinnerMode, false);
+	    //U.setEnabled(mSpinnerMode, false);
+	    U.setEnabled(mButtonModes,   false);
+	    U.setEnabled(mButtonLamps,   false);
+	    U.setEnabled(mButtonPresets, false);
 	}
     }
 
-//    OnItemSelectedListener dummyOnItemCliItemSelectedListener = new OnItemSelectedListener()
-//    {
-//	public void onItemSelected(AdapterView<?> arg0, View arg1, int arg2, long arg3)
-//        {
-//	    Log.d(TAG, "ignored: onItemSelected");
-//        }
-//
-//	public void onNothingSelected(AdapterView<?> arg0)
-//        {
-//	    Log.d(TAG, "ignored: onNothingSelected");
-//        }	
-//    };
-
-    boolean mIgnoreNextItemSelection = false;
     
     private void parseStripModes(String modeStr)
     {
-	//ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item);
-	ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.mode_name);
-	
-	// does not work (event do come asynchroneously)
-	//mSpinnerMode.setOnItemSelectedListener(dummyOnItemCliItemSelectedListener);
-	mIgnoreNextItemSelection = true;
-	
-	mSpinnerMode.setAdapter(adapter);
 	String[] parts = modeStr.split("[\\t ]+");
 	
+	mAvailableModes = new String[parts.length];
+	
+	int i = 0;
 	for (String name : parts)
 	{
 	    name = name.replaceAll("^[0-9]+=", "").replaceAll("_", " ");
-	    adapter.add(name);
+	    mAvailableModes[i++] = name;
 	}
-	
-	//mSpinnerMode.setOnItemSelectedListener(this);
     }
     
-    /*
-    private void setStripModes(String ... names)
-    {
-	//ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item);
-	ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.mode_name);
-	mSpinnerMode.setAdapter(adapter);
-	
-	for (String name : names)
-	{
-	    adapter.add(name);
-	};
-    }
-    */
-
     private void analyzeUpdateLine(String line)
     {
 	doLog("GOT Update LINE: " + line);
@@ -662,7 +559,9 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	int color = Integer.parseInt(colorStr, 16);
 	int brite = Integer.parseInt(briteStr, 16);
 	
-	mSpinnerMode.setSelection(mode);
+	//mSpinnerMode.setSelection(mode);
+	
+	mSelectedModeIndex = mode;	
 	mColorWheel.setColor(color);
 	mBrightness.setProgress(brite);
     }
@@ -681,8 +580,6 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     };
     
     private Set<FEATURE> supportedFeatures = new HashSet<StripControlActivity.FEATURE>();
-    private int numberLamps = 0;
-    private String[] lampNames;
     
     void resetFeatures()
     {
@@ -696,8 +593,13 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     
     void setLamps(String ... lamps)
     {	
-	numberLamps = lamps.length;
-	this.lampNames = lamps;
+	this.mAvailableLamps = lamps;
+    }
+    
+    
+    void setPresets(String ... presets)
+    {
+	this.mAvailablePresets = presets;
     }
 
     private void analyzeHelloLine(String line)
@@ -722,12 +624,16 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 		    // H:V=1 K=ARGB P=0-2 B=0-FF A=0-FF S=0-FFF F=0-FFF R=0-FF T=0-FFF C=0-FFFFFF M=0=Water 1=WaterColored 2=Fading 3=Rainbow 4=Constant 5=RainFlow	
 		    //setStripModes("Water", "WaterColored", "Fading", "Rainbow", "Constant", "RainFlow");
 		    setLamps("one");
+		    // TODO: Parse also the presets from the devices capability line.
+		    setPresets("OnChip 1", "OnChip 2", "OnChip 3", "OnChip 4", "OnChip 5", "OnChip 6", "OnMobile A", "OnMobile B");
 		}		
 		else if ("LPD6803".equalsIgnoreCase(kind))
 		{
 		    // H:V=1 K=LPD6803 P=0-2 B=0-FF A=0-FF S=0-FFF F=0-FFF R=0-FF T=0-FFF C=0-FFFFFF M=0=Water	1=WaterColored	2=Fading 3=Rainbow 4=RainbowLong 5=RainbowShort 6=Constant 7=RainFlow 8=RainFlowShort	
 		    //setStripModes("Water1", "Water2", "Rainbow1", "Rainbow2", "Rainbow3",  "Fading1", "Fading2", "Funky");
 		    setLamps("one");
+		    // TODO: Parse also the presets from the devices capability line.
+		    setPresets("OnChip 1", "OnChip 2", "OnChip 3", "OnChip 4", "OnChip 5", "OnChip 6", "OnMobile A", "OnMobile B", "OnMobile C");
 		}
 		else if ("OTURMA".equals(kind))
 		{
@@ -746,6 +652,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 			setLamps("Up 1", "Up 2", "Down", "Strip 1", "Strip 2");
 		    }
 
+		    // TODO: Parse also the presets from the devices capability line.
+		    setPresets("Bright", "Dim", "Eat", "Party", "TV", "Fake presence");
 		    //setStripModes("Up+Up", "Up+Up+Down", "Up+Down", "Down", "Strip1", "Strip1+2", "Strip2", "FakeTV");		    
 		}
 		
@@ -864,6 +772,11 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
     
     
     private String mConnectedDeviceName;
+    private int    mSelectedModeIndex = 0;
+    
+    private String[] mAvailableModes   = { "None"    };
+    private String[] mAvailableLamps   = { "Default" };
+    private String[] mAvailablePresets = { "Preset 1", "Preset 2", "Preset 3", "Preset 4", "Preset 5", "Preset 6" };
 
     private void handleCommand(String receivedLine)
     {
@@ -944,5 +857,60 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	} 
     }
 
+
+    public void onClick(View v)
+    {	
+	if (v==mButtonModes)
+	{
+	    Dialog d = new ModeListDialog(this, this.mAvailableModes);
+	    d.show();
+	}
+	else if (v==mButtonLamps)
+	{
+	    Dialog d = new LampListDialog(this, this.mAvailableLamps);
+	    d.show();	    
+	}
+	else if (v==mButtonPresets)
+	{
+	    Dialog d = new PresetListDialog(this, this.mAvailablePresets);
+	    d.show();	    
+	}
+    }
+
+
+    public void setSelectedMode(int selectedIndex, String name)
+    {
+	this.mSelectedModeIndex = selectedIndex;
+    }
+
+
+    private boolean mExitConfirmation=true;
+
+    public boolean onKeyDown(int keyCode, KeyEvent event) 
+    {
+	//Handle the back button
+	if (keyCode == KeyEvent.KEYCODE_BACK && isTaskRoot()) 
+	{
+	    if (mExitConfirmation)
+	    {
+		//Ask the user if they want to quit
+		new AlertDialog.Builder(this)
+		.setIcon(android.R.drawable.ic_dialog_alert)
+		.setTitle("Quit")
+		.setMessage("Do you want to quit?")
+		.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+		    public void onClick(DialogInterface dialog, int which) {
+			//Stop the activity
+			finish();    
+		    }
+		})
+		.setNegativeButton("No", null)
+		.show();
+		return true;
+	    }
+	}
+
+	return super.onKeyDown(keyCode, event);
+    }
 
 }

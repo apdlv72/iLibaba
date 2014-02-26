@@ -21,11 +21,13 @@ import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
@@ -34,6 +36,7 @@ import android.os.Vibrator;
 import android.text.Layout;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -48,6 +51,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.apdlv.ilibaba.R;
+import com.apdlv.ilibaba.activities.DeviceListActivity;
 import com.apdlv.ilibaba.bt.SPPConnection;
 import com.apdlv.ilibaba.bt.SPPDataHandler;
 import com.apdlv.ilibaba.bt.SPPService;
@@ -996,5 +1000,34 @@ public class GateControlActivity extends Activity implements OnClickListener
 	    }
 	}
     };
+
+    private boolean mExitConfirmation=true;
+
+    public boolean onKeyDown(int keyCode, KeyEvent event) 
+    {
+	//Handle the back button
+	if (keyCode == KeyEvent.KEYCODE_BACK && isTaskRoot()) 
+	{
+	    if (mExitConfirmation)
+	    {
+		//Ask the user if they want to quit
+		new AlertDialog.Builder(this)
+		.setIcon(android.R.drawable.ic_dialog_alert)
+		.setTitle("Quit")
+		.setMessage("Do you want to quit?")
+		.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+		    public void onClick(DialogInterface dialog, int which) {
+			//Stop the activity
+			finish();    
+		    }
+		})
+		.setNegativeButton("No", null)
+		.show();
+		return true;
+	    }
+	}
+
+	return super.onKeyDown(keyCode, event);
+    }
 
 }

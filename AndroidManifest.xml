@@ -35,7 +35,7 @@
             android:label="@string/app_name" >
         </activity>
         <activity
-            android:name="com.apdlv.ilibaba.gate.DeviceListActivity"
+            android:name="com.apdlv.ilibaba.activities.DeviceListActivity"
             android:configChanges="orientation|keyboardHidden"
             android:label="@string/select_device"
             android:theme="@android:style/Theme.Dialog" />

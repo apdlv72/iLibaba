@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.apdlv.ilibaba.gate;
+package com.apdlv.ilibaba.activities;
 
 import java.util.Set;
 
@@ -47,7 +47,7 @@ import com.apdlv.ilibaba.R;
  */
 public class DeviceListActivity extends Activity {
     // Debugging
-    private static final String TAG = "PresetsActivity";
+    private static final String TAG = "DeviceListActivity";
     private static final boolean D = true;
 
 

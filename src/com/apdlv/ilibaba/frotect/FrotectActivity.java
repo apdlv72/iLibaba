@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,6 +54,7 @@ import android.widget.Toast;
 
 import com.apdlv.ilibaba.R;
 import com.apdlv.ilibaba.R.id;
+import com.apdlv.ilibaba.activities.DeviceListActivity;
 import com.apdlv.ilibaba.bt.SPPConnection;
 import com.apdlv.ilibaba.bt.SPPDataHandler;
 import com.apdlv.ilibaba.bt.SPPDataHandler.Device;
@@ -63,7 +63,6 @@ import com.apdlv.ilibaba.bt.SPPService;
 import com.apdlv.ilibaba.bt.SPPStatusAwareDialog;
 import com.apdlv.ilibaba.bt.SPPStatusListener;
 import com.apdlv.ilibaba.frotect.FrotectActivity.FrotectBTDataCompleteListener.TYPE;
-import com.apdlv.ilibaba.gate.DeviceListActivity;
 import com.apdlv.ilibaba.gate.GateControlActivity;
 import com.apdlv.ilibaba.util.OnClickAwareDialog;
 import com.apdlv.ilibaba.util.OnClickHelper;
@@ -2432,7 +2431,8 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
     public boolean onKeyDown(int keyCode, KeyEvent event) 
     {
 	//Handle the back button
-	if (keyCode == KeyEvent.KEYCODE_BACK && isTaskRoot()) {
+	if (keyCode == KeyEvent.KEYCODE_BACK && isTaskRoot()) 
+	{
 	    if (mExitConfirmation)
 	    {
 		//Ask the user if they want to quit

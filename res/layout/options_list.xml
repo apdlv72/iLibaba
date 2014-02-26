@@ -18,7 +18,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     >
-    <TextView android:id="@+id/title_lamps_list"
+    <TextView android:id="@+id/options_list_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/title_paired_devices"
@@ -29,7 +29,7 @@
     />
 
     <ListView
-        android:id="@+id/available_lamps"
+        android:id="@+id/options_list_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
