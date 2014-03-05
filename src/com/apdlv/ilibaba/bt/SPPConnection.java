@@ -113,4 +113,14 @@ public class SPPConnection implements ServiceConnection
     {
 	return null!=mService && mService.isConnected();
     }
+
+
+    public void startDiscovery()
+    {
+	if (null!=mService)
+	{
+	    mService.startDiscovery();
+	}
+	
+    }
 }

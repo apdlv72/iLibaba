@@ -597,9 +597,9 @@ public class GateControlActivity extends Activity implements OnClickListener
         }
         
         @Override
-        protected void onToast(String msg)
+        protected void onToast(String msg, boolean _long)
         {
-            showToast(msg);
+            showToast(msg, _long);
         }	
     }
     
@@ -766,7 +766,12 @@ public class GateControlActivity extends Activity implements OnClickListener
 
     protected void showToast(String string)
     {
-	Toast.makeText(this, string, Toast.LENGTH_LONG).show();
+	showToast(string, false);
+    }
+    
+    protected void showToast(String string, boolean _long)
+    {
+	Toast.makeText(this, string, _long ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT).show();
     }
 
 

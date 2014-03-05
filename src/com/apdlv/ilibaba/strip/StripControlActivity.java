@@ -779,9 +779,9 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	};
 	
 	@Override
-	protected void onToast(String msg) 
+	protected void onToast(String msg, boolean _long) 
 	{
-		Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+		Toast.makeText(getApplicationContext(), msg, _long ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT).show();
 	    
 	}
 	

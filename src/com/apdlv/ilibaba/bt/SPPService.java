@@ -16,10 +16,17 @@
 package com.apdlv.ilibaba.bt;
 
 
+import java.util.HashSet;
+
+import com.apdlv.ilibaba.util.U;
+
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
@@ -33,15 +40,17 @@ public class SPPService  extends Service
     public static final String KEY_DEVICE_NAME = "KEY_DEVICE_NAME";
     public static final String KEY_DEVICE_ADDR = "KEY_DEVICE_ADDR";
 
-    // Constants that indicate the current connection state
-    public static final int STATE_NONE           = 0; // we're doing nothing
-    public static final int STATE_CONNECTING     = 1; // now initiating an outgoing connection
-    public static final int STATE_CONNECTED      = 2; // now connected timeout a remote device
-    public static final int STATE_DISCONNECTED   = 3; // now connected timeout a remote device
-    public static final int STATE_CONN_TIMEOUT   = 4; // now connected timeout a remote device
-    public static final int STATE_LOST           = 5; // now listening for incoming connections
-    public static final int STATE_FAILED         = 6; // now listening for incoming connections
-    // Message types sent from the BluetoothChatService Handler
+    // Constants that indicate the current connection state.
+    public static final int STATE_NONE           =  0; // we're doing nothing
+    public static final int STATE_CONNECTING     =  1; // now initiating an outgoing connection
+    public static final int STATE_CONNECTED      =  2; // now connected timeout a remote device
+    public static final int STATE_DISCONNECTED   =  3; // now connected timeout a remote device
+    public static final int STATE_CONN_TIMEOUT   =  4; // now connected timeout a remote device
+    public static final int STATE_LOST           =  5; // now listening for incoming connections
+    public static final int STATE_FAILED         =  6; // now listening for incoming connections
+    public static final int STATE_CANCELLED      =  7; // connection attempt was cancelled upon user request 
+    
+    // Message types sent from the BluetoothChatService handler.
     public static final int MESSAGE_HELLO        =  1; // sent to handler upon registration 
     public static final int MESSAGE_STATE_CHANGE =  2; // state changed
     public static final int MESSAGE_READ         =  3; // sending timeout handler a message received from the peer device
@@ -51,6 +60,7 @@ public class SPPService  extends Service
     public static final int MESSAGE_READLINE     =  7;
     public static final int MESSAGE_DEBUG_MSG    =  8;
     public static final int MESSAGE_BYEBYE       =  9;
+    public static final int MESSAGE_RESET_BT     = 10; // bring BT adapter down and up again in order to reset 
 
     public static String state2String(int state)
     {
@@ -116,6 +126,9 @@ public class SPPService  extends Service
     {    
 	super.onCreate();
     	Log.d(TAG, "onCreate");
+
+    	IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+	registerReceiver(mReceiver, filter);
     };
 
 
@@ -208,19 +221,29 @@ public class SPPService  extends Service
         return STATE_CONNECTED==mState;
     }
 
-    public void connect(BluetoothDevice device) 
+    public boolean connect(BluetoothDevice device) 
     {
         synchronized (this)
         {
+            /*
+            if (checkTimeout(device))
+            {
+        	log("Detected former timeout connecting to " + device.getName());        	
+        	mHandler.obtainMessage(MESSAGE_RESET_BT, device).sendToTarget();
+        	return false;
+            }            
+            */
+            
             log("SPPService.connect(" + device + ")");
             cancelThreads();
     
             // Start the thread timeout connect with the given device
-            mConnectingThread = new ConnectThread(this, device, mLinewise);
-            mConnectingThread.start();
+            mConnectThread = new ConnectThread(this, device, mLinewise);
+            mConnectThread.start();
     
             sendDevicenfo(device);
             setState(STATE_CONNECTING);
+    	    return true;
         }
     }
 
@@ -242,9 +265,9 @@ public class SPPService  extends Service
 	    if (mState!=STATE_CONNECTED) return;
 	    try
 	    {
-		if (null!=mConnectingThread)
+		if (null!=mConnectThread)
 		{
-		    mConnectingThread.write(out);
+		    mConnectThread.write(out);
 		}
 	    }
 	    catch (Exception e)
@@ -257,9 +280,9 @@ public class SPPService  extends Service
 
     void sendMessageBytes(ConnectThread connectThread, int messageRead, int bytes, byte[] buffer)
     {
-	if (this.mConnectingThread==connectThread)
+	if (this.mConnectThread==connectThread)
 	{
-	    mHandler.obtainMessage(SPPService.MESSAGE_READ, bytes, -1, buffer).sendToTarget();
+	    mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer).sendToTarget();
 	}
 	else
 	{
@@ -269,9 +292,9 @@ public class SPPService  extends Service
 
     void sendMessageString(ConnectThread connectThread, String msg)
     {
-	if (this.mConnectingThread==connectThread)
+	if (this.mConnectThread==connectThread)
 	{
-	    mHandler.obtainMessage(SPPService.MESSAGE_READLINE, msg).sendToTarget();
+	    mHandler.obtainMessage(MESSAGE_READLINE, msg).sendToTarget();
 	}
 	else
 	{
@@ -281,9 +304,9 @@ public class SPPService  extends Service
 
     void sendDebug(ConnectThread connectThread, String msg)
     {
-	if (this.mConnectingThread==connectThread)
+	if (this.mConnectThread==connectThread)
 	{
-	    mHandler.obtainMessage(SPPService.MESSAGE_DEBUG_MSG, msg).sendToTarget();
+	    mHandler.obtainMessage(MESSAGE_DEBUG_MSG, msg).sendToTarget();
 	}
 	else
 	{
@@ -293,9 +316,12 @@ public class SPPService  extends Service
 
     boolean cancelDiscovery(ConnectThread connectThread)
     {
-	if (this.mConnectingThread==connectThread)
+	if (this.mConnectThread==connectThread)
 	{
-	    mAdapter.cancelDiscovery();
+	    if (mAdapter.isDiscovering())
+	    {
+		mAdapter.cancelDiscovery();
+	    }
 	    return true;
 	}
 	else
@@ -305,11 +331,16 @@ public class SPPService  extends Service
 	}
     }
 
+    public void startDiscovery()
+    {
+	mAdapter.startDiscovery();
+    }
+
     void setState(ConnectThread connectThread, int state) 
     {
         synchronized (this)
         {
-            if (mConnectingThread!=connectThread)
+            if (mConnectThread!=connectThread)
             {
         	Log.d(TAG, "setState: Ignoring state change from wrong thread " + connectThread);
         	return;
@@ -348,8 +379,9 @@ public class SPPService  extends Service
     /**
      * Called by ConnectThread to indicate that the connection attempt failed and 
      * the UI Activity should be notified.
+     * @param connectThread 
      */
-    void connectionFailed(String reason) 
+    void connectionFailed(ConnectThread connectThread, String reason) 
     {
         synchronized (this)
         {
@@ -363,6 +395,77 @@ public class SPPService  extends Service
         	mHandler.sendMessage(msg);
             }
         }
+    }
+    
+    
+    public void sendToast(String text)
+    {
+	sendToast(text, false);
+    }
+    
+    public void sendToast(String text, boolean _long)
+    {
+	if (null==mHandler) return;
+	Message msg = mHandler.obtainMessage(MESSAGE_TOAST, _long ? 1 : 0, -1, text);
+	//Bundle bundle = new Bundle();
+	mHandler.sendMessage(msg);	
+    }
+    
+
+    public void scheduleRetry(ConnectThread connectThread)
+    {
+	if (mConnectThread==connectThread)
+	{
+	    int retry = connectThread.getRetry();
+	    final int MAX = 4;
+	    
+	    if (retry>=MAX)
+	    {		
+		sendToast("Giving up");
+		return;
+	    }
+	    else if (retry==2)
+	    {
+//		sendToast("Plaese switch BT off, then on and retry", true);
+//		return;
+		
+		sendToast("Resetting bluetooth adapter");
+		
+		long start = mCounterBTOff;
+		if (mAdapter.isEnabled())
+		{		   
+		    log("Resetting BT adapter");
+		    mAdapter.disable();
+		
+		    while (start==mCounterBTOff)
+		    {
+			Log.d(TAG, "Waiting for adapter to come down, counter: " + mCounterBTOff);
+			U.sleep(250);
+		    }
+		}		
+
+		U.sleep(2500);
+		
+		start = mCounterBTOn;
+		log("Bringing BT adapter up");
+		mAdapter.enable();
+		
+		while (start==mCounterBTOn)
+		{
+		    Log.d(TAG, "Waiting for adapter to come up, counter: " + mCounterBTOn);
+		    U.sleep(250);
+		}
+
+		mAdapter.startDiscovery();
+		U.sleep(2500);
+	    }
+	    
+	    U.sleep(1000);
+	    retry++;
+	    sendToast("Retrying (" + retry + " of  " + MAX + ")");
+	    mConnectThread = new ConnectThread(this, connectThread.getDevice(), connectThread.getLinewise(), retry);
+	    mConnectThread.start();
+	}
     }
 
     /**
@@ -383,34 +486,47 @@ public class SPPService  extends Service
         }
     }
 
-    boolean attachConnectThread(ConnectThread connectThread)
+    private HashSet<ConnectThread> registeredThreads = new HashSet<ConnectThread>();
+    
+    public void registerConnectThread(ConnectThread connectThread)
     {
-        if (connectThread==mConnectingThread)
-        {
-            (mConnectedThread = connectThread).attachToService(this);
-            return true;
-        }
-        else
-        {
-            connectThread.cancel();
-            return false;
-        }
-    }
+	synchronized (registeredThreads)
+	{
+	    registeredThreads.add(connectThread);
+	}
+    }    
 
-    void releaseConnectThread(ConnectThread connectThread)
+    public boolean checkTimeout(BluetoothDevice targetDevice)
     {
-        if (connectThread==mConnectedThread)
+	boolean rc = false;
+	HashSet<ConnectThread> toBeRemoved = new HashSet<ConnectThread>();
+	
+	synchronized (registeredThreads)
         {
-            mConnectedThread = null;
-            connectThread.releaseFromService(this);
-        }
+	    for (ConnectThread t : registeredThreads)
+	    {
+		BluetoothDevice device = t.getDevice();
+		boolean same = (device.getAddress().equals(targetDevice.getAddress()));
 
-        if (connectThread==mConnectingThread)
-        {
-            mConnectingThread = null;
+		if (!t.isAlive()) // remove dead threads
+		{
+		    toBeRemoved.add(t);
+		}
+		else if (same && t.isTimedout())
+		{
+		    rc = true;
+		    toBeRemoved.add(t);
+		}
+	    }
+
+	    for (ConnectThread t : toBeRemoved)
+	    {
+		registeredThreads.remove(t);
+	    }
         }
+	return rc;
     }
-
+    
     /*
     private class CancelThread extends Thread 
     {
@@ -480,14 +596,9 @@ public class SPPService  extends Service
 
     private void cancelThreads()
     {
-        if (mConnectingThread != null) 	    
+        if (mConnectThread != null) 	    
         {
-            try { mConnectingThread.cancel(); } catch (Exception e) {} 
-        }
-    
-        if (mConnectedThread != null && mConnectedThread!=mConnectingThread) 	    
-        {
-            try { mConnectedThread.cancel();  } catch (Exception e) {} 
+            try { mConnectThread.cancel();  } catch (Exception e) {} 
         }        
     }
 
@@ -504,34 +615,44 @@ public class SPPService  extends Service
         }
     }
 
+    
+    private volatile long mCounterBTOff = 0;
+    private volatile long mCounterBTOn  = 0;
+    
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() 
+    {
+	@Override
+	public void onReceive(Context context, Intent intent) 
+	{
+	    final String action = intent.getAction();
+
+	    if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) 
+	    {
+		final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
+		
+		switch (state) 
+		{
+		case BluetoothAdapter.STATE_OFF:
+		    mCounterBTOff++;
+		    break;
+		case BluetoothAdapter.STATE_ON:
+		    mCounterBTOn++;
+		    break;
+		}
+
+	    }
+	}
+    };
+
     // Debugging
-    private static final String TAG = SPPService.class.getSimpleName();
-    private static final boolean D = true;
+    private static final String  TAG = SPPService.class.getSimpleName();
+    private static final boolean D   = true;
     // Member fields
     private BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
     private int           mState           = STATE_NONE;
     private boolean       mLinewise        = true;
     private Handler       mHandler         = null;
-    private ConnectThread mConnectingThread  = null;
-    private ConnectThread mConnectedThread = null;    
+    //private ConnectThread mConnectingThread  = null;
+    private ConnectThread mConnectThread = null;
+
 }
-
-//private class DisconnectThread extends Thread
-//{
-//	//private final String TAG = DisconnectThread.class.getSimpleName();
-//
-//	private BluetoothSocket mmSocket;
-//
-//	public DisconnectThread(BluetoothSocket socket)
-//	{
-//	    this.mmSocket = socket;
-//	}
-//
-//	@Override
-//	public void run()
-//	{
-//	    closeBluetoothSocket(mmSocket);
-//	    mmSocket = null;
-//	}
-//}
-

@@ -25,6 +25,7 @@ import android.content.res.Resources;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.media.RingtoneManager;
+import android.media.AudioRecord.OnRecordPositionUpdateListener;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -376,7 +377,8 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	}
 	return false;
     }
-
+    
+    
     public void onActivityResult(int requestCode, int resultCode, Intent data)
     {
 	switch (requestCode) 
@@ -384,10 +386,13 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 
 	case REQUEST_ENABLE_BT:
 	    // When the request to enable Bluetooth returns
-	    if (resultCode == Activity.RESULT_OK) {
+	    if (resultCode == Activity.RESULT_OK) 
+	    {
 		// Bluetooth is now enabled, so set up a chat session
 		//setupChat();
-	    } else {
+	    } 
+	    else 
+	    {
 		// User did not enable Bluetooth or an error occured
 		Toast.makeText(this, R.string.bt_not_enabled_leaving, Toast.LENGTH_SHORT).show();
 		finish();
@@ -723,10 +728,16 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 	    }
 	}
 
-	@Override
 	protected void onToast(String msg)
 	{
-	    Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+	    onToast(msg, false); 
+	}
+	
+	
+	@Override
+	protected void onToast(String msg, boolean _long)
+	{
+	    Toast.makeText(getApplicationContext(), msg, _long ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT).show();
 	}
 
 	@Override
@@ -749,6 +760,13 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		U.setVisible(mErrorView);
 	    }
 	}
+	
+	
+//	@Override
+//	protected void onBluetoothReset(BluetoothDevice device) 
+//	{
+//	};
+	
 
 	@Override
 	protected void onIdle() { setTitleMsg("unconnected"); }
@@ -2403,22 +2421,15 @@ public class FrotectActivity extends Activity implements OnClickListener, OnLong
 		
 		switch (state) 
 		{
-        		case BluetoothAdapter.STATE_OFF:
-        		    showToast("Bluetooth turned off");
-        		    //mBluetoothEnabled = false;
-        		    break;
-        		case BluetoothAdapter.STATE_TURNING_OFF:
-        		    //showToast("Turning Bluetooth off...");
-        		    //mBluetoothEnabled = false; // preemptive obedience
-        		    break;
-        		case BluetoothAdapter.STATE_ON:
-        		    showToast("Bluetooth turned on");
-        		    //mBluetoothEnabled = true;
-        		    break;
-        		case BluetoothAdapter.STATE_TURNING_ON:
-        		    showToast("Turning Bluetooth on...");
-        		    //mBluetoothEnabled = false; // if turning on, it's not on yet
-        		    break;
+		case BluetoothAdapter.STATE_TURNING_OFF:
+		case BluetoothAdapter.STATE_TURNING_ON:
+		    break;
+		case BluetoothAdapter.STATE_OFF:
+		    showToast("Bluetooth turned off");
+		    break;
+		case BluetoothAdapter.STATE_ON:
+		    showToast("Bluetooth turned on");
+		    break;
 		}
 
 	    }

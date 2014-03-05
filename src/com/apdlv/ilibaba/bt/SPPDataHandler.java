@@ -2,6 +2,7 @@ package com.apdlv.ilibaba.bt;
 
 import java.util.HashSet;
 
+import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -126,8 +127,15 @@ public class SPPDataHandler extends Handler
         	break;
 
         case SPPService.MESSAGE_TOAST:
-        	onToast((String) msg.obj);
+        	onToast((String) msg.obj, msg.arg1==1);
         	break;
+        	
+        case SPPService.MESSAGE_RESET_BT:
+            {
+                BluetoothDevice device = (BluetoothDevice) msg.obj;
+                onBluetoothReset(device);
+            }
+            break;
         }
     }
     
@@ -200,8 +208,10 @@ public class SPPDataHandler extends Handler
     protected void onIdle() {}
     protected void onDataReceived(byte[] readBuf, int len) {}
     protected void onLineReceived(String receivedLine) {}
-    protected void onToast(String msg) {}
+    protected void onToast(String msg, boolean _long) {}
     protected void onDebugMessage(String msg) {}
+    protected void onBluetoothReset(BluetoothDevice device) {}
+
 
     
     private HashSet<SPPDataListener>   dataListeners = new HashSet<SPPDataListener>();

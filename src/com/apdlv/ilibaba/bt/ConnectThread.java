@@ -5,57 +5,188 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.util.Calendar;
 import java.util.UUID;
 
+import com.apdlv.ilibaba.util.U;
+
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
+
+class TimeoutThread extends Thread
+{
+    private final String TAG = TimeoutThread.class.getSimpleName();
+ 
+    private ConnectThread connectThread;
+
+    TimeoutThread(ConnectThread connectThread)
+    {
+	this.connectThread = connectThread;
+    }
+
+    public void run()
+    {
+	long start = now();
+	
+	while (now()-start<3*ConnectThread.THRESHOLD)
+	{
+	    if (connectThread.isConnected())
+	    {
+		Log.e(TAG, "ConnectThread connected, bailing out");
+		return;
+	    }
+	    else if (!connectThread.isAlive())
+	    {
+		Log.e(TAG, "ConnectThread dead, bailing out");
+		return;
+	    }
+	    else if (connectThread.isTimedout())
+	    {
+		Log.e(TAG, "ConnectThread timed out, calling handleTimeout");
+		connectThread.handleTimeout();
+	    }
+	    
+	    try { Thread.sleep(100); } catch (Exception e) {}
+	}
+	   
+    }
+
+    private static long now()
+    {
+	return Calendar.getInstance().getTimeInMillis();
+    }
+}
+
+class SocketCloseThread extends Thread
+{
+    private final String TAG = SocketCloseThread.class.getSimpleName();
+
+    private BluetoothSocket mSocket;
+
+    SocketCloseThread(BluetoothSocket socket)
+    {
+	this.mSocket = socket;
+    }
+
+    public void run()
+    {
+	try
+	{
+	    Log.e(TAG, "Closing BT socket " + mSocket + " (in the background)");
+	    mSocket.close();
+	    Log.e(TAG, "BT socket " + mSocket + " closed");
+	}
+	catch (Exception e)
+	{
+	    Log.e(TAG, "" + e);
+	}
+    }
+}
+
 
 class ConnectThread extends Thread 
 {
     // The standard Serial Port Profile UUID
     public static final UUID SPP_UUID =  UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
     
+    public final static long THRESHOLD = 5*1000L; // seconds
+
     public static boolean DUMP_SERVICES = false;
 
-    public ConnectThread(SPPService sppService, BluetoothDevice device, boolean linewise) 
+
+    public ConnectThread(SPPService sppService, BluetoothDevice device, boolean linewise)
+    {
+	this(sppService, device, linewise, 0);
+    }
+    
+    
+    public ConnectThread(SPPService sppService, BluetoothDevice device, boolean linewise, int retry) 
     {
 	if (DUMP_SERVICES)
 	{
 	    logDeviceServices(device);
 	}
 
-	this.mDevice          = device;
-	this.mCreatorService  = sppService;
-	this.mAttachedService = null;
-	this.mLinewise        = linewise;
-	this.mDoCancel       = false;
+	this.mRetry      = retry;
+	this.mDevice     = device;
+	this.mSPPService = sppService;
+	this.mLinewise   = linewise;
+	this.mDoCancel   = false;
+	setState(SPPService.STATE_NONE);
+    }
+
+    public boolean isConnected()
+    {
+	return mLastState==SPPService.STATE_CONNECTED;
+    }
+
+    public void handleTimeout()
+    {	// save this value, since cancle() belo will set it for sure
+	boolean wasCancelled = mDoCancel;
+	
+	cancel();
+	
+	if (!wasCancelled)
+	{
+	    Log.d(TAG, "handleTimeout: not cancelled, calling scheduleRetry");
+	    mSPPService.scheduleRetry(this);
+	}
+	else
+	{
+	    Log.d(TAG, "handleTimeout: WAS cancelled, NOT calling scheduleRetry");	    
+	}
+	setState(SPPService.STATE_CONN_TIMEOUT);
+    }
+
+    public BluetoothDevice getDevice()
+    {
+	return mDevice;
+    }
+
+    public boolean isTimedout()
+    {	
+	return mLastState==SPPService.STATE_CONN_TIMEOUT && now()-mLastStateChange>THRESHOLD; 
     }
 
 
     public void run() 
     {
+	// socket.connect() may block forever, therefore start a thread that will monitor
+	// whether the connection attempt takes too long. 
+	TimeoutThread toThread = new TimeoutThread(this);
+	toThread.start();
+	
+	// Register this thread with the service to allow detection of threads that
+	// stalled while connecting to the remote device or even while closing the socket.
+        mSPPService.registerConnectThread(this);
+	
         log("BEGIN mConnectThread");
         setName("ConnectThread");
-        mWasCancelled = false;
+        setState(SPPService.STATE_CONNECTING);
     
         // Always cancel discovery because it will slow down a connection
-        if (!mCreatorService.cancelDiscovery(this))
+        Log.d(TAG, "Cancelling discovery ...");
+        if (!mSPPService.cancelDiscovery(this))
         {
+            setState(SPPService.STATE_FAILED);
             return;
         }
     
         if (mDoCancel)
         {        
-            mWasCancelled = true;
+            setState(SPPService.STATE_CANCELLED);
             return;
         }
         
         try
         {
             log("Creating bluetooth socket ...");
+            setState(SPPService.STATE_CONN_TIMEOUT); // next method might block
             mSocket = createSocket(mDevice);
+            setState(SPPService.STATE_CONNECTING);            
         }
         catch (Exception e)
         {
@@ -65,15 +196,17 @@ class ConnectThread extends Thread
         if (null==mSocket) // connect was not successful
         {
             log("Socket creation failed");
-            mCreatorService.connectionFailed("Socket creation failed");		
+            mSPPService.connectionFailed(this, "Socket creation failed");		
+            setState(SPPService.STATE_FAILED);            
             return;		
         }
 
         if (mDoCancel)
         {
-            mWasCancelled = true;
+            setState(SPPService.STATE_CONN_TIMEOUT); // next method might block
             closeBluetoothSocket();
-            mCreatorService.connectionFailed("Connection cancelled");
+            setState(SPPService.STATE_CANCELLED);
+            mSPPService.connectionFailed(this, "Connection cancelled");
             return;
         }        
 
@@ -81,56 +214,80 @@ class ConnectThread extends Thread
         try 
         {
             // This is a blocking call and will only return on a successful connection or an exception
-            log("Connecting socket ...");
+            log("Connecting socket ... BT discovering: " + BluetoothAdapter.getDefaultAdapter().isDiscovering());
+            
+            setState(SPPService.STATE_CONN_TIMEOUT); // next method might block
             mSocket.connect(); 
-            log("Socket connected!");
+            setState(SPPService.STATE_CONNECTED);
+            
+            log("Socket connected! (retry: " + mRetry + ")");
         } 
         catch (IOException ioe)
         {
             String msg = ioe.getMessage();
-            log("Connection failed: "+ msg);
-            mCreatorService.connectionFailed(msg);
+            
+            log("Connection failed (IOException): "+ msg);
+            mSPPService.connectionFailed(this, msg);
+            
             // Close the socket
-            closeBluetoothSocket();
-    
-            mCreatorService.setState(this, SPPService.STATE_FAILED);
+            setState(SPPService.STATE_CONN_TIMEOUT); // next method might block
+            closeBluetoothSocket();            
+            setState(SPPService.STATE_FAILED);
+
+            if (!mDoCancel)
+            {            
+        	if (msg.contains("discovery failed"))
+        	{
+        	    U.sleep(2000);
+        	    mSPPService.scheduleRetry(this);
+        	}
+        	else 
+        	{
+        	    mSPPService.connectionFailed(this, ioe.getMessage());
+        	}
+            }
             return;
         }
         catch (Exception e) 
         {
-            log("Connection failed: "+ e);
-            mCreatorService.connectionFailed("" + e);
+            log("Connection failed (Exception): "+ e);
+            mSPPService.connectionFailed(this, "" + e);
+            
             // Close the socket
-            closeBluetoothSocket();
-    
-            mCreatorService.setState(this, SPPService.STATE_FAILED);
+            setState(SPPService.STATE_CONN_TIMEOUT); // next method might block
+            closeBluetoothSocket();    
+            setState(SPPService.STATE_FAILED);
+            
+            mSPPService.connectionFailed(this, e.getMessage());
             return;
         }
     
         if (mDoCancel)
         {
-            mWasCancelled = true;
+            setState(SPPService.STATE_CONN_TIMEOUT); // next method might block
             closeBluetoothSocket();
-            mCreatorService.connectionFailed("Connection cancelled");
+            setState(SPPService.STATE_FAILED);
+            
+            mSPPService.connectionFailed(this, "Connection cancelled");
             return;
         }        
 
-        if (!mCreatorService.attachConnectThread(this))
-        {
-            cancel();
-            return;
-        }
+        // if we succeed until here, we're connected
+        setState(SPPService.STATE_CONNECTED); 
+        mSPPService.setState(this, SPPService.STATE_CONNECTED);
     
-        mCreatorService.setState(this, SPPService.STATE_CONNECTED);
-    
+        setState(SPPService.STATE_CONN_TIMEOUT); // next method might block???
         if (!getSocketStreams())
         {
-            mAttachedService.setState(this, SPPService.STATE_FAILED);
-            mAttachedService.releaseConnectThread(this);
             closeBluetoothSocket();
+            setState(SPPService.STATE_FAILED);
+            mSPPService.setState(this, SPPService.STATE_FAILED);
             return;
         }
-        else if (mLinewise)
+        
+        // set this back to connected state to prevent isTimedout() from firing
+        setState(SPPService.STATE_CONNECTED); 
+        if (mLinewise)
         {
             communicateLinewise();
         }
@@ -141,8 +298,7 @@ class ConnectThread extends Thread
         
         if (mDoCancel)
 	{
-	    mWasCancelled = true;
-	    mAttachedService.connectionLost("Connection cancelled");
+	    mSPPService.connectionLost("Connection cancelled");
 	}
 
 	closeBluetoothSocket();
@@ -158,12 +314,30 @@ class ConnectThread extends Thread
             {
         	mDoCancel = true;
         	this.interrupt();
+        	if (null!=mSocket)
+        	{
+        	    (new SocketCloseThread(mSocket)).start();        	    
+        	} 
+        	this.interrupt();
+        	this.join(100);
+        	
+        	if (this.isAlive())
+        	{
+        	    Log.e(TAG, "ConnectThread still alive after being interrupted...");
+//        	    Throwable throwable = new RuntimeException("Thread cancelled");
+//		    this.stop(throwable);
+        	}
             } 
             catch (Exception e) 
             {
         	Log.e(TAG, "cancel(): ", e);
             }
     
+            /* Do not attempt to close the bt socket here,since "cancle()" will run in the context 
+             * of the calling thread and therefore might break the UI activity. e it up to the thread
+             * itself to detect the cancellation and take appropriate action.  
+             */
+            /*
             try
             {
         	if (null==mSocket)
@@ -183,23 +357,11 @@ class ConnectThread extends Thread
             {
         	Log.e(TAG, "close() of connect socket failed", e);
             }
-            mAttachedService.setState(this, SPPService.STATE_DISCONNECTED);
+            mSPPService.setState(this, SPPService.STATE_DISCONNECTED);
+            */
         }
     }
 
-
-    // called by sspService
-    public void attachToService(SPPService sppService)
-    {
-	this.mAttachedService = sppService;
-    }
-
-    // called by sspService
-    public void releaseFromService(SPPService sppService)
-    {
-	this.mAttachedService = null;
-    }    
-    
 
     public void write(byte[] buffer)
     {
@@ -215,6 +377,13 @@ class ConnectThread extends Thread
         {
             Log.e(TAG, "Exception during write", e);
         }
+    }
+
+
+    private void setState(int state)
+    {
+	this.mLastState       = state;
+	this.mLastStateChange = Calendar.getInstance().getTimeInMillis();
     }
 
 
@@ -270,11 +439,11 @@ class ConnectThread extends Thread
 	{
 	    Log.d(TAG, msg);
 	    
-	    if (null==mAttachedService) 
+	    if (null==mSPPService) 
 	    {
 		return;
 	    }
-	    mAttachedService.sendDebug(this, msg);
+	    mSPPService.sendDebug(this, msg);
 	}
     }
 
@@ -291,9 +460,9 @@ class ConnectThread extends Thread
 	    {
 		String line = br.readLine();
 		//log("ConnectedThread: read line: " + line);
-		if (null!=mAttachedService)
+		if (null!=mSPPService)
 		{
-		    mAttachedService.sendMessageString(this, line);
+		    mSPPService.sendMessageString(this, line);
 		}
 		else
 		{
@@ -305,7 +474,7 @@ class ConnectThread extends Thread
 		log("ConnectedThread: communicateLinewise: " + e);
 		if (!mDoCancel)
 		{
-		    mAttachedService.connectionLost(e.getMessage());
+		    mSPPService.connectionLost(e.getMessage());
 		}
 		break;
 	    }
@@ -338,9 +507,9 @@ class ConnectThread extends Thread
 		bytes = mInputStream.read(buffer);
 		log("ConnectedThread: read " + bytes + " bytes)");
 
-		if (null!=mAttachedService)
+		if (null!=mSPPService)
 		{
-		    mAttachedService.sendMessageBytes(this, SPPService.MESSAGE_READ, bytes, buffer);
+		    mSPPService.sendMessageBytes(this, SPPService.MESSAGE_READ, bytes, buffer);
 		}
 	    } 
 	    catch (IOException e) 
@@ -348,7 +517,7 @@ class ConnectThread extends Thread
 		log("ConnectedThread: communicateBytewise: " + e);
 		if (!mDoCancel)
 		{
-		    mAttachedService.connectionLost(e.getMessage());
+		    mSPPService.connectionLost(e.getMessage());
 		}
 		break;
 	    }
@@ -521,18 +690,35 @@ class ConnectThread extends Thread
         }
     }
 
+    private static long now()
+    {
+	return Calendar.getInstance().getTimeInMillis();
+    }
+    
 
     private final String TAG = ConnectThread.class.getSimpleName();
 
-    private BluetoothSocket mSocket;
-    private OutputStream    mOutStream;
-    private InputStream     mInputStream;
-    private boolean         mDoCancel;
-    private boolean         mWasCancelled;
-    private boolean         mLinewise;
-    private BluetoothDevice mDevice;
-    private SPPService      mCreatorService;
-    private SPPService      mAttachedService;
+    private BluetoothSocket  mSocket;
+    private OutputStream     mOutStream;
+    private InputStream      mInputStream;
+    private volatile boolean mDoCancel;
+    private boolean          mLinewise;
+    private BluetoothDevice  mDevice;
+    private SPPService       mSPPService;
+    private int              mLastState;
+    private long             mLastStateChange;
+    private int 	     mRetry;
+
+    
+    public int getRetry()
+    {
+	return mRetry;
+    }
+
+    public boolean getLinewise()
+    {
+	return mLinewise;
+    }
 
 } 
 // ConnectThread
