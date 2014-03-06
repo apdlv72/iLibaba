@@ -169,8 +169,11 @@ public class SPPService  extends Service
     @Override
     public void onDestroy() 
     {
-	disconnect();
 	super.onDestroy();
+	disconnect();
+	
+	Log.d(TAG, "onDestroy: Unregistering bluetooth broadcast receiver");
+	unregisterReceiver(mReceiver);
     };
 
     
@@ -306,7 +309,14 @@ public class SPPService  extends Service
     {
 	if (this.mConnectThread==connectThread)
 	{
-	    mHandler.obtainMessage(MESSAGE_DEBUG_MSG, msg).sendToTarget();
+	    if (null!=mHandler)
+	    {
+		mHandler.obtainMessage(MESSAGE_DEBUG_MSG, msg).sendToTarget();
+	    }
+	    else
+	    {
+		Log.d(TAG, "No handler (any more?) for debug msg: " + msg);
+	    }
 	}
 	else
 	{
