@@ -89,7 +89,10 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
         }
         
 	// Set up the window layout
-	requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
+
+        // Exception: You cannot combine custom ....
+	//requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
+        
 	setContentView(R.layout.activity_strip);
 	getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.custom_title);
 
@@ -98,7 +101,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 	if (null!=mTitle) mTitle.setText(R.string.view_name_water);
 
 	mTitle = (TextView) findViewById(R.id.title_right_text);
-	mTitle.setText("test");
+	U.setText(mTitle, "test");
+	//mTitle.setText("test");
 
 	mLogView = (TextView) findViewById(R.id.logView);
 	mLogView.setMaxLines(1000);
@@ -510,7 +514,8 @@ public class StripControlActivity extends Activity implements OnSeekBarChangeLis
 
     private void setTitleMessage(String s)
     {
-	mTitle.setText(s);
+	U.setText(mTitle, s);
+	//mTitle.setText(s);
     }
 
 //    public void onBTDataReceived(byte[] data, int len)

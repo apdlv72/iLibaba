@@ -123,7 +123,10 @@ public class GateControlActivity extends Activity implements OnClickListener
 	} 	
 
         // Set up the window layout
-        requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
+
+	// Exception: You cannot combine custom ....
+        //requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
+	
         setContentView(R.layout.activity_gate);
         getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.custom_title);
 
